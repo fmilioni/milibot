@@ -1,0 +1,156 @@
+{
+  "app": {
+    "loading": "Connecting to Milibot…",
+    "bootErrorTitle": "Could not connect to Milibot",
+    "retry": "Try again",
+    "reconnecting": "Reconnecting…",
+    "crash": {
+      "title": "Something went wrong in this window",
+      "body": "The screen hit an unexpected error. Reloading usually fixes it: your conversations and the bots' work are safe.",
+      "reload": "Reload",
+      "copyDetails": "Copy details",
+      "copied": "Copied"
+    },
+    "areaError": "This part of the screen couldn't be shown.",
+    "messageError": "This message couldn't be shown."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "filters": {
+      "allProjects": "All projects",
+      "allBots": "All bots",
+      "allStatuses": "All statuses"
+    },
+    "gb": "{{value}} GB",
+    "gbUnit": "GB"
+  },
+  "time": {
+    "now": "now",
+    "today": "Today",
+    "yesterday": "yesterday",
+    "yesterdayTitle": "Yesterday"
+  },
+  "newSection": {
+    "title": "New section",
+    "name": "Name",
+    "placeholder": "e.g. Dev, Teams, Finance",
+    "create": "Create section"
+  },
+  "newGroup": {
+    "title": "New group",
+    "name": "Group name",
+    "namePlaceholder": "e.g. Dev Squad",
+    "members": "Members",
+    "create": "Create group",
+    "failed": "Could not create the group."
+  },
+  "deleteDialog": {
+    "botTitle": "Delete {{name}}?",
+    "groupTitle": "Delete the group {{name}}?",
+    "botBody": "The bot leaves the sidebar and stops working. Its history is kept.",
+    "groupBody": "The group leaves the sidebar. Its messages are kept.",
+    "lastBot": "This is the only bot in the workspace, so it can't be deleted. Create another bot first.",
+    "confirm": "Delete"
+  },
+  "avatar": {
+    "preview": "Avatar preview",
+    "color": "Color",
+    "shape": "Shape",
+    "eyes": "Eyes",
+    "random": "Random",
+    "shapes": {
+      "square": "Square",
+      "triangle": "Triangle",
+      "hexagon": "Hexagon",
+      "cloud": "Cloud",
+      "drop": "Drop",
+      "ghost": "Ghost",
+      "blob": "Blob",
+      "arch": "Arch",
+      "tv": "TV",
+      "shield": "Shield",
+      "diamond": "Diamond"
+    },
+    "eyeStyles": {
+      "capsule": "Capsule",
+      "oval": "Oval",
+      "slit": "Slit"
+    }
+  },
+  "colors": {
+    "blue": "Blue",
+    "orange": "Orange",
+    "teal": "Teal",
+    "violet": "Violet",
+    "pink": "Pink",
+    "red": "Red",
+    "green": "Green",
+    "amber": "Amber",
+    "brown": "Brown",
+    "gray": "Gray"
+  },
+  "models": {
+    "defaultTag": "default",
+    "descriptions": {
+      "fable": "most capable · priciest",
+      "opus": "most capable · most expensive",
+      "sonnet": "balance of cost and quality",
+      "haiku": "fast and cheap",
+      "astra": "most capable",
+      "sol": "balance of speed and quality",
+      "terra": "balanced, previous generation",
+      "luna": "fast and light"
+    }
+  },
+  "screenshot": {
+    "double": "2×",
+    "right": "right",
+    "middle": "middle"
+  },
+  "vmWindow": {
+    "title": "Desktop · {{name}} — Milibot",
+    "heading": "Desktop · {{name}}",
+    "open": "Open in a bigger window",
+    "yourControl": "You are in control",
+    "fullScreen": "Full screen",
+    "exitFullScreen": "Exit full screen",
+    "pasteHint": "⌘V pastes text from this computer here",
+    "unavailable": "This bot's screen is not available right now."
+  },
+  "reasoningEffort": {
+    "levels": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Extra high",
+      "max": "Max"
+    },
+    "short": {
+      "low": "low",
+      "medium": "medium",
+      "high": "high",
+      "xhigh": "extra high",
+      "max": "max"
+    },
+    "hints": {
+      "low": "fast and cheap",
+      "max": "slower and pricier"
+    },
+    "modelDefault": "Model default",
+    "contextFull": "Whole window ({{size}})",
+    "contextUnlimited": "No limit",
+    "contextTokens": "{{size}} tokens",
+    "none": "Not used"
+  },
+  "datePicker": {
+    "none": "No date",
+    "clear": "Clear",
+    "today": "Today",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  }
+}

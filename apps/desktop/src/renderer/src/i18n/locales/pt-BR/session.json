@@ -1,0 +1,84 @@
+{
+  "helpersRunning_one": "Ajudante trabalhando",
+  "helpersRunning_other": "{{count}} ajudantes trabalhando",
+  "notFound": "Esta sessão não existe mais.",
+  "backToChat": "Voltar ao chat",
+  "backTo": "Voltar para {{name}}",
+  "conversation": "Conversa da sessão",
+  "panel": "Plano e alterações",
+  "resize": "Redimensionar o painel",
+  "tabs": {
+    "plan": "Plano",
+    "changes": "Alterações"
+  },
+  "stop": "Parar sessão",
+  "stopping": "Parando…",
+  "stopHint": "Interrompe o trabalho e encerra a sessão. O bot continua disponível no chat.",
+  "menu": "Opções da sessão",
+  "copyWhere": "Copiar {{value}}",
+  "copyFolder": "Copiar caminho da pasta",
+  "copyBranch": "Copiar nome do branch",
+  "delete": "Excluir sessão",
+  "deleteRunning": "Excluir (pare a sessão antes)",
+  "deleteTitle": "Excluir sessão de trabalho?",
+  "deleteBody": "A conversa de “{{title}}” e o histórico dela somem do app. Os arquivos na máquina virtual e o branch continuam lá.",
+  "deleteConfirm": "Excluir",
+  "plan": {
+    "result": "Resultado",
+    "planSteps": "Passos do plano",
+    "steps": "Passos",
+    "noSteps": "O bot não listou passos nesta sessão.",
+    "noStepsYet": "O bot ainda não listou os passos. Eles aparecem aqui assim que ele começar.",
+    "goal": "Objetivo"
+  },
+  "changes": {
+    "files_one": "{{count}} arquivo",
+    "files_other": "{{count}} arquivos",
+    "refresh": "Atualizar",
+    "loadFailed": "Não foi possível ler as alterações.",
+    "empty": "Nenhum arquivo alterado ainda.",
+    "filter": "Filtrar arquivos",
+    "noMatch": "Nenhum arquivo com esse nome.",
+    "renamedFrom": "renomeado de {{path}}",
+    "binary": "binário",
+    "status": {
+      "added": "Novo",
+      "modified": "Modificado",
+      "deleted": "Apagado",
+      "renamed": "Renomeado"
+    },
+    "unavailable": {
+      "no_baseline": "As alterações aparecem quando a máquina virtual ligar e a sessão preparar a pasta de trabalho.",
+      "vm_not_running": "Ligue a máquina virtual para ver as alterações.",
+      "too_large": "A pasta desta sessão é grande demais para acompanhar as alterações (mais de 20 mil arquivos ou 200 MB).",
+      "failed": "Não foi possível ler as alterações agora."
+    }
+  },
+  "diff": {
+    "add": "Linha adicionada",
+    "del": "Linha removida",
+    "noNewline": "sem quebra de linha no fim",
+    "noTextChanges": "Sem diferenças de texto neste arquivo.",
+    "truncated": "O arquivo é grande demais: só o começo das diferenças aparece aqui.",
+    "binary": "Arquivo binário: não dá para mostrar as diferenças.",
+    "imageBefore": "Antes",
+    "imageAfter": "Depois",
+    "imageMeta": "{{width}}×{{height}} · {{size}}",
+    "imageTooLarge": "Imagem grande demais para pré-visualizar ({{size}}).",
+    "imageLoadFailed": "Não foi possível abrir a imagem.",
+    "imageBackdropLight": "Ver sobre fundo claro",
+    "imageBackdropDark": "Ver sobre fundo escuro",
+    "loadFailed": "Não foi possível abrir as diferenças deste arquivo.",
+    "mode": {
+      "split": "Lado a lado",
+      "unified": "Unificado"
+    }
+  },
+  "settings": {
+    "subtitle": "Trabalhos longos que os bots fazem em paralelo ao chat: acompanhe os passos e o que mudou em cada um.",
+    "empty": "Nenhuma sessão ainda. Os bots abrem uma quando o trabalho é grande (uma mudança em muitos arquivos, por exemplo) ou quando você aprova um plano para rodar numa sessão.",
+    "emptyFiltered": "Nenhuma sessão com esses filtros.",
+    "updated": "Atualizado {{when}}"
+  },
+  "modelBadge": "Modelo desta sessão"
+}

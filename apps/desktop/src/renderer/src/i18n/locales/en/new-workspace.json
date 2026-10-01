@@ -1,0 +1,21 @@
+{
+  "title": "New workspace",
+  "description": "A fully separate environment — another VM, other bots, other memory and other keys. Great for keeping personal and work apart.",
+  "name": "Name",
+  "namePlaceholder": "e.g. Acme Inc.",
+  "color": "Color",
+  "copyFrom": "Reuse from “{{name}}”",
+  "copyProviders": "Providers and models",
+  "copyProvidersHint": "Settings only, without keys",
+  "copyKeys": "API keys",
+  "copyKeysHint": "Useful if it's the same account",
+  "copyVm": "VM size",
+  "copyVmHint": "Same CPUs, memory and disk",
+  "closeTitle": "When the last window of this workspace closes",
+  "close": {
+    "keep_running": "Keep running — routines and tasks continue",
+    "suspend_vm": "Suspend the VM — saves memory on this computer"
+  },
+  "create": "Create and set up",
+  "failed": "Could not create the workspace."
+}

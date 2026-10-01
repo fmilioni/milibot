@@ -1,0 +1,47 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // System commands the code spawns (no package provides them).
+  "ignoreBinaries": ["xdotool", "tasklist", "wine", "ldd", "otool"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{mjs,ts}", "test/**/*.test.ts"],
+      // The `conventionalcommits` preset named in .releaserc.json.
+      "ignoreDependencies": ["conventional-changelog-conventionalcommits"],
+      "project": ["scripts/**/*.{mjs,ts}", "test/**/*.ts"],
+    },
+    "packages/agent": {
+      "entry": ["eval/**/run.ts", "src/embeddings/local-worker.ts"],
+      "project": ["src/**/*.ts", "eval/**/*.ts"],
+    },
+    "packages/shared": {
+      "project": ["src/**/*.ts"],
+    },
+    "apps/daemon": {
+      "entry": [
+        "src/runtime-main.ts",
+        "scripts/**/*.{mjs,ts}",
+        "test/**/*.test.ts",
+        "test/fixtures/**/*.mjs",
+      ],
+      "project": ["src/**/*.{ts,css}", "test/**/*.{ts,mjs}", "scripts/**/*.{mjs,ts}"],
+      // Reached by path, not import: the design compiler reads Inter's files, and the build keeps onnxruntime
+      // external and the packager copies both into the app.
+      "ignoreDependencies": ["@fontsource-variable/inter", "onnxruntime-common", "onnxruntime-node"],
+    },
+    "apps/desktop": {
+      "entry": ["src/**/*.test.{ts,tsx}", "test/**/*.test.ts"],
+      "project": ["src/**/*.{ts,tsx,css}", "test/**/*.ts"],
+      "paths": { "@/*": ["src/renderer/src/*"] },
+      // The root vitest.config.ts names the `dom` project's environment.
+      "ignoreDependencies": ["happy-dom"],
+    },
+    "vm/host": {
+      "entry": ["src/cli/*.ts", "test/**/*.test.ts", "test/support/*.mjs"],
+      "project": ["src/**/*.ts", "test/**/*.{ts,mjs}"],
+    },
+    "vm/guest-agent": {
+      "entry": ["src/main.ts", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts", "scripts/*.mjs"],
+    },
+  },
+}

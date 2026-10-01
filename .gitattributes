@@ -1,0 +1,23 @@
+# LF everywhere: shell scripts, units and templates are copied into the Linux VM as they are checked out.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.qcow2 binary
+*.iso binary
+*.fd binary
+*.node binary
+*.onnx binary

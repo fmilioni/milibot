@@ -1,0 +1,33 @@
+{
+  "name": "@milibot/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli/index.ts",
+    "./embeddings": "./src/embeddings/index.ts",
+    "./images": "./src/images/index.ts",
+    "./llm": "./src/llm/index.ts",
+    "./prompts": "./src/prompts/index.ts",
+    "./testing": "./src/test-support/index.ts",
+    "./tools": "./src/tools/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "eval:long-memory": "tsx eval/long-memory/run.ts",
+    "eval:knowledge": "tsx eval/knowledge/run.ts",
+    "eval:knowledge-thresholds": "tsx eval/knowledge/thresholds.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@huggingface/transformers": "^4.3.0",
+    "@milibot/shared": "workspace:*",
+    "js-yaml": "4.3.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "tsx": "^4.23.15"
+  }
+}

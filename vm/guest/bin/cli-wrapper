@@ -1,0 +1,24 @@
+#!/bin/bash
+# milibot-cli-wrapper
+# Installed as /usr/local/bin/claude and /usr/local/bin/codex: the CLI always runs as agent, whose login in
+# /home/agent is the one the bots use.
+name=${0##*/}
+real=/usr/local/lib/milibot/$name-real
+vars=()
+if [ "$name" = codex ]; then
+  export CODEX_HOME=/home/agent/.codex
+  vars+=(CODEX_HOME="$CODEX_HOME")
+fi
+if [ ! -e "$real" ]; then
+  echo "$name is not installed in this VM" >&2
+  exit 127
+fi
+if [ "$(id -un)" = agent ]; then
+  exec "$real" "$@"
+fi
+for var in DISPLAY BROWSER TERM COLORTERM LANG; do
+  [ -n "${!var:-}" ] && vars+=("$var=${!var}")
+done
+exec sudo -n -u agent -H -- /usr/bin/env "${vars[@]}" /bin/bash -lc \
+  'cd -- "$1" 2>/dev/null || { echo "$2: $1 is not accessible to agent, starting in /workspace" >&2; cd /workspace; }; shift 2; exec "$0" "$@"' \
+  "$real" "$PWD" "$name" "$@"

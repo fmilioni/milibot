@@ -1,0 +1,317 @@
+{
+  "title": "Knowledge",
+  "subtitle": "Documents the bots of this workspace can look up",
+  "add": "Add documents",
+  "pickTitle": "Choose documents",
+  "model": {
+    "label": "Search model",
+    "hint": "Turns document passages into vectors so they are found by meaning, not only by the exact word",
+    "onThisComputer": "On this computer",
+    "via": "Via {{provider}}",
+    "recommended": "Recommended",
+    "ram": "{{size}} of RAM",
+    "indexShare": "index {{percent}}%",
+    "dimensions": "{{dims}} dimensions",
+    "perMillion": "per 1M tokens",
+    "priceUnknown": "No price registered",
+    "footer": "Switching models reindexes the documents in the background; search keeps working.",
+    "families": {
+      "embeddinggemma": "One model, three index sizes · passages up to {{tokens}} tokens",
+      "multilingual-e5": "Three models of different sizes · passages up to {{tokens}} tokens"
+    },
+    "levels": {
+      "embeddinggemma": {
+        "max": {
+          "name": "Highest accuracy",
+          "note": ""
+        },
+        "balanced": {
+          "name": "Balanced",
+          "note": "almost the same accuracy"
+        },
+        "compact": {
+          "name": "Compact",
+          "note": "for many documents"
+        }
+      },
+      "multilingual-e5": {
+        "small": {
+          "name": "Small",
+          "note": "The fastest and lightest"
+        },
+        "base": {
+          "name": "Medium",
+          "note": "More accurate"
+        },
+        "large": {
+          "name": "Large",
+          "note": "The most accurate of the family, slower"
+        }
+      }
+    },
+    "qwen": {
+      "name": "Qwen3 Embedding",
+      "vendor": "Alibaba"
+    },
+    "noProvider": "Add an OpenAI-compatible provider (such as OpenRouter) in Providers and models · passages leave your computer",
+    "unavailable": "Unavailable — register the model",
+    "unavailableHint": "This model is not registered (or was turned off) in Providers and models; meanwhile search uses words only",
+    "apiModels": "Models over an API",
+    "noRegistered": "Register search models on your provider in Providers and models · passages leave your computer",
+    "noneRegistered": "No search model registered",
+    "providerModels": "Search models",
+    "apiDescription": "Run on the provider's servers; passages leave your computer",
+    "localServerDescription": "Run on a server on this computer; passages do not leave it",
+    "dimensionsOnChoose": "dimensions measured when chosen",
+    "upTo": "up to {{tokens}} tokens",
+    "register": "Register search models in Providers and models",
+    "probing": "Testing {{model}}…",
+    "probeFailed": "{{model}} did not work: {{reason}}. The previous model stays."
+  },
+  "status": {
+    "downloaded": "Model downloaded",
+    "disk": "{{size}} on disk",
+    "ram": "uses {{size}} of RAM while indexing",
+    "chunks_one": "{{formatted}} passage indexed",
+    "chunks_other": "{{formatted}} passages indexed",
+    "viaProvider": "Via {{provider}}",
+    "notDownloaded": "The model ({{size}}) is downloaded when the first document is indexed",
+    "downloading": "Downloading the model · {{loaded}} of {{total}} · {{percent}}%",
+    "downloadingShort": "Downloading the model…",
+    "loading": "Loading the model…",
+    "indexing": "Indexing · {{done}} of {{total}} passages",
+    "reindexing": "Reindexing with the new model · {{done}} of {{total}} passages · meanwhile search uses the previous model",
+    "unavailable": "Search by meaning is unavailable: {{reason}}. Documents are still found by their words.",
+    "waitingVm_one": "{{count}} document waiting for the machine to start",
+    "waitingVm_other": "{{count}} documents waiting for the machine to start",
+    "errors": {
+      "model_download_failed": "the model could not be downloaded",
+      "model_load_failed": "the model did not open",
+      "inference_failed": "the model failed to read the passages",
+      "provider_error": "the provider refused the request",
+      "invalid_response": "the provider answered something unexpected",
+      "invalid_setting": "the chosen model is not set up correctly",
+      "model_not_registered": "the chosen model is not registered in Providers and models",
+      "unknown": "something went wrong"
+    }
+  },
+  "autoRetrieve": {
+    "label": "Automatic passages in replies",
+    "hint": "Before replying, the bot already gets the passages closest to the message. More accurate, but spends tokens on every reply"
+  },
+  "suggestDocs": {
+    "label": "Suggest relevant documents",
+    "hint": "With each message, the bot sees the titles of documents that seem related and decides whether to open them"
+  },
+  "docs": {
+    "title": "Documents",
+    "filterPlaceholder": "Filter by name or summary",
+    "kindFilter": "Type",
+    "anyKind": "All types",
+    "authorFilter": "Author",
+    "anyAuthor": "Any author",
+    "authorYou": "You",
+    "authorBots": "Any bot",
+    "authorOneBot": "A bot",
+    "statusFilter": "Status",
+    "anyStatus": "Any status",
+    "statuses": {
+      "ready": "Ready",
+      "failed": "With a problem",
+      "queued": "Queued",
+      "extracting": "Reading",
+      "summarizing": "Summarizing",
+      "indexing": "Indexing"
+    },
+    "empty": "No documents yet. Add contracts, manuals, spreadsheets and notes for the bots to look up.",
+    "noMatches": "No documents match these filters",
+    "clearFilters": "Clear filters",
+    "loadError": "Could not load the documents",
+    "range": "{{from}}–{{to}} of {{total}}",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
+  "kinds": {
+    "pdf": "PDF",
+    "docx": "Word",
+    "odt": "ODT",
+    "epub": "EPUB",
+    "rtf": "RTF",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "text": "Text",
+    "csv": "CSV",
+    "json": "JSON",
+    "code": "Code",
+    "image": "Image",
+    "pptx": "PowerPoint",
+    "xlsx": "Excel",
+    "note": "Note"
+  },
+  "docStatus": {
+    "ready": "Ready",
+    "queued": "Queued",
+    "waitingVm": "Waiting for the machine to start",
+    "extracting": "Reading the file · {{percent}}%",
+    "summarizing": "Summarizing",
+    "indexing": "Indexing · {{percent}}%"
+  },
+  "errors": {
+    "unsupported_format": {
+      "title": "Format not supported",
+      "hint": "Save it as PDF, .docx, .xlsx or .csv and send it again"
+    },
+    "too_large": {
+      "title": "File too large",
+      "hint": "Split the file into smaller parts and send them again"
+    },
+    "timeout": {
+      "title": "Took too long to read",
+      "hint": "Try again or split the file into smaller parts"
+    },
+    "tools_missing": {
+      "title": "The machine lacks the document reader",
+      "hint": "Update the virtual machine's system to read this file"
+    },
+    "legacy_office_disabled": {
+      "title": "Old Office file",
+      "hint": "Turn on “Old Office files” above to read this file"
+    },
+    "office_missing": {
+      "title": "LibreOffice is not in the machine",
+      "hint": "The install did not finish; try installing again"
+    },
+    "extract_failed": {
+      "title": "Could not read the file",
+      "hint": "The file may be damaged or password protected"
+    },
+    "empty": {
+      "title": "No text found",
+      "hint": "The file has no readable text"
+    },
+    "file_missing": {
+      "title": "File not found",
+      "hint": "The stored file is gone; send it again"
+    },
+    "vm_file_not_found": {
+      "title": "The file left /workspace",
+      "hint": "The file is no longer where it was added from"
+    },
+    "internal": {
+      "title": "Something went wrong",
+      "hint": "Try reading the document again"
+    }
+  },
+  "updateSystem": "Update system",
+  "legacyOffice": {
+    "label": "Old Office files (.doc, .xls, .ppt)",
+    "hint": "Also reads .ods and .odp. Installs LibreOffice in the virtual machine (about {{size}} MB of its disk).",
+    "enable": "Turn on",
+    "status": {
+      "waitingVm": "Will install when the machine starts",
+      "starting": "Installing LibreOffice in the machine…",
+      "preparing": "Getting the LibreOffice install ready… {{percent}}%",
+      "installing": "Installing LibreOffice in the machine… {{percent}}%",
+      "removing": "Removing LibreOffice from the machine… {{percent}}%",
+      "installed": "LibreOffice installed · the bots can read these files",
+      "installFailed": "Could not install LibreOffice (no internet in the machine?)",
+      "removeFailed": "Could not remove LibreOffice"
+    }
+  },
+  "detail": {
+    "pages_one": "{{formatted}} page",
+    "pages_other": "{{formatted}} pages",
+    "lines_one": "{{formatted}} line",
+    "lines_other": "{{formatted}} lines",
+    "sheets_one": "{{formatted}} sheet",
+    "sheets_other": "{{formatted}} sheets",
+    "slides_one": "{{formatted}} slide",
+    "slides_other": "{{formatted}} slides",
+    "sections_one": "{{formatted}} section",
+    "sections_other": "{{formatted}} sections",
+    "ocrAll_one": "{{formatted}} page read with OCR",
+    "ocrAll_other": "{{formatted}} pages read with OCR",
+    "ocrSome_one": "{{formatted}} read with OCR",
+    "ocrSome_other": "{{formatted}} read with OCR",
+    "chunks_one": "{{formatted}} passage",
+    "chunks_other": "{{formatted}} passages",
+    "uploaded": "sent by you",
+    "attachment": "attached by you in a conversation",
+    "attachmentDm": "attached by you in the conversation with {{name}}",
+    "attachmentGroup": "attached by you in the group {{name}}",
+    "vmFileBot": "added by {{name}} from {{path}}",
+    "vmFileUser": "added by you from {{path}}",
+    "writtenBy": "written by {{name}}",
+    "aBot": "a bot",
+    "readWhenVmStarts": "will be read when the VM starts"
+  },
+  "access": {
+    "label": "Bots that can look up {{name}}",
+    "all": "All bots",
+    "none": "No bots"
+  },
+  "pin": "Highlight",
+  "unpin": "Remove highlight",
+  "pinHint": "Highlighted documents always show in the list the bots see; they find the others by searching",
+  "pinnedHint": "Highlighted: always shows in the list the bots see",
+  "menu": {
+    "more": "More actions for {{name}}",
+    "view": "View content and summary",
+    "download": "Download",
+    "rename": "Rename",
+    "reindex": "Read again",
+    "delete": "Delete"
+  },
+  "downloadTitle": "Save document",
+  "rename": {
+    "title": "Rename document",
+    "label": "Name"
+  },
+  "delete": {
+    "title": "Delete document",
+    "message": "“{{name}}” leaves the knowledge base and the bots no longer find it. The original file on your computer or in the VM is not deleted.",
+    "confirm": "Delete"
+  },
+  "content": {
+    "summary": "Summary",
+    "summaryBy": "Summarized by {{model}}",
+    "noSummary": "The summary shows up once the document has been read.",
+    "content": "Content",
+    "page": "Page {{page}}",
+    "part": "Part {{part}} of {{parts}}",
+    "previous": "Previous part",
+    "next": "Next part",
+    "loading": "Loading…",
+    "empty": "No text yet",
+    "error": "Could not load the content"
+  },
+  "upload": {
+    "drop": "Drag files here · PDF, Word, Excel, PowerPoint, ODT, EPUB, RTF, HTML, Markdown, TXT, CSV, JSON and images with text (OCR) · up to {{max}} MB",
+    "dropLegacy": "Drag files here · PDF, Word, Excel and PowerPoint (also .doc, .xls and .ppt), ODT, ODS, ODP, EPUB, RTF, HTML, Markdown, TXT, CSV, JSON and images with text (OCR) · up to {{max}} MB",
+    "dropTitle": "Drop to add to the knowledge base",
+    "sending": "Sending… {{percent}}%",
+    "tooLarge": "Larger than {{max}} MB",
+    "unsupported": "Format not supported · save it as PDF, .docx, .xlsx or .csv",
+    "legacyOffice": "Old Office file · needs “Old Office files”",
+    "legacyOfficeAction": "Turn on and send",
+    "failed": "Could not send",
+    "cancel": "Cancel sending {{name}}",
+    "dismiss": "Dismiss"
+  },
+  "search": {
+    "placeholder": "Try a search in the documents…",
+    "label": "Try a search",
+    "run": "Search",
+    "clear": "Clear search",
+    "summary_one": "{{count}} passage · {{ms}} ms · {{mode}}",
+    "summary_other": "{{count}} passages · {{ms}} ms · {{mode}}",
+    "hybrid": "by meaning and words",
+    "text": "by words only",
+    "none": "No passages found for this search",
+    "error": "The search did not work",
+    "page": "p. {{page}}",
+    "pages": "pp. {{from}}–{{to}}",
+    "open": "Open the document"
+  },
+  "note": "Bots look up the documents when a question calls for it and cite the file and page. Files they create or download in /workspace can be added too. With an “On this computer” model, the content never leaves your computer."
+}

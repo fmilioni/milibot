@@ -1,0 +1,41 @@
+{
+  "save": "Save",
+  "add": "Add note",
+  "edit": "Edit",
+  "delete": "Delete",
+  "pin": "Pin: always in context",
+  "unpin": "Unpin: search only",
+  "bot": {
+    "title": "Memory",
+    "empty": "{{name}} has not saved anything yet.",
+    "placeholder": "A fact {{name}} should always remember…",
+    "workspaceLink": "Notes for every bot live in Settings › Memory"
+  },
+  "versions": {
+    "title": "Prompt versions",
+    "initial": "Initial version",
+    "byUser": "You",
+    "current": "Current",
+    "restore": "Restore",
+    "restoreHint": "Brings the prompt back to this version",
+    "empty": "(no instructions of its own)"
+  },
+  "settings": {
+    "subtitle": "Applies to every bot in this workspace",
+    "add": "New note",
+    "notesTitle": "Workspace notes",
+    "notesHint": "Who you are, language, currency, formats and team facts. Bots also save and update these notes when you tell them something that applies to everyone.",
+    "placeholder": "E.g.: I live in Portugal and use euros (€).",
+    "empty": "No notes yet. Bots write down here what they learn about you that applies to everyone.",
+    "promptsTitle": "Evolving prompts",
+    "modeLabel": "Prompt changes",
+    "modeHint": "When you change a bot's role or correct how it works, it updates its own prompt.",
+    "modes": {
+      "auto": "Automatic, with a notice",
+      "autoHint": "Applied right away, with an Undo card",
+      "approval": "Ask for my approval",
+      "approvalHint": "The bot proposes the change and you approve it in the chat"
+    },
+    "howItWorks": "Role and way of working live in each bot's prompt; facts and preferences live in memory. One-off requests change nothing."
+  }
+}

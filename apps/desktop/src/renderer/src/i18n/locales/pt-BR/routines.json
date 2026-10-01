@@ -1,0 +1,38 @@
+{
+  "schedule": {
+    "daily": "Todo dia · {{time}}",
+    "weekdays": "Seg a sex · {{time}}",
+    "weekend": "Sáb e dom · {{time}}",
+    "days": "{{days}} · {{time}}",
+    "monthly": "Todo dia {{day}} · {{time}}",
+    "hourly_one": "A cada hora",
+    "hourly_other": "A cada {{count}} horas",
+    "hourlyAt_one": "A cada hora · aos {{minute}} min",
+    "hourlyAt_other": "A cada {{count}} horas · aos {{minute}} min",
+    "minutes_one": "A cada minuto",
+    "minutes_other": "A cada {{count}} minutos",
+    "custom": "Personalizada · {{cron}}",
+    "every": [
+      "Todo domingo",
+      "Toda segunda",
+      "Toda terça",
+      "Toda quarta",
+      "Toda quinta",
+      "Toda sexta",
+      "Todo sábado"
+    ],
+    "short": ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"],
+    "ordinalFirst": "1º",
+    "ordinal": {
+      "one": "{{n}}",
+      "two": "{{n}}",
+      "few": "{{n}}",
+      "other": "{{n}}"
+    }
+  },
+  "when": {
+    "today": "hoje {{time}}",
+    "tomorrow": "amanhã {{time}}",
+    "date": "{{date}} {{time}}"
+  }
+}

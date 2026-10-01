@@ -1,0 +1,41 @@
+{
+  "save": "Salvar",
+  "add": "Adicionar nota",
+  "edit": "Editar",
+  "delete": "Excluir",
+  "pin": "Fixar: sempre no contexto",
+  "unpin": "Desafixar: só por busca",
+  "bot": {
+    "title": "Memória",
+    "empty": "{{name}} ainda não guardou nada.",
+    "placeholder": "Um fato que {{name}} deve lembrar sempre…",
+    "workspaceLink": "Notas que valem para todos os bots ficam em Configurações › Memória"
+  },
+  "versions": {
+    "title": "Versões do prompt",
+    "initial": "Versão inicial",
+    "byUser": "Você",
+    "current": "Atual",
+    "restore": "Restaurar",
+    "restoreHint": "Volta o prompt para esta versão",
+    "empty": "(sem instruções próprias)"
+  },
+  "settings": {
+    "subtitle": "Vale para todos os bots deste workspace",
+    "add": "Nova nota",
+    "notesTitle": "Notas do workspace",
+    "notesHint": "Quem você é, idioma, moeda, formatos e fatos da equipe. Os bots também guardam e atualizam estas notas quando você conta algo que vale para todos.",
+    "placeholder": "Ex.: Moro em Portugal e uso euros (€).",
+    "empty": "Nenhuma nota ainda. Os bots anotam aqui o que aprenderem sobre você que vale para todos.",
+    "promptsTitle": "Prompts que evoluem",
+    "modeLabel": "Mudanças no prompt",
+    "modeHint": "Quando você muda o papel de um bot ou corrige como ele trabalha, ele atualiza o próprio prompt.",
+    "modes": {
+      "auto": "Automático, com aviso",
+      "autoHint": "Aplica na hora e mostra um card com Desfazer",
+      "approval": "Pedir minha aprovação",
+      "approvalHint": "O bot propõe a mudança e você aprova no chat"
+    },
+    "howItWorks": "Papel e jeito de trabalhar ficam no prompt de cada bot; fatos e preferências ficam na memória. Pedidos pontuais não mudam nada."
+  }
+}

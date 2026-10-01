@@ -1,0 +1,72 @@
+{
+  "start": {
+    "title": "Teach {{name}}",
+    "description": "You take the screen and do the task. Every click becomes a step with a screenshot; typed text is grouped. At the end, {{name}} turns it into a procedure.",
+    "name": "What are you going to teach?",
+    "namePlaceholder": "E.g. Export the report as PDF",
+    "begin": "Start recording"
+  },
+  "bar": {
+    "steps_one": "· {{count}} step",
+    "steps_other": "· {{count}} steps",
+    "pause": "Pause",
+    "resume": "Resume",
+    "undo": "Undo",
+    "finish": "Finish",
+    "discard": "Discard recording",
+    "steps_zero": "· no steps"
+  },
+  "hint": "Every click takes a screenshot and becomes a step. Typed text is grouped. When you finish, the bot sums it up as a reusable procedure.",
+  "stepsTitle": "Steps",
+  "empty": "Do the task on the screen: the steps show up here.",
+  "narration": "Explain this step (optional)…",
+  "step": {
+    "click": "Click at ({{x}}, {{y}})",
+    "double_click": "Double click at ({{x}}, {{y}})",
+    "right_click": "Right click at ({{x}}, {{y}})",
+    "middle_click": "Middle click at ({{x}}, {{y}})",
+    "drag": "Dragged from ({{x}}, {{y}}) to ({{toX}}, {{toY}})",
+    "scroll": "Scrolled {{direction}}",
+    "type": "Typed “{{text}}”",
+    "key": "Pressed {{keys}}"
+  },
+  "directions": {
+    "up": "up",
+    "down": "down",
+    "left": "left",
+    "right": "right"
+  },
+  "meta": {
+    "click": "click",
+    "drag": "drag",
+    "scroll": "scroll · {{amount}}×",
+    "type": "text",
+    "key": "shortcut",
+    "keyRepeat": "shortcut · {{count}}×",
+    "double_click": "double click",
+    "right_click": "right click",
+    "middle_click": "middle click"
+  },
+  "shotPending": "Capturing the screen…",
+  "shotFailed": "No screenshot",
+  "finish": {
+    "title": "Save procedure",
+    "description": "{{name}} will turn the {{count}} steps into a procedure it (or other bots) can repeat.",
+    "name": "Procedure name",
+    "scope": "Who can use it",
+    "scopeBot": "Only {{name}}",
+    "scopeGlobal": "All bots",
+    "save": "Save procedure",
+    "saving": "Saving…"
+  },
+  "discard": {
+    "title": "Discard the recording?",
+    "body_one": "The recorded step will be lost.",
+    "body_other": "The {{count}} recorded steps will be lost.",
+    "confirm": "Discard"
+  },
+  "generating": "{{name}} is writing the procedure “{{procedure}}”…",
+  "space": "Space",
+  "newSteps_one": "{{count}} new step",
+  "newSteps_other": "{{count}} new steps"
+}

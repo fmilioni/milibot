@@ -1,0 +1,14 @@
+{
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 110,
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": "apps/daemon/src/runtime/browser/scripts/*.js",
+      "options": {
+        "trailingComma": "es5"
+      }
+    }
+  ]
+}

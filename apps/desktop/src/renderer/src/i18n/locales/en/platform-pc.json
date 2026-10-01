@@ -1,0 +1,54 @@
+{
+  "chat": {
+    "attachments": {
+      "reveal": "Show in folder",
+      "revealNamed": "Show {{name}} in folder"
+    },
+    "secretRequest": {
+      "hintRemember": "Goes straight to the system's password store. {{name}} uses the password without seeing it.",
+      "sentRemember_bot": "Saved in the password store as {{secret}} · only {{name}} uses it",
+      "sentRemember_all": "Saved in the password store as {{secret}} · all bots use it"
+    }
+  },
+  "panels": {
+    "settings": {
+      "reduceMotionHint": "State changes without animation (follows the system by default)"
+    }
+  },
+  "settings": {
+    "general": {
+      "notifications": "System notifications",
+      "reveal": "Show in folder",
+      "deleteBody": "The VM is shut down and erased with its disks (/workspace included), along with the bots, conversations, memory and the keys kept in the system's password store. This cannot be undone."
+    },
+    "providers": {
+      "subtitle": "Keys are kept in the system's password store. Each bot picks its provider and model.",
+      "keySaved": "key kept in the password store"
+    },
+    "credentials": {
+      "secrets": {
+        "note": "Values stay in the system's password store. Variables reach the bots as environment variables; the others they only use by reference, without seeing the value. Bots can also ask for a password in the chat — the ones you send with “Remember” show up here."
+      }
+    }
+  },
+  "vmWindow": {
+    "pasteHint": "Ctrl+V pastes text from this computer here"
+  },
+  "backup": {
+    "errors": {
+      "no_qemu": "qemu-img was not found. Install QEMU."
+    }
+  },
+  "mcp": {
+    "form": {
+      "savedSecret": "•••••• saved in the password store",
+      "secretOn": "Secret: kept in the password store, never shown"
+    }
+  },
+  "canvas": {
+    "navHint": "Space + drag to pan · Ctrl + scroll to zoom",
+    "zoomIn": "Zoom in (Ctrl++)",
+    "zoomOut": "Zoom out (Ctrl+−)",
+    "actualSize": "Actual size (Ctrl+0)"
+  }
+}

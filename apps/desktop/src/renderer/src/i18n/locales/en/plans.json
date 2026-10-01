@@ -1,0 +1,69 @@
+{
+  "status": {
+    "draft": "Draft",
+    "awaiting_approval": "Waiting for approval",
+    "approved": "Approved",
+    "executing": "In progress",
+    "done": "Done",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
+  },
+  "stepStatus": {
+    "pending": "To do",
+    "in_progress": "In progress",
+    "done": "Done",
+    "skipped": "Skipped"
+  },
+  "steps": "{{done}} of {{total}} steps",
+  "revision": "Revision {{n}}",
+  "general": "General",
+  "card": {
+    "label": "Plan",
+    "labelRevision": "Plan · revision {{n}}",
+    "view": "View plan",
+    "approve": "Approve",
+    "requestChanges": "Request changes",
+    "reject": "Reject",
+    "changesPlaceholder": "What should change in the plan?",
+    "rejectPlaceholder": "Why not go ahead with this plan? (optional)",
+    "sendChanges": "Send request",
+    "rejectConfirm": "Reject plan",
+    "changesRequested": "You asked for changes: “{{comment}}”",
+    "rejectedWith": "Rejected: “{{comment}}”",
+    "removed": "Plan removed: {{title}}",
+    "preview": "Plan: {{title}}",
+    "inSession": "Run in a work session",
+    "inSessionHint": "Runs alongside the chat with its own context and reports back here when done. Off, the bot runs it here in the conversation.",
+    "mergePr": "Merge the PR at the end",
+    "mergePrHint": "If the work opens a PR, the bot merges it once its checks pass. Off, you merge it.",
+    "sessionModel": "Session model",
+    "sessionModelHint": "The bot suggested it from what you asked in the chat.",
+    "botModel": "The bot's model",
+    "effort": "Effort"
+  },
+  "dialog": {
+    "title": "Plan",
+    "byBot": "by {{name}}",
+    "project": "Project: {{name}}",
+    "summary": "Summary",
+    "steps": "Steps",
+    "noSteps": "No steps.",
+    "revisions": "Revisions",
+    "changes": "Changes from the previous revision",
+    "markDone": "Mark as done",
+    "cancelPlan": "Cancel plan",
+    "delete": "Delete plan",
+    "deleteQuestion": "Delete this plan? It leaves the list and its chat cards show it was removed.",
+    "deleteConfirm": "Delete",
+    "save": "Save as file",
+    "saveTitle": "Save plan",
+    "loadFailed": "Could not load the plan."
+  },
+  "settings": {
+    "subtitle": "What the bots planned before large work: approve it, follow the steps and look back at older plans.",
+    "empty": "No plans yet. Ask a bot to plan something large (a code change, a trip) before it starts.",
+    "emptyFiltered": "No plans match these filters.",
+    "search": "Search by title or summary",
+    "updated": "Updated {{when}}"
+  }
+}

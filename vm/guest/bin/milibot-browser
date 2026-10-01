@@ -1,0 +1,20 @@
+#!/bin/sh
+# The bot's Chrome: its own profile and a DevTools port on 127.0.0.1 (9222 + display number) for the
+# browser tools. The guest agent installs this file at every start.
+display_num=${DISPLAY#*:}
+display_num=${display_num%%.*}
+case "$display_num" in '' | *[!0-9]*) display_num=0 ;; esac
+port=$((9222 + display_num))
+for b in ${MILIBOT_BROWSER_BIN:-google-chrome-stable chromium}; do
+  if command -v "$b" >/dev/null 2>&1; then
+    exec "$b" \
+      --user-data-dir="$HOME/.config/milibot-browser" \
+      --no-first-run --no-default-browser-check \
+      --password-store=basic \
+      --disable-dev-shm-usage \
+      --remote-debugging-port="$port" \
+      "$@"
+  fi
+done
+echo "no browser installed" >&2
+exit 1

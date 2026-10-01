@@ -1,0 +1,126 @@
+{
+  "title": "Quadros",
+  "nav": "Quadros",
+  "new": "Novo quadro",
+  "emptyFilter": "Nenhum quadro aqui.",
+  "empty": {
+    "title": "Nenhum quadro ainda",
+    "hint": "Peça a um bot para planejar um objetivo grande em um quadro, ou crie um aqui."
+  },
+  "filters": {
+    "active": "Ativos",
+    "done": "Concluídos",
+    "archived": "Arquivados"
+  },
+  "status": {
+    "active": "Em andamento",
+    "done": "Concluído",
+    "archived": "Arquivado"
+  },
+  "columns": {
+    "todo": "A fazer",
+    "doing": "Fazendo",
+    "done": "Feito",
+    "dropped": "Descartado"
+  },
+  "progress": "{{done}} de {{total}} feitos",
+  "progressShort": "{{done}}/{{total}}",
+  "doingCount": "{{count}} fazendo",
+  "droppedCount_one": "{{count}} descartado",
+  "droppedCount_other": "{{count}} descartados",
+  "due": "Entrega {{date}}",
+  "until": "até {{date}}",
+  "overdue": "Prazo vencido",
+  "createdBy": "criado por {{name}}",
+  "createdByUser": "criado por você",
+  "addCard": "Adicionar card",
+  "cardTitlePlaceholder": "Título do card",
+  "collapse": "Recolher",
+  "expandDropped": "Mostrar descartados ({{count}})",
+  "hasImages": "Tem imagens",
+  "menu": {
+    "label": "Mais opções de “{{title}}”",
+    "edit": "Editar",
+    "archive": "Arquivar",
+    "unarchive": "Desarquivar",
+    "delete": "Excluir quadro"
+  },
+  "delete": {
+    "title": "Excluir o quadro “{{title}}”?",
+    "description": "Os cards, comentários e imagens serão apagados. Não dá para desfazer.",
+    "confirm": "Excluir"
+  },
+  "dialog": {
+    "newTitle": "Novo quadro",
+    "editTitle": "Editar quadro",
+    "save": "Salvar",
+    "create": "Criar",
+    "fields": {
+      "title": "Título",
+      "summary": "Resumo",
+      "summaryHint": "ajuda os bots a encontrar o quadro",
+      "due": "Data de entrega"
+    }
+  },
+  "links": {
+    "plan": "Plano",
+    "session": "Sessão",
+    "design": "Design",
+    "pr": "Pull request",
+    "commit": "Commit",
+    "url": "Link"
+  },
+  "card": {
+    "more": "Mais opções de “{{title}}”",
+    "delete": "Excluir card",
+    "title": "Título",
+    "status": "Status",
+    "due": "Entrega",
+    "updated": "atualizado {{time}}",
+    "summary": "Resumo",
+    "summaryPlaceholder": "Resumo em uma ou duas frases",
+    "description": "Descrição",
+    "edit": "Editar",
+    "noDescription": "Sem descrição.",
+    "addImage": "Adicionar imagem",
+    "uploading": "Enviando imagem…",
+    "changes": "Alterações da sessão",
+    "comments": "Comentários",
+    "commentsCount": "Comentários · {{count}}",
+    "you": "Você",
+    "deleteComment": "Excluir comentário",
+    "commentPlaceholder": "Escreva um comentário…",
+    "send": "Enviar",
+    "links": "Vínculos",
+    "noLinks": "Nenhum vínculo ainda.",
+    "addLink": "Vincular",
+    "removeLink": "Remover vínculo",
+    "linkKind": "Tipo do vínculo",
+    "linkPlaceholder": {
+      "pr": "Link do pull request",
+      "commit": "Hash ou link do commit",
+      "url": "https://…"
+    },
+    "prState": {
+      "open": "Aberto",
+      "review": "Em revisão",
+      "done": "Mergeado",
+      "failed": "Fechado"
+    },
+    "createdBy": "Criado por {{name}} em {{date}}",
+    "createdByUser": "Criado por você em {{date}}",
+    "deleteTitle": "Excluir o card “{{title}}”?",
+    "deleteDescription": "Os comentários e vínculos do card serão apagados. Não dá para desfazer.",
+    "assignees": "Responsáveis",
+    "assign": "Atribuir",
+    "deletedBot": "bot excluído",
+    "labels": "Etiquetas"
+  },
+  "labels": {
+    "search": "Buscar ou criar etiqueta",
+    "create": "Criar “{{name}}”",
+    "color": "Trocar a cor",
+    "delete": "Excluir a etiqueta",
+    "empty": "Digite um nome para criar a primeira etiqueta."
+  }
+}

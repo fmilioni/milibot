@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout</title>
+    <style>
+      body {
+        font: 14px sans-serif;
+        margin: 16px;
+      }
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .box {
+        background: #fff;
+        padding: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <form>
+      <label>Card number <input id="card" autocomplete="off" aria-describedby="card-hint" /></label>
+      <small id="card-hint">16 digits, no spaces</small>
+      <p>
+        <span id="zip-label">ZIP</span>
+        <input id="zip" aria-labelledby="zip-label" aria-errormessage="zip-err" />
+        <span id="zip-err" role="alert"></span>
+      </p>
+      <textarea placeholder="Delivery notes"></textarea>
+      <button type="button" id="pay">Pay</button>
+    </form>
+    <script>
+      document.getElementById('pay').addEventListener('click', () => {
+        const zip = document.getElementById('zip')
+        zip.setAttribute('aria-invalid', 'true')
+        document.getElementById('zip-err').textContent = 'Enter a valid ZIP code'
+        const scrim = document.createElement('div')
+        scrim.className = 'scrim'
+        scrim.innerHTML =
+          '<div class="box" role="alertdialog" aria-modal="true" aria-label="Payment failed">' +
+          '<p>We could not process your card. Check the highlighted fields.</p><button>Close</button></div>'
+        scrim.querySelector('button').onclick = () => scrim.remove()
+        document.body.appendChild(scrim)
+      })
+    </script>
+  </body>
+</html>

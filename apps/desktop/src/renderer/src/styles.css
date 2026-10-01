@@ -1,0 +1,605 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Design tokens. `data-theme` on <html> is resolved from the user's
+   preference (system | light | dark) by the renderer. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f4f4f2;
+  --surface-2: #ffffff;
+  --surface-3: #e9e9e6;
+  --border: #e4e4e0;
+  --text-primary: #17181b;
+  --text-secondary: #5e636b;
+  --text-muted: #9a9ea6;
+  --accent: #3b82f6;
+  --accent-soft: #3b82f614;
+  --on-accent: #ffffff;
+  --success: #1fa971;
+  --success-soft: #1fa9711a;
+  --warning: #e9a23b;
+  --danger: #e5484d;
+  --danger-soft: #e5484d66;
+  --danger-tint: #e5484d12;
+  --warning-tint: #e9a23b1a;
+
+  --diff-add-bg: #1fa97114;
+  --diff-add-gutter: #1fa97124;
+  --diff-del-bg: #e5484d12;
+  --diff-del-gutter: #e5484d22;
+  --diff-add-word-bg: #1fa97140;
+  --diff-del-word-bg: #e5484d38;
+  --diff-hunk-bg: #3b82f60d;
+  --diff-empty-bg: #e9e9e666;
+  --syntax-keyword: #8839ef;
+  --syntax-string: #0f7b52;
+  --syntax-comment: #9a9ea6;
+  --syntax-number: #c2410c;
+  --syntax-function: #2563eb;
+  --syntax-type: #b45309;
+  --syntax-tag: #be123c;
+  --syntax-attr: #7c3aed;
+  --syntax-punctuation: #5e636b;
+  --scrollbar-thumb: #0d0e1124;
+  --scrollbar-thumb-hover: #0d0e1147;
+
+  --sidebar-width: 280px;
+  --right-panel-width: 560px;
+  --titlebar-height: 40px;
+  /* Width Windows' caption buttons take at the top right (0 elsewhere, see `pr-caption-*`). */
+  --caption-inset: 0px;
+
+  color-scheme: light;
+}
+
+/* Windows Controls Overlay: the buttons cover the title bar area's right end; 138px when unknown. */
+:root[data-platform='win32'] {
+  --caption-inset: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 138px)));
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d0e11;
+  --surface: #14161a;
+  --surface-2: #1b1e24;
+  --surface-3: #23272f;
+  --border: #262a32;
+  --text-primary: #ecedef;
+  --text-secondary: #a0a6b1;
+  --text-muted: #6c7380;
+  --accent: #8b93ff;
+  --accent-soft: #8b93ff22;
+  --on-accent: #0d0e11;
+  --success: #3dd68c;
+  --success-soft: #3dd68c1f;
+  --warning: #f5b94a;
+  --danger: #f26d6d;
+  --danger-soft: #f26d6d66;
+  --danger-tint: #f26d6d14;
+  --warning-tint: #f5b94a1a;
+
+  --diff-add-bg: #3dd68c14;
+  --diff-add-gutter: #3dd68c24;
+  --diff-del-bg: #f26d6d14;
+  --diff-del-gutter: #f26d6d26;
+  --diff-add-word-bg: #3dd68c3d;
+  --diff-del-word-bg: #f26d6d42;
+  --diff-hunk-bg: #8b93ff12;
+  --diff-empty-bg: #14161a;
+  --syntax-keyword: #c792ea;
+  --syntax-string: #a5d6a7;
+  --syntax-comment: #6c7380;
+  --syntax-number: #f5b94a;
+  --syntax-function: #82aaff;
+  --syntax-type: #ffcb6b;
+  --syntax-tag: #f07178;
+  --syntax-attr: #c3a6ff;
+  --syntax-punctuation: #a0a6b1;
+  --scrollbar-thumb: #ffffff1c;
+  --scrollbar-thumb-hover: #ffffff38;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-fg: var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-tint: var(--danger-tint);
+  --color-warning-tint: var(--warning-tint);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Theme-independent tokens. Tailwind's default font sizes are replaced (they also set a line height); ours
+   set only the size, so a `leading-*` still decides the line height. */
+@theme {
+  --text-*: initial;
+  --text-3xs: 9px;
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-code: 12.5px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: 16px;
+  --text-2xl: 17px;
+  --text-3xl: 18px;
+  --text-4xl: 20px;
+  --text-5xl: 22px;
+  --text-6xl: 24px;
+  --text-7xl: 26px;
+  --text-display: 48px;
+
+  /* Backdrops under dialogs and full-window previews. */
+  --color-scrim: #0d0e1166;
+  --color-scrim-strong: #0d0e11b3;
+  /* Surfaces that stay dark in both themes: the VM screen and the login terminal. */
+  --color-screen: #0d0e11;
+  --color-screen-surface: #14161a;
+  --color-screen-surface-2: #1b1e24;
+  --color-screen-border: #3a3f48;
+  --color-screen-fg: #ecedef;
+  --color-screen-fg-secondary: #a0a6b1;
+
+  /* Stacking order, lowest first; roles that share a value never overlap. */
+  --z-index-sticky: 10;
+  --z-index-popup: 20;
+  --z-index-panel: 30;
+  --z-index-overlay: 40;
+  --z-index-modal: 40;
+  --z-index-menu: 50;
+  --z-index-toast: 50;
+  --z-index-dropdown: 60;
+  --z-index-preview: 80;
+  --z-index-tooltip: 90;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  input,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: default;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+  }
+}
+
+/* Title bars differ per platform (`data-platform` on <html>): only macOS draws the traffic lights
+   over the content, so only there the headers leave room for them. */
+@custom-variant mac (&:where([data-platform=darwin], [data-platform=darwin] *));
+/* Windows draws its caption buttons (minimize, maximize, close) over the top-right corner instead:
+   the header at the window's right edge keeps clear of them with `win:pr-caption-<n>`. */
+@custom-variant win (&:where([data-platform=win32], [data-platform=win32] *));
+
+@utility pr-caption-* {
+  padding-right: calc(var(--caption-inset) + --spacing(--value(number)));
+}
+
+@utility drag-region {
+  -webkit-app-region: drag;
+}
+
+@utility no-drag {
+  -webkit-app-region: no-drag;
+}
+
+@utility selectable {
+  user-select: text;
+}
+
+/*
+ * Scrollbars are styled with the ::-webkit-scrollbar pseudo-elements: Chromium ignores them on any element
+ * with `scrollbar-width`/`scrollbar-color`, so those properties must not be used (nor Tailwind's `scrollbar-*`
+ * utilities, which set them: ours is `scroll-slim`). The transparent border insets the thumb, and the track
+ * margin keeps it off rounded corners.
+ */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  margin: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+@utility scroll-slim {
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    margin: 4px;
+  }
+}
+
+/* Keyboard focus ring (mouse clicks do not show it). */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Rows and tiles inside scrolling lists: an outline outside them would be clipped by the list. Bordered
+   cards use `outline-none focus-visible:border-accent` instead. */
+@utility focus-inset {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+  }
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+@keyframes caret-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 3px;
+  vertical-align: -0.17em;
+  border-radius: 1px;
+  background: var(--accent);
+  animation: caret-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes working-dot {
+  0%,
+  70%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.working-dots > span {
+  display: inline-block;
+  animation: working-dot 1.3s ease-in-out infinite;
+}
+
+.working-dots > span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.working-dots > span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+[data-reduced-motion] .stream-caret {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stream-caret,
+  .working-dots > span {
+    animation: none;
+  }
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.tooltip-in {
+  animation: tooltip-in 90ms ease-out;
+}
+
+[data-reduced-motion] .tooltip-in {
+  animation: none;
+}
+
+/* Inline separator for meta lines ("$1.20 today • 12k tokens"). */
+.meta-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 6px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.7;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Settings › Virtual machine: range sliders (track painted inline with the accent fill). */
+.vm-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--surface-2);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+}
+.vm-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Setup hero: avatars drifting up and down (rotation comes from --tilt). */
+@keyframes setup-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(calc(var(--tilt, 0deg) + 2deg));
+  }
+}
+
+.setup-float {
+  transform: rotate(var(--tilt, 0deg));
+  animation: setup-float var(--float-duration, 6s) ease-in-out var(--float-delay, 0s) infinite;
+}
+
+[data-reduced-motion] .setup-float {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setup-float {
+    animation: none;
+  }
+}
+
+/* Behind images with transparency (session image diffs); `data-backdrop` picks light or dark squares. */
+.image-checker {
+  --checker-base: #ffffff;
+  --checker-square: #e9e9e6;
+  background-color: var(--checker-base);
+  background-image: conic-gradient(
+    var(--checker-square) 25%,
+    transparent 0 50%,
+    var(--checker-square) 0 75%,
+    transparent 0
+  );
+  background-size: 16px 16px;
+}
+.image-checker[data-backdrop='dark'] {
+  --checker-base: #1b1e24;
+  --checker-square: #23272f;
+}
+
+/* Syntax colors of code in session diffs (Prism token classes from refractor). */
+.code-tokens {
+  color: var(--text-primary);
+  font-variant-ligatures: none;
+}
+.code-tokens .diff-word-add {
+  background: var(--diff-add-word-bg);
+  border-radius: 2px;
+}
+.code-tokens .diff-word-del {
+  background: var(--diff-del-word-bg);
+  border-radius: 2px;
+}
+.code-tokens .keyword,
+.code-tokens .important,
+.code-tokens .atrule,
+.code-tokens .rule {
+  color: var(--syntax-keyword);
+}
+.code-tokens .string,
+.code-tokens .char,
+.code-tokens .template-string,
+.code-tokens .regex,
+.code-tokens .url,
+.code-tokens .inserted {
+  color: var(--syntax-string);
+}
+.code-tokens .comment,
+.code-tokens .prolog,
+.code-tokens .doctype,
+.code-tokens .cdata {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.code-tokens .number,
+.code-tokens .boolean,
+.code-tokens .constant,
+.code-tokens .symbol {
+  color: var(--syntax-number);
+}
+.code-tokens .function,
+.code-tokens .method {
+  color: var(--syntax-function);
+}
+.code-tokens .class-name,
+.code-tokens .builtin,
+.code-tokens .type,
+.code-tokens .namespace {
+  color: var(--syntax-type);
+}
+.code-tokens .tag,
+.code-tokens .selector,
+.code-tokens .deleted {
+  color: var(--syntax-tag);
+}
+.code-tokens .attr-name,
+.code-tokens .property,
+.code-tokens .key {
+  color: var(--syntax-attr);
+}
+.code-tokens .punctuation,
+.code-tokens .operator {
+  color: var(--syntax-punctuation);
+}
+
+/* Design canvas: a frame whose page is still loading, and the band over the frame a bot is drawing on. */
+@keyframes canvas-skeleton {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.canvas-skeleton {
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  animation: canvas-skeleton 1.6s ease-in-out infinite;
+}
+
+@keyframes canvas-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(200%);
+  }
+}
+
+.canvas-shimmer {
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--shimmer-color) 50%, transparent);
+  animation: canvas-shimmer 2.2s ease-in-out infinite;
+}
+
+/* A bot reading a frame: a band whose bottom edge sweeps from the top to the bottom (BotCursor READ_SCAN_MS). */
+@keyframes canvas-read-scan {
+  from {
+    top: -35%;
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  to {
+    top: 65%;
+    opacity: 0;
+  }
+}
+
+.canvas-read-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--scan-color) 10%, transparent) 55%,
+    color-mix(in srgb, var(--scan-color) 30%, transparent) 97%,
+    color-mix(in srgb, var(--scan-color) 70%, transparent)
+  );
+  animation: canvas-read-scan 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+[data-reduced-motion] .canvas-skeleton,
+[data-reduced-motion] .canvas-shimmer {
+  animation: none;
+}
+
+[data-reduced-motion] .canvas-read-scan {
+  top: 0;
+  height: 100%;
+  background: color-mix(in srgb, var(--scan-color) 10%, transparent);
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-skeleton,
+  .canvas-shimmer {
+    animation: none;
+  }
+
+  .canvas-read-scan {
+    top: 0;
+    height: 100%;
+    background: color-mix(in srgb, var(--scan-color) 10%, transparent);
+    animation: none;
+  }
+}

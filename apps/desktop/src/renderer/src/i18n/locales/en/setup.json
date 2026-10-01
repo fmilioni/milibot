@@ -1,0 +1,186 @@
+{
+  "title": "Let's get everything ready",
+  "tagline": "Your team of bots working on a real computer.",
+  "language": "Language",
+  "stepLabel": "Step {{number}}",
+  "stepDone": "Step {{number}} done",
+  "pending": "Setup not finished",
+  "back": "Back to {{name}}",
+  "providers": {
+    "title": "How the bots think",
+    "summary": "How the bots think · {{names}}",
+    "select": "Use {{name}}",
+    "cli": {
+      "description": "Uses your {{account}} account. Runs inside the VM, with its own coding tools.",
+      "later": "You sign in after the VM is created"
+    },
+    "openRouter": {
+      "name": "OpenRouter",
+      "description": "Hundreds of models with a single key. You pay for what you use.",
+      "keyLabel": "OpenRouter key",
+      "keyPlaceholder": "Paste your sk-or-… key",
+      "checking": "Checking the key…",
+      "valid": "Key accepted by OpenRouter",
+      "credit": "{{amount}} in credit",
+      "invalid": "OpenRouter did not accept this key",
+      "unreachable": "Could not reach OpenRouter right now. Try again in a moment.",
+      "saved": "Key already stored in this workspace",
+      "replace": "Change key"
+    },
+    "compatible": {
+      "name": "OpenAI-compatible",
+      "description": "Any service that follows the OpenAI API: OpenAI, xAI (Grok), local models…",
+      "configure": "Set up",
+      "edit": "Edit"
+    },
+    "defaultLabel": "Default for new bots:",
+    "hint": "Pick at least one. You can change it per bot later.",
+    "issues": {
+      "none_selected": "Pick at least one way for the bots to think.",
+      "openrouter_key": "Paste an OpenRouter key that works, or uncheck OpenRouter.",
+      "compatible_missing": "Set up the OpenAI-compatible service, or uncheck it."
+    }
+  },
+  "machine": {
+    "title": "Create the virtual machine",
+    "subtitle": "A Linux computer just for your bots. Pick a size — you can change it later.",
+    "presets": {
+      "light": {
+        "name": "Light",
+        "fit": "1–2 bots at a time"
+      },
+      "recommended": {
+        "name": "Recommended",
+        "fit": "~3 bots at a time"
+      },
+      "powerful": {
+        "name": "Powerful",
+        "fit": "heavy projects, 5+ bots"
+      }
+    },
+    "specs": "{{cpus}} CPUs · {{mem}} GB · {{disk}} GB",
+    "tooBig": "Your computer can give the machine up to {{cpus}} processors and {{mem}} GB of memory.",
+    "customize": "Customize",
+    "cpus": "Processors",
+    "memory": "Memory",
+    "disk": "Space for files",
+    "max": "max. {{value}}",
+    "maxGb": "max. {{value}} GB",
+    "grows": "grows as it is used",
+    "diskNote": "The disk grows as it is used — it does not reserve space on the SSD. You can make it bigger later in Settings.",
+    "legacyOffice": {
+      "label": "Read old Office files (.doc, .xls, .ppt)",
+      "hint": "Installs LibreOffice in the machine · +{{size}} MB of disk. You can change it later in Settings › Knowledge."
+    },
+    "decrease": "Decrease {{name}}",
+    "increase": "Increase {{name}}",
+    "create": "Create machine (~{{minutes}} min)",
+    "saving": "Getting ready…",
+    "continue": "Continue",
+    "failed": "Could not start creating the machine: {{error}}",
+    "summary": "{{cpus}} processors · {{mem}} GB of memory · {{disk}} GB for /workspace",
+    "ready": "Virtual machine ready · {{cpus}} CPUs · {{mem}} GB · {{disk}} GB",
+    "items": {
+      "download": "Download the Debian 13 image",
+      "downloadSize": "Download the Debian 13 image ({{size}})",
+      "install": "Install the desktop, Chrome and developer tools",
+      "save": "Save the base image (to restore if something breaks)",
+      "create": "Prepare the machine's disks",
+      "boot": "Turn the machine on",
+      "desktop": "Create your first bot's desktop"
+    },
+    "percent": "{{percent}}%",
+    "eta": "~{{minutes}} min left",
+    "etaSoon": "less than 1 min",
+    "keepGoing": "you can close the window, the daemon keeps going",
+    "goldenFailed": "The base image could not be prepared: {{error}}",
+    "updatingSystem": "Preparing the newest system version…",
+    "updateFailed": "The newest system version could not be prepared: {{error}}",
+    "useCurrent": "Use the current version",
+    "useCurrentHint": "Creates the machine with the system already on this computer. The update shows up later in Settings › Virtual machine.",
+    "vmFailed": "The machine did not start: {{error}}",
+    "qemu": {
+      "title": "Install QEMU",
+      "description": "Milibot uses QEMU to run the bots' virtual machine. Install it with Homebrew in Terminal:",
+      "copy": "Copy command",
+      "copied": "Copied",
+      "openTerminal": "Open in Terminal",
+      "check": "Check again",
+      "stillMissing": "QEMU was not found yet. When Terminal finishes, check again.",
+      "noBrew": "No Homebrew? See how to install it at brew.sh",
+      "openFailed": "Could not open Terminal: {{error}}",
+      "descriptionLinux": "Milibot uses {{qemu}} to run the bots' virtual machine. Run this command in a terminal:",
+      "descriptionWindows": "Milibot uses {{qemu}} to run the bots' virtual machine. Run this command in PowerShell or Windows Terminal:",
+      "descriptionNoManager": "Milibot uses QEMU to run the bots' virtual machine. Install it with your distribution's package manager: {{qemu}}, qemu-img and the UEFI firmware (OVMF on x86, AAVMF on ARM).",
+      "stillMissingLinux": "{{qemu}} was not found yet. When the command finishes, check again.",
+      "setupFailed": "Milibot needs {{qemu}} to run the bots' virtual machine, but could not find out how to install it on this computer. Install it, then check again.",
+      "firmwareMissing": "QEMU is installed, but its UEFI firmware files are missing. Reinstall it with Homebrew in Terminal:",
+      "firmwareMissingLinux": "QEMU is installed, but its UEFI firmware is missing (package ovmf, or qemu-efi-aarch64 on ARM). Install it and check again.",
+      "firmwareMissingWindows": "QEMU is installed, but its UEFI firmware files are missing. Reinstall QEMU and check again."
+    },
+    "kvm": {
+      "noDeviceTitle": "No KVM acceleration: the machine will be slow",
+      "noDevice": "/dev/kvm was not found. Without it the machine runs emulated (TCG), much slower. Turn on virtualization (Intel VT-x or AMD-V) in the computer's firmware and check that the kvm module is loaded. You can continue anyway.",
+      "noPermissionTitle": "No permission to use KVM",
+      "noPermission": "Your user cannot open /dev/kvm. Join the kvm group with the command below, then log out and back in. Without it the machine runs emulated, much slower.",
+      "reloginTitle": "Log out and back in",
+      "relogin": "Your user is already in the kvm group, but this session started before that. Log out and back in so the machine can use KVM."
+    },
+    "whpx": {
+      "feature_disabled": {
+        "title": "Turn on Windows Hypervisor Platform",
+        "body": "Without it, the machine runs emulated (TCG), much slower. Turn it on in \"Turn Windows features on or off\" (optionalfeatures) or run this command in PowerShell as administrator:"
+      },
+      "reboot_pending": {
+        "title": "Restart Windows to finish",
+        "body": "Windows Hypervisor Platform is already on, but it only starts working after the computer restarts. Restart and come back here."
+      },
+      "virtualization_disabled": {
+        "title": "Virtualization is off on this computer",
+        "body": "Virtualization is turned off in the firmware. Turn on Intel VT-x or AMD-V (SVM) in the computer's BIOS/UEFI and restart. Without it, the machine runs emulated, much slower. You can continue anyway."
+      },
+      "unavailable": {
+        "title": "No WHPX acceleration: the machine will be slow",
+        "body": "Windows Hypervisor Platform is not available, so the machine runs emulated (TCG), much slower. Turn the feature on in \"Turn Windows features on or off\" (optionalfeatures) or run this command in PowerShell as administrator:",
+        "note": "Then restart the computer. If that does not help, check that virtualization (Intel VT-x or AMD-V) is on in the BIOS/UEFI."
+      },
+      "restartNote": "Then restart the computer and check again. You can continue without it, with a slower machine."
+    }
+  },
+  "firstBot": {
+    "title": "Meet your first bot",
+    "hintPending": "If you picked Claude Code or Codex, you sign in on the VM's terminal. Then your first bot introduces itself.",
+    "hint": "It talks with you, does the tasks and builds the team when you ask."
+  },
+  "login": {
+    "title": "Sign in to your {{account}} account",
+    "description": "This is the VM's terminal running the official {{engine}}. Choose “{{option}}” and finish in the browser — your password and token stay inside the VM.",
+    "screenLabel": "Your first bot's desktop with the {{engine}} terminal",
+    "windowTitle": "agent@{{name}} — VM terminal",
+    "waiting": "Waiting for sign-in…",
+    "opening": "Opening the terminal in the VM…",
+    "useKey": "Use an API key instead",
+    "changeProviders": "Go back and choose how the bots think",
+    "keyTitle": "{{vendor}} API key",
+    "keyHint": "The bots' {{engine}} uses this key and you pay {{vendor}} for what you use.",
+    "saveKey": "Save and continue",
+    "back": "Back to signing in",
+    "failed": "Could not open the VM's terminal. Try again.",
+    "retry": "Open the terminal again",
+    "openHint": "Click the screen to open the bot's desktop in a bigger window.",
+    "reopen": "Reopen login terminal",
+    "terminalClosed": "The login terminal was closed. Reopen it to continue.",
+    "wrongTerminal": "You signed in from the wrong terminal — use the login terminal (user agent)."
+  },
+  "team": {
+    "title": "Your team starts here",
+    "hint": "Ask {{name}} to put together bots for your tasks, or use + to create one yourself."
+  },
+  "suggestions": {
+    "label": "Ideas to get started",
+    "finances": "Organize my finances and put together monthly reports",
+    "repos": "Review PRs and keep my repositories up to date",
+    "research": "Research a topic in depth and give me a summary",
+    "news": "Every day at 8am, send me a summary of the news in my field"
+  }
+}

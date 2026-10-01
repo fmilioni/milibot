@@ -1,0 +1,52 @@
+{
+  "vm": {
+    "not_created": "VM não criada",
+    "stopped": "VM desligada",
+    "starting": "VM iniciando…",
+    "stopping": "VM desligando…",
+    "running_one": "VM ativa · {{count}} desktop",
+    "running_other": "VM ativa · {{count}} desktops",
+    "suspended": "VM suspensa",
+    "error": "VM com erro",
+    "usageHint": "Ver uso da VM"
+  },
+  "usage": "{{cost}} hoje · {{tokens}} tokens",
+  "quota": {
+    "title": "Uso do {{engine}}",
+    "planTooltip": "Plano da conta {{account}} conectada",
+    "windows": {
+      "five_hour": "Janela de 5h",
+      "seven_day": "Semana"
+    },
+    "windowTitles": {
+      "five_hour": "Janela de 5 horas",
+      "seven_day": "Janela de 7 dias"
+    },
+    "used": "{{percent}}% usado",
+    "pace": "ritmo ideal {{percent}}%",
+    "onPace": "no ritmo",
+    "abovePace": "{{points}} p.p. acima",
+    "renewsAt": "Renova às {{time}}",
+    "renewsOn": "Renova {{day}}, {{time}}",
+    "limited": "limite atingido · volta às {{time}}",
+    "limitedNoTime": "limite atingido"
+  },
+  "debug": "Debug e custos",
+  "settings": "Configurações",
+  "usageSince": "{{cost}} desde {{time}} · {{tokens}} tokens",
+  "resetCounter": "Zerar contador",
+  "counterHint": "Clique para zerar o contador (o histórico continua guardado)",
+  "activeWork": {
+    "count_one": "{{count}} em andamento",
+    "count_other": "{{count}} em andamento",
+    "hint": "Ver o que está em andamento",
+    "title": "Em andamento",
+    "inChat": "no chat",
+    "steps": "{{done}}/{{total}} passos"
+  },
+  "systemUpdate": {
+    "title": "Atualização do sistema",
+    "link": "Ver o que há de novo",
+    "dismiss": "Dispensar"
+  }
+}

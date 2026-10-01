@@ -1,0 +1,34 @@
+{
+  "status": {
+    "idle": "Disponível",
+    "thinking": "Pensando…",
+    "working": "Trabalhando no computador",
+    "talking": "Conversando…",
+    "paused": "Pausado",
+    "effort": "Se esforçando…",
+    "busy": "Trabalhando…"
+  },
+  "activity": {
+    "computer": "Utilizando o computador…",
+    "terminal": "Usando o terminal…",
+    "files": "Mexendo em arquivos…",
+    "web": "Pesquisando na web…",
+    "memory": "Consultando a memória…",
+    "talk": "Conversando com {{name}}…",
+    "talkUnknown": "Conversando com outro bot…",
+    "repo": "Trabalhando no repositório…",
+    "team": "Organizando a equipe…",
+    "external": "Usando uma ferramenta externa…",
+    "skills": "Consultando uma skill…",
+    "routines": "Organizando as rotinas…",
+    "plans": "Planejando…",
+    "browser": "Navegando na web…",
+    "waitingUser": "Aguardando você…",
+    "design": "Desenhando…"
+  },
+  "waiting": {
+    "secret": "Aguardando você · pediu uma senha",
+    "question": "Aguardando você · fez uma pergunta",
+    "plan": "Aguardando você · enviou um plano"
+  }
+}

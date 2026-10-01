@@ -1,0 +1,34 @@
+{
+  "status": {
+    "idle": "Available",
+    "thinking": "Thinking…",
+    "working": "Working on the computer",
+    "talking": "Talking…",
+    "paused": "Paused",
+    "effort": "Pushing through…",
+    "busy": "Working…"
+  },
+  "activity": {
+    "computer": "Using the computer…",
+    "terminal": "Using the terminal…",
+    "files": "Working on files…",
+    "web": "Searching the web…",
+    "memory": "Checking memory…",
+    "talk": "Talking to {{name}}…",
+    "talkUnknown": "Talking to another bot…",
+    "repo": "Working in the repository…",
+    "team": "Organizing the team…",
+    "external": "Using an external tool…",
+    "skills": "Reading a skill…",
+    "routines": "Organizing routines…",
+    "plans": "Planning…",
+    "browser": "Browsing the web…",
+    "waitingUser": "Waiting for you…",
+    "design": "Designing…"
+  },
+  "waiting": {
+    "secret": "Waiting for you · asked for a password",
+    "question": "Waiting for you · asked a question",
+    "plan": "Waiting for you · sent a plan"
+  }
+}

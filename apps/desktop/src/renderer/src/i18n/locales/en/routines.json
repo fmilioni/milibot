@@ -1,0 +1,38 @@
+{
+  "schedule": {
+    "daily": "Every day · {{time}}",
+    "weekdays": "Mon–Fri · {{time}}",
+    "weekend": "Sat and Sun · {{time}}",
+    "days": "{{days}} · {{time}}",
+    "monthly": "Every month on the {{day}} · {{time}}",
+    "hourly_one": "Every hour",
+    "hourly_other": "Every {{count}} hours",
+    "hourlyAt_one": "Every hour · at :{{minute}}",
+    "hourlyAt_other": "Every {{count}} hours · at :{{minute}}",
+    "minutes_one": "Every minute",
+    "minutes_other": "Every {{count}} minutes",
+    "custom": "Custom · {{cron}}",
+    "every": [
+      "Every Sunday",
+      "Every Monday",
+      "Every Tuesday",
+      "Every Wednesday",
+      "Every Thursday",
+      "Every Friday",
+      "Every Saturday"
+    ],
+    "short": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "ordinalFirst": "1st",
+    "ordinal": {
+      "one": "{{n}}st",
+      "two": "{{n}}nd",
+      "few": "{{n}}rd",
+      "other": "{{n}}th"
+    }
+  },
+  "when": {
+    "today": "today {{time}}",
+    "tomorrow": "tomorrow {{time}}",
+    "date": "{{date}} {{time}}"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "nav": "Designs",
+  "title": "Designs",
+  "search": "Search designs",
+  "filters": {
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "empty": {
+    "title": "No designs yet",
+    "hint": "Ask a bot to design screens, a website or a visual identity. The designs it makes show up here."
+  },
+  "goToChat": "Go to the conversation",
+  "subtitle": "Screens, websites and visual identities the bots designed. Click one to open it on the canvas.",
+  "total_one": "{{count}} design · {{frames}}",
+  "total_other": "{{count}} designs · {{frames}}",
+  "openCanvas": "Open on the canvas",
+  "emptyFilter": {
+    "active": {
+      "title": "No active designs",
+      "hint": "The designs you archived are still in the Archived tab."
+    },
+    "archived": {
+      "title": "No archived designs",
+      "hint": "Archive a design to keep it out of the bots’ view without deleting it."
+    }
+  },
+  "emptySearch": {
+    "title": "No designs found",
+    "hint": "Try another name or clear the search."
+  }
+}

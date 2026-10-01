@@ -1,0 +1,21 @@
+{
+  "title": "Novo workspace",
+  "description": "Um ambiente totalmente separado — outra VM, outros bots, outra memória e outras chaves. Ideal para separar pessoal e trabalho.",
+  "name": "Nome",
+  "namePlaceholder": "Ex.: Empresa Acme",
+  "color": "Cor",
+  "copyFrom": "Aproveitar de “{{name}}”",
+  "copyProviders": "Provedores e modelos",
+  "copyProvidersHint": "Só a configuração, sem as chaves",
+  "copyKeys": "Chaves de API",
+  "copyKeysHint": "Útil se for a mesma conta",
+  "copyVm": "Tamanho da VM",
+  "copyVmHint": "Mesmos CPUs, memória e disco",
+  "closeTitle": "Quando fechar a última janela deste workspace",
+  "close": {
+    "keep_running": "Continuar rodando — rotinas e tarefas seguem",
+    "suspend_vm": "Suspender a VM — economiza memória do computador"
+  },
+  "create": "Criar e configurar",
+  "failed": "Não foi possível criar o workspace."
+}

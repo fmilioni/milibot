@@ -1,0 +1,72 @@
+{
+  "start": {
+    "title": "Ensinar {{name}}",
+    "description": "Você assume a tela e faz a tarefa. Cada clique vira um passo com screenshot; o texto digitado é agrupado. No fim, {{name}} transforma tudo num procedimento.",
+    "name": "O que você vai ensinar?",
+    "namePlaceholder": "Ex.: Exportar relatório em PDF",
+    "begin": "Começar a gravar"
+  },
+  "bar": {
+    "steps_one": "· {{count}} passo",
+    "steps_other": "· {{count}} passos",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "undo": "Desfazer",
+    "finish": "Concluir",
+    "discard": "Descartar gravação",
+    "steps_zero": "· nenhum passo"
+  },
+  "hint": "Cada clique tira um screenshot e vira um passo. O texto digitado é agrupado. Ao concluir, o bot resume tudo num procedimento reutilizável.",
+  "stepsTitle": "Passos",
+  "empty": "Faça a tarefa na tela: os passos aparecem aqui.",
+  "narration": "Explique este passo (opcional)…",
+  "step": {
+    "click": "Clique em ({{x}}, {{y}})",
+    "double_click": "Clique duplo em ({{x}}, {{y}})",
+    "right_click": "Clique com o botão direito em ({{x}}, {{y}})",
+    "middle_click": "Clique com o botão do meio em ({{x}}, {{y}})",
+    "drag": "Arrastou de ({{x}}, {{y}}) até ({{toX}}, {{toY}})",
+    "scroll": "Rolou para {{direction}}",
+    "type": "Digitou “{{text}}”",
+    "key": "Pressionou {{keys}}"
+  },
+  "directions": {
+    "up": "cima",
+    "down": "baixo",
+    "left": "a esquerda",
+    "right": "a direita"
+  },
+  "meta": {
+    "click": "clique",
+    "drag": "arrastar",
+    "scroll": "rolagem · {{amount}}×",
+    "type": "texto",
+    "key": "atalho",
+    "keyRepeat": "atalho · {{count}}×",
+    "double_click": "clique duplo",
+    "right_click": "botão direito",
+    "middle_click": "botão do meio"
+  },
+  "shotPending": "Capturando a tela…",
+  "shotFailed": "Sem screenshot",
+  "finish": {
+    "title": "Salvar procedimento",
+    "description": "{{name}} vai transformar os {{count}} passos num procedimento que ele (ou outros bots) pode repetir.",
+    "name": "Nome do procedimento",
+    "scope": "Quem pode usar",
+    "scopeBot": "Só {{name}}",
+    "scopeGlobal": "Todos os bots",
+    "save": "Salvar procedimento",
+    "saving": "Salvando…"
+  },
+  "discard": {
+    "title": "Descartar a gravação?",
+    "body_one": "O passo gravado será perdido.",
+    "body_other": "Os {{count}} passos gravados serão perdidos.",
+    "confirm": "Descartar"
+  },
+  "generating": "{{name}} está escrevendo o procedimento “{{procedure}}”…",
+  "space": "Espaço",
+  "newSteps_one": "{{count}} novo passo",
+  "newSteps_other": "{{count}} novos passos"
+}

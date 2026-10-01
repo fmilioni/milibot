@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Browser
+Comment=Web browser
+Exec=/usr/local/bin/milibot-browser %U
+Icon=@BROWSER_ICON@
+Terminal=false
+StartupNotify=true

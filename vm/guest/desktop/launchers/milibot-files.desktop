@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Files
+Comment=Browse /workspace
+Exec=thunar /workspace
+Icon=org.xfce.thunar
+Terminal=false
+StartupNotify=true

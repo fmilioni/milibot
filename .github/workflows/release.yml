@@ -1,0 +1,125 @@
+name: Release
+
+# Manual only (Actions → Release → Run workflow, from main); never runs on push. semantic-release picks the
+# next version from the Conventional Commits since the last v* tag, updates CHANGELOG.md and package.json,
+# commits and tags it and creates a draft GitHub release with the notes; the installers are then built from
+# that tag on each OS and uploaded to the draft. Nothing to release = only the first job runs.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Version, changelog and draft release
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          # semantic-release pushes with its own GITHUB_TOKEN URL; a persisted auth header would shadow it.
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter milibot
+      - id: release
+        env:
+          # main is protected: the release commit (CHANGELOG.md + version) is pushed with a fine-grained token of
+          # a repository admin (Contents: read and write), whose role bypasses the ruleset.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          git tag --list 'v*' | sort > tags-before
+          pnpm exec semantic-release
+          tag=$(git tag --list 'v*' | sort | comm -13 tags-before -)
+          if [ -z "$tag" ]; then
+            echo "::notice::No release-worthy commits since the last tag; nothing was released."
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: ${{ matrix.name }}
+    needs: prepare
+    if: needs.prepare.outputs.tag != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64 · dmg
+            runner: macos-latest
+            files: dist/*.dmg
+          - name: Linux x64 · AppImage + deb
+            runner: ubuntu-latest
+            files: |
+              dist/*.AppImage
+              dist/*.deb
+          - name: Linux arm64 · AppImage + deb
+            runner: ubuntu-24.04-arm
+            files: |
+              dist/*.AppImage
+              dist/*.deb
+          - name: Windows x64 · NSIS
+            runner: windows-latest
+            files: dist/*-setup.exe
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      # Signing and notarization are skipped when these secrets are not set (ad hoc / unsigned builds).
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm package
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-${{ strategy.job-index }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  upload:
+    name: Upload installers to the draft release
+    needs: [prepare, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+          pattern: package-*
+          merge-multiple: true
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" artifacts/* --repo "$GITHUB_REPOSITORY" --clobber

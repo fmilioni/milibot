@@ -1,0 +1,254 @@
+{
+  "title": "Skills",
+  "subtitle": "What the bots know how to do. A skill only enters the context when a bot needs it.",
+  "openFolder": "Open folder",
+  "new": "New skill",
+  "filterLabel": "Filter skills",
+  "filters": {
+    "all": "All",
+    "yours": "Yours",
+    "taught": "Taught",
+    "builtin": "Included"
+  },
+  "search": "Search skills",
+  "groups": {
+    "yours": {
+      "title": "Your skills",
+      "hint": "Imported, created by you or by the bots"
+    },
+    "taught": {
+      "title": "Taught",
+      "hint": "Procedures you showed on a bot's screen"
+    },
+    "builtin": {
+      "title": "Included in Milibot",
+      "hint": "They come with the app and update with it. Per bot: in each bot's settings."
+    }
+  },
+  "showMore": "Show {{count}} more: {{names}}",
+  "showLess": "Show less",
+  "empty": "No skills found.",
+  "dropTitle": "Drop to import",
+  "chips": {
+    "folder": "Folder",
+    "zip": "Zip",
+    "workspace": "Another workspace",
+    "createdBy": "Created by {{name}}",
+    "update": "Update available"
+  },
+  "meta": {
+    "tools_one": "{{count}} tool",
+    "tools_other": "{{count}} tools",
+    "tokens": "~{{tokens}} tokens",
+    "tokensOnLoad": "~{{tokens}} tokens when loaded",
+    "scripts": "Has scripts",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "captures_one": "{{count}} screenshot",
+    "captures_other": "{{count}} screenshots"
+  },
+  "access": {
+    "all": "all bots",
+    "allChip": "All bots",
+    "only": "Only {{name}}",
+    "none": "No bots",
+    "activeFor": "On for {{names}}",
+    "activeForNone": "On for no bot"
+  },
+  "enable": "Turn on {{name}}",
+  "more": "More actions for {{name}}",
+  "menu": {
+    "open": "Open",
+    "duplicate": "Duplicate",
+    "duplicateToEdit": "Duplicate to edit",
+    "update": "Update from source",
+    "delete": "Delete"
+  },
+  "deleteConfirm": "Delete “{{name}}”? Its folder is removed and the bots stop using it.",
+  "folderNote": "Each skill is a folder with a SKILL.md (and, if you want, scripts and templates). Copy folders into {{path}} and they show up here by themselves. In the VM the skill files are in {{vmPath}}, readable by every bot.",
+  "errors": {
+    "noDescription": "The SKILL.md has no “description”: bots only see the skill once it says what it is for.",
+    "noFrontmatter": "The SKILL.md must start with a block between --- lines with name and description.",
+    "missing": "The folder has no SKILL.md.",
+    "nameMismatch": "The name in SKILL.md must match the folder name.",
+    "builtinName": "A skill included in Milibot already has this name. Rename the folder and the name in SKILL.md.",
+    "folderName": "The folder name may only have lowercase letters, digits and hyphens.",
+    "codes": {
+      "too_many_files": "The skill has more than {{max}} files.",
+      "too_large": "The skill is larger than {{mb}} MB.",
+      "skill_md_missing": "The folder has no SKILL.md.",
+      "skill_md_too_large": "SKILL.md is larger than {{kb}} KB.",
+      "no_frontmatter": "SKILL.md must start with a block between --- lines with name and description.",
+      "invalid_yaml": "The SKILL.md header is not valid YAML ({{detail}}).",
+      "frontmatter_not_fields": "The SKILL.md header must have “key: value” fields.",
+      "name_empty": "SKILL.md has no “name”.",
+      "name_too_long": "The name has more than {{max}} characters.",
+      "name_invalid": "The name may only have lowercase letters, digits and hyphens.",
+      "description_missing": "SKILL.md has no “description”: bots only see a skill that says what it is for.",
+      "description_too_long": "The description is longer than {{max}} characters.",
+      "invalid_extension": "The “milibot” block of SKILL.md is not valid.",
+      "not_in_scan": "Not part of this search. Search again.",
+      "install_failed": "Could not import it ({{detail}})."
+    }
+  },
+  "newDialog": {
+    "title": "New skill",
+    "description": "Write what the bot should know how to do. It becomes a folder with a SKILL.md you can add to later.",
+    "name": "Name",
+    "nameHint": "lowercase letters, digits and hyphens",
+    "namePlaceholder": "bank-reconciliation",
+    "nameTaken": "A skill with this name already exists.",
+    "whenToUse": "When to use it",
+    "whenToUsePlaceholder": "E.g.: Check the bank statement against the spreadsheet. Load it before reconciling a month.",
+    "instructions": "Instructions",
+    "instructionsPlaceholder": "# Steps\n1. …",
+    "create": "Create skill"
+  },
+  "import": {
+    "open": "Import",
+    "title": "Import skills",
+    "subtitle": "From a folder, a SKILL.md, a .zip or a GitHub repository.",
+    "drop": "Drop a folder, a SKILL.md or a .zip here",
+    "or": "or",
+    "choose": "choose on this computer…",
+    "chooseTitle": "Choose skills to import",
+    "githubLabel": "GitHub repository address",
+    "githubPlaceholder": "github.com/anthropics/skills",
+    "search": "Search",
+    "searching": "Looking for skills…",
+    "fromWorkspace": "Copy from another workspace",
+    "workspacePlaceholder": "Choose a workspace",
+    "hint": "Takes a repository (owner/name), one of its folders (/tree/…) or the link to a SKILL.md.",
+    "found_one": "{{count}} skill found in {{origin}}",
+    "found_other": "{{count}} skills found in {{origin}}",
+    "selectAll": "Select all",
+    "selectNone": "Clear selection",
+    "more": "+ {{count}} more",
+    "less": "Show less",
+    "conflicts": {
+      "update": "Already here · will update",
+      "nameTaken": "Name in use · comes in as {{name}}",
+      "similarBuiltin": "Similar to the included “{{name}}”"
+    },
+    "scriptsNote": "Skills with scripts run code in the virtual machine when a bot uses them. Only import from sources you trust.",
+    "availableFor": "Available to",
+    "confirm_one": "Import {{count}} skill",
+    "confirm_other": "Import {{count}} skills",
+    "confirmNone": "Import",
+    "openGithubSettings": "Set up GitHub",
+    "errors": {
+      "notFound": "Repository not found.",
+      "notFoundNoToken": "Repository not found. If it is private, add a GitHub token.",
+      "github_ref_not_found": "That branch, tag or commit is not in the repository.",
+      "github_unauthorized": "GitHub refused the configured token. Replace it in GitHub and credentials.",
+      "github_rate_limited": "GitHub is limiting requests right now. Try again in a few minutes (a token raises the limit).",
+      "github_unreachable": "Could not reach GitHub. Check the internet connection.",
+      "github_failed": "GitHub did not answer as expected. Try again.",
+      "invalid_url": "That address was not recognized. Use owner/repository or a GitHub link.",
+      "no_skills_found": "No SKILL.md found there.",
+      "too_large": "The repository is too large to import from here (over 50 MB). Point to the skill's folder.",
+      "too_many_files": "Too many files in that folder. Choose the skill's folder.",
+      "path_not_found": "That file or folder was not found.",
+      "unsupported_file": "Drop a folder, a SKILL.md, a .zip or a .skill.",
+      "not_a_zip": "That file is not a valid .zip.",
+      "scan_expired": "The search expired. Search again.",
+      "workspace_not_found": "That workspace was not found.",
+      "source_missing": "This skill's source is no longer available."
+    }
+  },
+  "detail": {
+    "missing": "This skill no longer exists.",
+    "updateFromGithub": "Update from GitHub",
+    "view": "View",
+    "edit": "Edit",
+    "readOnly": "Included in Milibot: duplicate it to edit.",
+    "builtinNote": "Included in Milibot and updated with the app. Duplicate it to change it.",
+    "taughtNote": "The steps of this taught skill are edited in the bot's settings, under “Taught steps”.",
+    "whoCanUse": "Who can use it",
+    "disabledFor": "Turned off for {{names}} in the bot settings.",
+    "onlyFor": "On only for {{names}}. For other bots, turn it on in each one's settings.",
+    "onlyForNone": "No bot has it on. Turn it on in a bot's settings.",
+    "files_one": "Files · {{count}}",
+    "files_other": "Files · {{count}}",
+    "moreFiles": "+ {{count}} files",
+    "fewerFiles": "Show less",
+    "origin": {
+      "title": "Source",
+      "builtin": "Included in Milibot",
+      "taught": "Taught on a bot's screen",
+      "bot": "Created by {{name}} on {{date}}",
+      "user": "Created in the app or copied into the folder on {{date}}",
+      "workspace": "Copied from the {{name}} workspace",
+      "importedAt": "Imported on {{date}}",
+      "newVersion": "new version from {{date}}"
+    },
+    "usage": "Usage",
+    "usageText_one": "Loaded {{count}} time in the last {{days}} days by {{names}}.",
+    "usageText_other": "Loaded {{count}} times in the last {{days}} days by {{names}}.",
+    "usageNone": "No bot loaded this skill in the last {{days}} days.",
+    "vmPath": "In the VM: {{path}}",
+    "noVm": "SKILL.md only: nothing is copied to the VM."
+  },
+  "builtin": {
+    "web-browsing": {
+      "name": "Web browsing",
+      "description": "Read pages as text, fill in forms and handle dialogs and errors in the bot's Chrome."
+    },
+    "using-the-screen": {
+      "name": "Using the screen",
+      "description": "Desktop apps through the bot's screen, in batches of actions and with few screenshots. Includes what you taught."
+    },
+    "code-and-repos": {
+      "name": "Code and repositories",
+      "description": "A worktree per bot, Docker isolated per project and pull requests that show up as chat cards."
+    },
+    "team-management": {
+      "name": "Team management",
+      "description": "Create, adjust and remove bots and groups, and write a good prompt for each specialist."
+    },
+    "projects": {
+      "name": "Projects",
+      "description": "Lasting lines of work, with their own notes and documents."
+    },
+    "plans-and-sessions": {
+      "name": "Plans",
+      "description": "Plans for approval, step-by-step execution and long work sessions."
+    },
+    "boards": {
+      "name": "Boards",
+      "description": "Kanban boards for large goals: the bot splits them into cards and plans each one on its own."
+    },
+    "knowledge-base": {
+      "name": "Knowledge",
+      "description": "Look up and cite the workspace's documents and keep reference material."
+    },
+    "routines": {
+      "name": "Routines",
+      "description": "Tasks that run by themselves on a schedule: daily, weekly, reminders."
+    },
+    "secrets-and-variables": {
+      "name": "Passwords and variables",
+      "description": "Ask for passwords and keys safely and use them by reference, never shown in the chat."
+    },
+    "skill-creator": {
+      "name": "Creating skills",
+      "description": "Write and save new skills from what the bot learned to do."
+    },
+    "design": {
+      "name": "Design",
+      "description": "Draw screens, presentations and documents on the Canvas, with variables, themes and layout checks."
+    },
+    "slides": {
+      "name": "Presentations",
+      "description": "16:9 slides on the Canvas, exported to PDF or PowerPoint by a script in the skill."
+    },
+    "documents-pdf": {
+      "name": "PDF documents",
+      "description": "A4 pages on the Canvas, exported to PDF."
+    },
+    "design-to-code": {
+      "name": "Design to code",
+      "description": "Turn Canvas screens into code with the same tokens."
+    }
+  }
+}

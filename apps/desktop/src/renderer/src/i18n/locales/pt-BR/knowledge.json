@@ -1,0 +1,317 @@
+{
+  "title": "Conhecimento",
+  "subtitle": "Documentos que os bots deste workspace podem consultar",
+  "add": "Adicionar documentos",
+  "pickTitle": "Escolha os documentos",
+  "model": {
+    "label": "Modelo de busca",
+    "hint": "Transforma os trechos dos documentos em vetores para achar por sentido, não só pela palavra exata",
+    "onThisComputer": "Neste computador",
+    "via": "Via {{provider}}",
+    "recommended": "Recomendado",
+    "ram": "{{size}} de RAM",
+    "indexShare": "índice {{percent}}%",
+    "dimensions": "{{dims}} dimensões",
+    "perMillion": "por 1M de tokens",
+    "priceUnknown": "Sem preço cadastrado",
+    "footer": "Trocar de modelo reindexa os documentos em segundo plano; a busca continua funcionando.",
+    "families": {
+      "embeddinggemma": "Um modelo, três tamanhos de índice · trechos até {{tokens}} tokens",
+      "multilingual-e5": "Três modelos de tamanhos diferentes · trechos até {{tokens}} tokens"
+    },
+    "levels": {
+      "embeddinggemma": {
+        "max": {
+          "name": "Precisão máxima",
+          "note": ""
+        },
+        "balanced": {
+          "name": "Equilibrado",
+          "note": "quase a mesma precisão"
+        },
+        "compact": {
+          "name": "Compacto",
+          "note": "para muitos documentos"
+        }
+      },
+      "multilingual-e5": {
+        "small": {
+          "name": "Pequeno",
+          "note": "O mais rápido e leve"
+        },
+        "base": {
+          "name": "Médio",
+          "note": "Mais preciso"
+        },
+        "large": {
+          "name": "Grande",
+          "note": "O mais preciso da família, mais lento"
+        }
+      }
+    },
+    "qwen": {
+      "name": "Qwen3 Embedding",
+      "vendor": "Alibaba"
+    },
+    "noProvider": "Adicione um provedor compatível com OpenAI (como o OpenRouter) em Provedores e modelos · os trechos saem do seu computador",
+    "unavailable": "Indisponível — cadastre o modelo",
+    "unavailableHint": "Este modelo não está cadastrado (ou foi desativado) em Provedores e modelos; enquanto isso a busca usa só as palavras",
+    "apiModels": "Modelos por API",
+    "noRegistered": "Cadastre modelos de busca no seu provedor em Provedores e modelos · os trechos saem do seu computador",
+    "noneRegistered": "Nenhum modelo de busca cadastrado",
+    "providerModels": "Modelos de busca",
+    "apiDescription": "Rodam nos servidores do provedor; os trechos saem do seu computador",
+    "localServerDescription": "Rodam num servidor deste computador; os trechos não saem dele",
+    "dimensionsOnChoose": "dimensões medidas ao escolher",
+    "upTo": "até {{tokens}} tokens",
+    "register": "Cadastrar modelos de busca em Provedores e modelos",
+    "probing": "Testando {{model}}…",
+    "probeFailed": "{{model}} não funcionou: {{reason}}. O modelo anterior continua."
+  },
+  "status": {
+    "downloaded": "Modelo baixado",
+    "disk": "{{size}} no disco",
+    "ram": "usa {{size}} de RAM enquanto indexa",
+    "chunks_one": "{{formatted}} trecho indexado",
+    "chunks_other": "{{formatted}} trechos indexados",
+    "viaProvider": "Via {{provider}}",
+    "notDownloaded": "O modelo ({{size}}) é baixado quando o primeiro documento for indexado",
+    "downloading": "Baixando o modelo · {{loaded}} de {{total}} · {{percent}}%",
+    "downloadingShort": "Baixando o modelo…",
+    "loading": "Carregando o modelo…",
+    "indexing": "Indexando · {{done}} de {{total}} trechos",
+    "reindexing": "Reindexando com o modelo novo · {{done}} de {{total}} trechos · enquanto isso a busca usa o modelo anterior",
+    "unavailable": "Busca por sentido indisponível: {{reason}}. Os documentos continuam sendo achados pelas palavras.",
+    "waitingVm_one": "{{count}} documento esperando a máquina ligar",
+    "waitingVm_other": "{{count}} documentos esperando a máquina ligar",
+    "errors": {
+      "model_download_failed": "não deu para baixar o modelo",
+      "model_load_failed": "o modelo não abriu",
+      "inference_failed": "o modelo falhou ao ler os trechos",
+      "provider_error": "o provedor recusou o pedido",
+      "invalid_response": "o provedor respondeu algo inesperado",
+      "invalid_setting": "o modelo escolhido não está configurado direito",
+      "model_not_registered": "o modelo escolhido não está cadastrado em Provedores e modelos",
+      "unknown": "algo deu errado"
+    }
+  },
+  "autoRetrieve": {
+    "label": "Trechos automáticos nas respostas",
+    "hint": "Antes de responder, o bot já recebe os trechos mais parecidos com a mensagem. Mais preciso, mas gasta tokens em toda resposta"
+  },
+  "suggestDocs": {
+    "label": "Sugerir documentos relevantes",
+    "hint": "A cada mensagem, o bot vê os títulos dos documentos que parecem ter a ver com o assunto e decide se vale abrir"
+  },
+  "docs": {
+    "title": "Documentos",
+    "filterPlaceholder": "Filtrar por nome ou resumo",
+    "kindFilter": "Tipo",
+    "anyKind": "Todos os tipos",
+    "authorFilter": "Autor",
+    "anyAuthor": "Qualquer autor",
+    "authorYou": "Você",
+    "authorBots": "Qualquer bot",
+    "authorOneBot": "Um bot",
+    "statusFilter": "Status",
+    "anyStatus": "Qualquer status",
+    "statuses": {
+      "ready": "Prontos",
+      "failed": "Com problema",
+      "queued": "Na fila",
+      "extracting": "Lendo",
+      "summarizing": "Resumindo",
+      "indexing": "Indexando"
+    },
+    "empty": "Nenhum documento ainda. Adicione contratos, manuais, planilhas e anotações para os bots consultarem.",
+    "noMatches": "Nenhum documento com esses filtros",
+    "clearFilters": "Limpar filtros",
+    "loadError": "Não foi possível carregar os documentos",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "previous": "Página anterior",
+    "next": "Próxima página"
+  },
+  "kinds": {
+    "pdf": "PDF",
+    "docx": "Word",
+    "odt": "ODT",
+    "epub": "EPUB",
+    "rtf": "RTF",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "text": "Texto",
+    "csv": "CSV",
+    "json": "JSON",
+    "code": "Código",
+    "image": "Imagem",
+    "pptx": "PowerPoint",
+    "xlsx": "Excel",
+    "note": "Nota"
+  },
+  "docStatus": {
+    "ready": "Pronto",
+    "queued": "Na fila",
+    "waitingVm": "Aguardando a máquina ligar",
+    "extracting": "Lendo o arquivo · {{percent}}%",
+    "summarizing": "Resumindo",
+    "indexing": "Indexando · {{percent}}%"
+  },
+  "errors": {
+    "unsupported_format": {
+      "title": "Formato não suportado",
+      "hint": "Salve como PDF, .docx, .xlsx ou .csv e envie de novo"
+    },
+    "too_large": {
+      "title": "Arquivo grande demais",
+      "hint": "Divida o arquivo em partes menores e envie de novo"
+    },
+    "timeout": {
+      "title": "Demorou demais para ler",
+      "hint": "Tente de novo ou divida o arquivo em partes menores"
+    },
+    "tools_missing": {
+      "title": "Falta o leitor de documentos na máquina",
+      "hint": "Atualize o sistema da máquina virtual para ler este arquivo"
+    },
+    "legacy_office_disabled": {
+      "title": "Arquivo antigo do Office",
+      "hint": "Ative “Arquivos antigos do Office” acima para ler este arquivo"
+    },
+    "office_missing": {
+      "title": "O LibreOffice não está na máquina",
+      "hint": "A instalação não terminou; tente instalar de novo"
+    },
+    "extract_failed": {
+      "title": "Não foi possível ler o arquivo",
+      "hint": "O arquivo pode estar corrompido ou protegido por senha"
+    },
+    "empty": {
+      "title": "Nenhum texto encontrado",
+      "hint": "O arquivo não tem texto que dê para ler"
+    },
+    "file_missing": {
+      "title": "Arquivo não encontrado",
+      "hint": "O arquivo guardado sumiu; envie de novo"
+    },
+    "vm_file_not_found": {
+      "title": "O arquivo saiu do /workspace",
+      "hint": "O arquivo não está mais no caminho de onde foi adicionado"
+    },
+    "internal": {
+      "title": "Algo deu errado",
+      "hint": "Tente reindexar o documento"
+    }
+  },
+  "updateSystem": "Atualizar sistema",
+  "legacyOffice": {
+    "label": "Arquivos antigos do Office (.doc, .xls, .ppt)",
+    "hint": "Lê também .ods e .odp. Instala o LibreOffice na máquina virtual (cerca de {{size}} MB no disco dela).",
+    "enable": "Ativar",
+    "status": {
+      "waitingVm": "Vai instalar quando a máquina ligar",
+      "starting": "Instalando o LibreOffice na máquina…",
+      "preparing": "Preparando a instalação do LibreOffice… {{percent}}%",
+      "installing": "Instalando o LibreOffice na máquina… {{percent}}%",
+      "removing": "Removendo o LibreOffice da máquina… {{percent}}%",
+      "installed": "LibreOffice instalado · os bots já leem esses arquivos",
+      "installFailed": "Não foi possível instalar o LibreOffice (sem internet na máquina?)",
+      "removeFailed": "Não foi possível remover o LibreOffice"
+    }
+  },
+  "detail": {
+    "pages_one": "{{formatted}} página",
+    "pages_other": "{{formatted}} páginas",
+    "lines_one": "{{formatted}} linha",
+    "lines_other": "{{formatted}} linhas",
+    "sheets_one": "{{formatted}} planilha",
+    "sheets_other": "{{formatted}} planilhas",
+    "slides_one": "{{formatted}} slide",
+    "slides_other": "{{formatted}} slides",
+    "sections_one": "{{formatted}} seção",
+    "sections_other": "{{formatted}} seções",
+    "ocrAll_one": "{{formatted}} página lida por OCR",
+    "ocrAll_other": "{{formatted}} páginas lidas por OCR",
+    "ocrSome_one": "{{formatted}} lida por OCR",
+    "ocrSome_other": "{{formatted}} lidas por OCR",
+    "chunks_one": "{{formatted}} trecho",
+    "chunks_other": "{{formatted}} trechos",
+    "uploaded": "enviado por você",
+    "attachment": "anexado por você numa conversa",
+    "attachmentDm": "anexado por você na conversa com {{name}}",
+    "attachmentGroup": "anexado por você no grupo {{name}}",
+    "vmFileBot": "adicionado por {{name}} em {{path}}",
+    "vmFileUser": "adicionado por você em {{path}}",
+    "writtenBy": "escrito por {{name}}",
+    "aBot": "um bot",
+    "readWhenVmStarts": "será lido quando a VM ligar"
+  },
+  "access": {
+    "label": "Bots que podem consultar {{name}}",
+    "all": "Todos os bots",
+    "none": "Nenhum bot"
+  },
+  "pin": "Destacar",
+  "unpin": "Tirar o destaque",
+  "pinHint": "Documentos destacados aparecem sempre na lista que os bots veem; os outros eles acham pela busca",
+  "pinnedHint": "Destacado: aparece sempre na lista que os bots veem",
+  "menu": {
+    "more": "Mais ações para {{name}}",
+    "view": "Ver conteúdo e resumo",
+    "download": "Baixar",
+    "rename": "Renomear",
+    "reindex": "Ler de novo",
+    "delete": "Excluir"
+  },
+  "downloadTitle": "Salvar documento",
+  "rename": {
+    "title": "Renomear documento",
+    "label": "Nome"
+  },
+  "delete": {
+    "title": "Excluir documento",
+    "message": "“{{name}}” sai do conhecimento e os bots deixam de encontrá-lo. O arquivo original no seu computador ou na VM não é apagado.",
+    "confirm": "Excluir"
+  },
+  "content": {
+    "summary": "Resumo",
+    "summaryBy": "Resumido por {{model}}",
+    "noSummary": "O resumo aparece quando o documento terminar de ser lido.",
+    "content": "Conteúdo",
+    "page": "Página {{page}}",
+    "part": "Parte {{part}} de {{parts}}",
+    "previous": "Parte anterior",
+    "next": "Próxima parte",
+    "loading": "Carregando…",
+    "empty": "Sem texto por enquanto",
+    "error": "Não foi possível carregar o conteúdo"
+  },
+  "upload": {
+    "drop": "Arraste arquivos para cá · PDF, Word, Excel, PowerPoint, ODT, EPUB, RTF, HTML, Markdown, TXT, CSV, JSON e imagens com texto (OCR) · até {{max}} MB",
+    "dropLegacy": "Arraste arquivos para cá · PDF, Word, Excel e PowerPoint (também .doc, .xls e .ppt), ODT, ODS, ODP, EPUB, RTF, HTML, Markdown, TXT, CSV, JSON e imagens com texto (OCR) · até {{max}} MB",
+    "dropTitle": "Solte para adicionar ao conhecimento",
+    "sending": "Enviando… {{percent}}%",
+    "tooLarge": "Maior que {{max}} MB",
+    "unsupported": "Formato não suportado · salve como PDF, .docx, .xlsx ou .csv",
+    "legacyOffice": "Arquivo antigo do Office · precisa de “Arquivos antigos do Office”",
+    "legacyOfficeAction": "Ativar e enviar",
+    "failed": "Não foi possível enviar",
+    "cancel": "Cancelar o envio de {{name}}",
+    "dismiss": "Dispensar"
+  },
+  "search": {
+    "placeholder": "Testar uma busca nos documentos…",
+    "label": "Testar uma busca",
+    "run": "Buscar",
+    "clear": "Limpar busca",
+    "summary_one": "{{count}} trecho · {{ms}} ms · {{mode}}",
+    "summary_other": "{{count}} trechos · {{ms}} ms · {{mode}}",
+    "hybrid": "por sentido e palavras",
+    "text": "só pelas palavras",
+    "none": "Nenhum trecho encontrado para essa busca",
+    "error": "A busca não funcionou",
+    "page": "p. {{page}}",
+    "pages": "p. {{from}}–{{to}}",
+    "open": "Abrir o documento"
+  },
+  "note": "Os bots consultam os documentos quando a pergunta pede e citam o arquivo e a página. Arquivos que eles criam ou baixam no /workspace também podem entrar. Com o modelo “Neste computador”, o conteúdo não sai do seu computador."
+}

@@ -1,0 +1,42 @@
+{
+  "label": "Conversations",
+  "newMenu": "New",
+  "newBot": "New bot",
+  "newGroup": "New group",
+  "newSection": "New section",
+  "search": "Search bots and groups",
+  "sections": {
+    "pinned": "Pinned",
+    "bots": "Bots",
+    "groups": "Groups",
+    "none": "No section"
+  },
+  "noResults": "Nothing found",
+  "noMessages": "No messages yet",
+  "youPrefix": "You: {{text}}",
+  "authorPrefix": "{{name}}: {{text}}",
+  "pinned": "Pinned",
+  "unread_one": "{{count}} unread message",
+  "unread_other": "{{count}} unread messages",
+  "groupFallback": "Group",
+  "dragHint": "Drag to reorder or drop into another section",
+  "emptySection": "Drag conversations here",
+  "collapseSection": "Collapse section",
+  "expandSection": "Expand section",
+  "renameSection": "Rename section",
+  "deleteSection": "Delete section",
+  "menu": {
+    "label": "Conversation actions",
+    "pin": "Pin to top",
+    "unpin": "Unpin",
+    "moveTo": "Move to",
+    "createSection": "Create section…",
+    "markUnread": "Mark as unread",
+    "customizeAvatar": "Customize avatar",
+    "rename": "Rename",
+    "copyId": "Copy conversation ID",
+    "hide": "Hide from sidebar",
+    "delete": "Delete"
+  },
+  "nav": "Navigation"
+}

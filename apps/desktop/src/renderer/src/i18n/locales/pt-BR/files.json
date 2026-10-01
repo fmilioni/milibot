@@ -1,0 +1,57 @@
+{
+  "nav": "Arquivos",
+  "title": "Arquivos",
+  "search": "Buscar arquivos",
+  "filters": {
+    "label": "Origem dos arquivos",
+    "all": "Todos",
+    "bots": "Dos bots",
+    "user": "Enviados por você"
+  },
+  "empty": {
+    "title": "Nenhum arquivo ainda",
+    "hint": "Os arquivos que você anexa nas conversas e os que os bots enviam para você ficam aqui, guardados na VM."
+  },
+  "more": "Carregar mais",
+  "fromYou": "Você",
+  "fromBot": "Bot",
+  "open": "Abrir",
+  "goToChat": "Ir para a conversa",
+  "moreOptions": "Mais opções de “{{name}}”",
+  "rename": {
+    "action": "Renomear",
+    "title": "Renomear arquivo",
+    "label": "Nome do arquivo",
+    "taken": "Já existe um arquivo com esse nome nessa pasta."
+  },
+  "delete": {
+    "action": "Excluir",
+    "title": "Excluir “{{name}}”?",
+    "description": "O arquivo é apagado da VM e sai desta lista; na conversa ele aparece como removido. Não dá para desfazer.",
+    "confirm": "Excluir",
+    "failed": "Não deu para excluir. Verifique se a VM está ligada e tente de novo."
+  },
+  "subtitle": "Tudo que você e os bots enviaram nas conversas. Os arquivos ficam na VM e vêm para o seu computador quando você baixa.",
+  "total_one": "{{count}} arquivo · {{size}} na VM",
+  "total_other": "{{count}} arquivos · {{size}} na VM",
+  "groups": {
+    "week": "Últimos 7 dias"
+  },
+  "columns": {
+    "name": "Nome",
+    "sender": "Enviado por",
+    "chat": "Conversa",
+    "size": "Tamanho",
+    "when": "Quando"
+  },
+  "emptySource": {
+    "all": "Nenhum arquivo ainda",
+    "bots": "Nenhum arquivo dos bots ainda",
+    "user": "Você ainda não enviou arquivos",
+    "hint": "Os arquivos aparecem aqui assim que alguém os envia numa conversa."
+  },
+  "emptySearch": {
+    "title": "Nenhum arquivo encontrado",
+    "hint": "Tente outro nome ou limpe a busca."
+  }
+}

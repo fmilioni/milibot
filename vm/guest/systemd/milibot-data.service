@@ -1,0 +1,16 @@
+[Unit]
+Description=Milibot data disk (/data, /home, /workspace)
+DefaultDependencies=no
+After=systemd-remount-fs.service systemd-udev-trigger.service
+Wants=systemd-udev-trigger.service
+Before=local-fs.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/milibot/bin/milibot-data-setup
+TimeoutStartSec=15min
+
+[Install]
+WantedBy=local-fs.target

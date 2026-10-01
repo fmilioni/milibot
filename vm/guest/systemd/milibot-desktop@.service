@@ -1,0 +1,21 @@
+[Unit]
+Description=Milibot desktop for bot %i
+After=network.target milibot-data.service
+Wants=milibot-data.service
+
+[Service]
+Type=simple
+User=bot-%i
+EnvironmentFile=/etc/milibot/bots/%i.env
+Environment=SLUG=%i
+RuntimeDirectory=milibot-desktop-%i
+RuntimeDirectoryMode=0700
+UMask=0002
+ExecStart=/opt/milibot/bin/milibot-desktop-session
+Restart=always
+RestartSec=2
+KillMode=control-group
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

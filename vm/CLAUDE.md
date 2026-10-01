@@ -1,0 +1,49 @@
+# VM
+
+The host needs QEMU (install commands in the README) and Node 24. The QEMU line comes from `vmProfile` (`packages/shared/src/portable/platform.ts`): mac `virt`+`hvf`, Linux x64 `q35`+`kvm`+OVMF, Linux arm64 `virt`+`kvm`+AAVMF, Windows `q35`+`whpx`+`cpu max`; without the accelerator (Linux: `/dev/kvm` not writable) TCG with `slow: true`.
+
+- **E2E** (manual, a few GB free in `MILIBOT_E2E_DIR`): `node vm/host/src/cli/e2e.ts --screenshot <png>`; without KVM/HVF raise `MILIBOT_E2E_BOOT_SEC`.
+- Script-only env: `MILIBOT_VM_ACCEL=tcg` forces TCG; `MILIBOT_VM_ARCH` emulates another guest architecture (command line tests only); `MILIBOT_BUILD_DIR` moves the golden build's scratch disk; `MILIBOT_QEMU_SHARE` adds a firmware folder.
+- After changing `guest-agent/src` or the helpers it embeds (`guest/bin/{cli-wrapper,gh,milibot-browser}`), run `pnpm --filter @milibot/guest-agent build` before starting a daemon with a real VM (the runtime replaces the VM's agent with the `dist/guest-agent.mjs` bundle when the `agentSha` differs).
+
+## Host CLIs (`host/`, `@milibot/vm-host`)
+
+- `src/cli/workspace-vm.ts`, `build-golden.ts` and `e2e.ts` are TypeScript run by **plain Node 24** (type stripping): only erasable syntax, relative imports with `.ts` extensions, and shared code only through `src/lib/shared.ts`, which reaches `packages/shared/src/portable/*` and the types of `packages/shared/src/vm/vm-cli.ts` by relative path (Node refuses to strip `.ts` under `node_modules`). Never value-import anything that pulls zod or a non-portable shared module.
+- The daemon runs them with its own Node (`scriptCommand` in `apps/daemon/src/vm-cli.ts`); the packaged app bundles them with esbuild into `Resources/vm/scripts/*.mjs` (`scripts/package/index.mjs`). `vmRootDir` (`src/lib/vm-root.ts`) finds the `vm/` folder from either layout.
+- The daemon imports the shared helpers from the package (`src/index.ts`), so they exist once.
+- Tests in `host/test/`: unit tests of the pure pieces; `commands.int.test.ts` runs the real CLI against fake `qemu-img`/`qemu-system-*` (`test/support/`; the fake QEMU runs through a symlink to Node named like QEMU (what macOS `ps` reports) and sets `process.title` to that name (Node 24 names its main thread `MainThread`, which Linux reports in `/proc/<pid>/comm`) so pid identity checks pass; run it in Docker with `--init`, or the exited fake stays a zombie that `pidAlive` counts as alive). Skipped on Windows.
+
+## Windows
+
+- Disk usage is the apparent size (no `blocks`). The VM CLI checks `WinHvPlatform.dll` itself and falls back to TCG when QEMU exits with "No accelerator found".
+- **WHPX irqchip** (`launchWithFallback`/`vmBootFallback` in `platform.ts`): the first boot uses QEMU's default `-accel whpx`; QEMU exiting at startup with a WHPX/irqchip error → relaunch with `kernel-irqchip=off` (a hung guest is the daemon's controller's job). The choice is saved as `whpxKernelIrqchip` in the VM's `config.json` (a saved `off` is never probed again); `MILIBOT_WHPX_KERNEL_IRQCHIP=on|off` overrides both, is never saved and skips the fallback. The golden build keeps `off` unless the env says otherwise.
+
+## Golden image
+
+- `host/src/cli/build-golden.ts` (`build.sh` is a shortcut; `--rebuild` builds a new version). Its stderr lines (`[build …]`, a curl-style download meter) are what the daemon's `golden/progress.ts` parses: keep them stable.
+- Output `<dataRoot>/images/debian13-golden-<ver>-<arch>.qcow2` (444), published per architecture in `images/current.json` (the only way the daemon and the VM CLI find it). cidata seeds are written by `shared/src/portable/iso9660.ts` (no external tools). The payload tar (`host/src/golden/payload-tar.ts`) carries `provision.sh`, `provision.d/`, `versions.env`, `guest/` and the agent bundle.
+- Old versions are never overwritten (overlays point to the versioned file); only delete a version no `vm/config.json` references. `golden-revision` goes up whenever the image content changes in a way workspaces need (a new or changed provision step, a version bump in `versions.env`): system update = `reset` onto the new golden, data disk intact.
+- `provision.sh` runs in the guest through cloud-init and is idempotent. It holds the shared constants and helpers (`pinned NAME` reads the per-architecture `NAME_<ARCH>`, `fetch_verified url dest sha256`), sources `versions.env`, then each `provision.d/NN-<name>.sh` in order. Adding or renaming a step means updating `PROVISION_STEPS` in the daemon's `golden/progress.ts` (a test compares them). Step files have no shebang (`# shellcheck shell=bash`); variables shared between steps are uppercase.
+- `versions.env` pins Go, rustup-init, uv and Claude Code with a sha256 per Debian architecture; downloads are verified, never piped into a shell.
+
+## Inside the VM
+
+- User `agent` (passwordless sudo through `%workspace`), groups `workspace` and `docker`, bots `bot-<slug>` (uid = gid). These values, the bot uid range and slug pattern, and the OCR/extract packages live in `packages/shared/src/portable/guest-constants.ts` (ports in `platform.ts`); `guest-agent/test/guest-constants.test.ts` checks the shell copies in `provision.sh`, `provision.d/`, `guest/` and the systemd unit.
+- Disks: `vda` system (overlay), `vdb` data mounted at `/data` with binds `/home` and `/workspace` (`root:workspace 2775`, default ACL `g::rwx`). Bot registry in `/etc/milibot/bots/<slug>.env` (system disk; a reset re-provisions with the same uid). `/var/lib/docker` and snapshots live on the system disk (gone on reset).
+- Desktop per bot: `milibot-desktop@<slug>` = `Xvnc :N` + XFCE; Chrome with CDP on loopback (no auth: any VM user can reach it). `milibot-desktop-session` fails loudly when the X socket never appears; an `xhost` failure only warns.
+- **Helpers owned by the guest agent**: at every start it installs `/usr/local/bin/{claude,codex,gh,milibot-browser}` (written only when content or mode differ; `guest-agent/src/guest-files.ts`) from `guest/bin/cli-wrapper` (claude and codex, chosen by `$0`), `gh` and `milibot-browser`, embedded in the bundle through `?raw` imports (esbuild plugin in `guest-agent/scripts/build.mjs`, native in Vitest). A new agent bundle therefore delivers helper changes to existing VMs; the daemon pushes none of them.
+- `gh` wrapper: adds `--draft` and refuses `gh pr merge` unless `AUTO_MERGE=1`, the cwd is under an `ALLOW_MERGE_DIR` (sessions whose plan has `merge_pr = 1`: Claude Code's process env is per bot, not per lane) or `MILIBOT_ALLOW_MERGE=1` (API bots' bash in such a session); the daemon only writes `/etc/milibot/git-policy`. A guard against mistakes, not security.
+- `claude`: the wrapper always runs as `agent`; the real binary is `/usr/local/lib/milibot/claude-real` (pinned in `versions.env`, no autoupdate, updated with the golden). The guest agent adds `outputStyle: Concise` to agent's `~/.claude/settings.json` at every start when absent (`claude-settings.ts`; provision wipes `~/.claude`, so it can't live in the golden).
+- `codex`: not in the golden. The daemon installs `@openai/codex@CODEX_VERSION` with npm as root on demand (`INSTALL_CODEX_SCRIPT`, daemon `runtime/providers/cli-engines/codex.ts`) and links `/usr/local/lib/milibot/codex-real` to it; the wrapper runs every user's `codex` as `agent` with `CODEX_HOME=/home/agent/.codex` (the login every bot uses) and exits 127 while the real binary is missing. Bumping `CODEX_VERSION` updates running VMs without a new golden.
+
+## Lifecycle (`host/src/cli/workspace-vm.ts`)
+
+- `vm/*.sh` are manual shortcuts. JSON on stdout; errors `{"ok":false,"error":{code,message}}` with exit 1, usage errors (`USAGE`) with exit 2. `config.json` and every command's output are typed by `packages/shared/src/vm/vm-cli.ts` (zod): the CLI writes them with those types, the daemon parses them (`parseVmCliOutput`, `VmConfigFileView`). Snapshots and `resize --port-base` need the VM stopped; `grow-disk` only grows. `maxPortBase` bounds `create` and `resize` so every bound port stays below 65536. Pid files are checked for identity (`lib/proc.ts`: a stale `qemu.pid` after a reboot can name an unrelated process).
+- Files in `<wsDir>/vm/`; the UEFI firmware pair is pinned in `config.json` (a changed code file gets a fresh vars copy). Ports: `127.0.0.1:P` → guest agent; `P+N` → VNC of display N.
+- Unix socket paths are length-limited: QEMU runs with cwd `<wsDir>/vm` and QMP uses a relative path (use the `qmp` subcommand); Windows uses TCP (not a named pipe: QEMU's win32 pipe chardev takes a single connection and the CLI connects per command). Start waits until QMP accepts a connection.
+
+## Guest agent (`guest-agent/`)
+
+- `routes.ts` is the route table, `http.ts` the plumbing. Paths (`GUEST_ROUTES`) and request/response types live in `packages/shared/src/portable/guest-api.ts` (the contract with the daemon's `GuestClient` and the CLI engines' backend), imported as `@milibot/shared/portable/guest-api`.
+- Bearer from `agent.token` on everything but `GET /ping`. `/health` returns `agentSha` and no feature flags: the runtime swaps the VM's bundle on boot when the sha differs, so existing VMs get new endpoints without a new golden.
+- `/exec` stdin goes in the JSON (body-size capped); `/procs` event lines are capped (the engines join `partial` pieces); `/fs/*` is confined to `/workspace`; per-bot slices `milibot-bot-<slug>.slice` escape hyphens as `\x2d`; `/extract` runs as `nobody` in a limited scope with the tools the golden installs (`tools_missing` otherwise; LibreOffice is opt-in, `office_missing`).

@@ -1,0 +1,27 @@
+{
+  "switcherLabel": "Switch workspace",
+  "menuTitle": "Workspaces",
+  "openInNewWindow": "Open in new window",
+  "openNamedInNewWindow": "Open {{name}} in a new window",
+  "openBadge": "open",
+  "new": "New workspace…",
+  "manage": "Manage workspaces",
+  "isolationNote": "Each workspace has its own VM, bots, memory and keys. Nothing is shared.",
+  "botsWorking_one": "{{count}} bot working",
+  "botsWorking_other": "{{count}} bots working",
+  "vmState": {
+    "not_created": "VM not created",
+    "stopped": "VM off",
+    "starting": "VM starting",
+    "running": "VM on",
+    "stopping": "VM shutting down",
+    "suspended": "VM suspended",
+    "error": "VM error"
+  },
+  "runtime": {
+    "stopped": "Closed",
+    "starting": "Opening",
+    "running": "Running in the background",
+    "crashed": "Stopped responding"
+  }
+}

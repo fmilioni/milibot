@@ -1,0 +1,54 @@
+{
+  "chat": {
+    "attachments": {
+      "reveal": "Mostrar na pasta",
+      "revealNamed": "Mostrar {{name}} na pasta"
+    },
+    "secretRequest": {
+      "hintRemember": "Vai direto para o cofre de senhas do sistema. {{name}} usa a senha sem ver o valor.",
+      "sentRemember_bot": "Guardada no cofre de senhas como {{secret}} · só {{name}} usa",
+      "sentRemember_all": "Guardada no cofre de senhas como {{secret}} · todos os bots usam"
+    }
+  },
+  "panels": {
+    "settings": {
+      "reduceMotionHint": "Troca de estado sem animação (segue o sistema por padrão)"
+    }
+  },
+  "settings": {
+    "general": {
+      "notifications": "Notificações do sistema",
+      "reveal": "Mostrar na pasta",
+      "deleteBody": "A VM é desligada e apagada junto com os discos (/workspace inclusive), os bots, as conversas, a memória e as chaves guardadas no cofre de senhas do sistema. Não dá para desfazer."
+    },
+    "providers": {
+      "subtitle": "As chaves ficam guardadas no cofre de senhas do sistema. Cada bot escolhe o provedor e o modelo.",
+      "keySaved": "chave guardada no cofre de senhas"
+    },
+    "credentials": {
+      "secrets": {
+        "note": "Os valores ficam no cofre de senhas do sistema. Variáveis chegam aos bots como variáveis de ambiente; as outras eles só usam por referência, sem ver o valor. Os bots também podem pedir uma senha no chat — a que você mandar com “Lembrar” aparece aqui."
+      }
+    }
+  },
+  "vmWindow": {
+    "pasteHint": "Ctrl+V cola o texto deste computador aqui"
+  },
+  "backup": {
+    "errors": {
+      "no_qemu": "O qemu-img não foi encontrado. Instale o QEMU."
+    }
+  },
+  "mcp": {
+    "form": {
+      "savedSecret": "•••••• guardado no cofre de senhas",
+      "secretOn": "Segredo: guardado no cofre de senhas e nunca mostrado"
+    }
+  },
+  "canvas": {
+    "navHint": "Espaço + arrastar para navegar · Ctrl + rolagem para zoom",
+    "zoomIn": "Aproximar (Ctrl++)",
+    "zoomOut": "Afastar (Ctrl+−)",
+    "actualSize": "Tamanho real (Ctrl+0)"
+  }
+}

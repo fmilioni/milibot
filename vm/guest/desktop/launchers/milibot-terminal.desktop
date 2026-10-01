@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Terminal
+Comment=Terminal in /workspace
+Exec=xfce4-terminal --working-directory=/workspace
+Icon=org.xfce.terminalemulator
+Terminal=false
+StartupNotify=true

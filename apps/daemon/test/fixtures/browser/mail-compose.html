@@ -1,0 +1,289 @@
+<!doctype html>
+<!-- Portuguese on purpose: a pt-BR page with accented labels, as bots meet on real sites. -->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Caixa de entrada (3) - ana@example.com - Correio</title>
+    <style>
+      body {
+        margin: 0;
+        font: 14px sans-serif;
+      }
+      header {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+        border-bottom: 1px solid #ddd;
+      }
+      nav {
+        position: fixed;
+        top: 57px;
+        left: 0;
+        width: 200px;
+      }
+      main {
+        margin-left: 210px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+      }
+      .compose {
+        position: fixed;
+        right: 16px;
+        bottom: 0;
+        width: 520px;
+        height: 520px;
+        background: #fff;
+        border: 1px solid #999;
+        display: flex;
+        flex-direction: column;
+      }
+      .compose h2 {
+        font-size: 14px;
+        margin: 0;
+        padding: 8px;
+        background: #eee;
+      }
+      .to {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-bottom: 1px solid #eee;
+      }
+      .chip {
+        display: inline-flex;
+        gap: 4px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        background: #e8f0fe;
+      }
+      .chip[aria-invalid='true'] {
+        background: #fce8e6;
+      }
+      .to input {
+        border: 0;
+        flex: 1;
+        min-width: 120px;
+        outline: none;
+      }
+      .subject {
+        border: 0;
+        border-bottom: 1px solid #eee;
+        padding: 8px;
+      }
+      .body {
+        flex: 1;
+        padding: 8px;
+        outline: none;
+      }
+      #suggestions {
+        position: fixed;
+        right: 40px;
+        bottom: 380px;
+        width: 400px;
+        background: #fff;
+        border: 1px solid #ccc;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      #suggestions[hidden] {
+        display: none;
+      }
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .alert {
+        background: #fff;
+        padding: 24px;
+        width: 380px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div role="button" tabindex="0" aria-label="Menu principal">☰</div>
+      <form role="search">
+        <input type="text" aria-label="Pesquisar e-mail" placeholder="Pesquisar e-mail" />
+      </form>
+    </header>
+    <nav aria-label="Marcadores">
+      <div role="button" tabindex="0" id="new">Escrever</div>
+      <a href="#inbox" aria-current="page">Caixa de entrada 3</a><br />
+      <a href="#sent">Enviados</a>
+    </nav>
+    <main>
+      <table role="grid" aria-label="Mensagens">
+        <tbody id="rows"></tbody>
+      </table>
+    </main>
+
+    <div class="compose" role="dialog" aria-labelledby="compose-title">
+      <h2 id="compose-title">Nova mensagem</h2>
+      <div class="to" id="to-row">
+        <span class="label">Para</span>
+        <div role="option" class="chip" data-hovercard-id="beatriz.ferreira@example.com" tabindex="-1">
+          <span>Beatriz Ferreira</span>
+          <div role="button" aria-label="Remover destinatário" tabindex="0">×</div>
+        </div>
+        <input
+          id="to"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-controls="suggestions"
+          aria-label="Destinatários em Para"
+          autocomplete="off"
+        />
+        <span role="link" tabindex="0">Cc</span><span role="link" tabindex="0">Cco</span>
+      </div>
+      <input class="subject" name="subjectbox" placeholder="Assunto" aria-label="Assunto" />
+      <div
+        class="body"
+        role="textbox"
+        aria-label="Corpo da mensagem"
+        aria-multiline="true"
+        contenteditable="true"
+      ></div>
+      <div style="padding: 8px">
+        <div role="button" tabindex="0" id="send" data-tooltip="Enviar (Ctrl+Enter)">Enviar</div>
+      </div>
+    </div>
+    <ul id="suggestions" role="listbox" aria-label="Sugestões" hidden></ul>
+
+    <script>
+      const rows = document.getElementById('rows')
+      const senders = [
+        'Carlos Lima',
+        'Equipe Financeiro',
+        'Joana Prado',
+        'Newsletter Semanal',
+        'Marcos Tavares',
+      ]
+      for (let i = 0; i < 600; i++) {
+        const tr = document.createElement('tr')
+        tr.className = 'row'
+        tr.setAttribute('jsaction', 'click:open')
+        // Deep markup per row, like real webmail inboxes (thousands of nodes).
+        let cells = '<td><div role="checkbox" aria-checked="false" aria-label="Selecionar"></div></td>'
+        cells += '<td><span><span><span>' + senders[i % 5] + '</span></span></span></td>'
+        cells +=
+          '<td><div><span>Assunto ' +
+          i +
+          '</span><span> - </span><span>trecho da mensagem ' +
+          i +
+          '</span></div>'
+        for (let k = 0; k < 20; k++) cells += '<span class="pad"><i></i><b></b></span>'
+        cells += '</td><td><span title="' + i + '">10:' + String(i % 60).padStart(2, '0') + '</span></td>'
+        tr.innerHTML = cells
+        rows.appendChild(tr)
+      }
+
+      const contacts = [
+        ['Beatriz Ferreira', 'beatriz.ferreira@example.com'],
+        ['Bernardo Alves', 'bernardo@example.com'],
+        ['Carla Mendes', 'carla.mendes@example.com'],
+      ]
+      const to = document.getElementById('to')
+      const list = document.getElementById('suggestions')
+      const row = document.getElementById('to-row')
+      const valid = (s) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s)
+      function addChip(name, email) {
+        const chip = document.createElement('div')
+        chip.className = 'chip'
+        chip.setAttribute('role', 'option')
+        chip.tabIndex = -1
+        if (email) chip.dataset.hovercardId = email
+        if (!valid(email || name)) chip.setAttribute('aria-invalid', 'true')
+        chip.innerHTML =
+          '<span></span><div role="button" aria-label="Remover destinatário" tabindex="0">×</div>'
+        chip.firstChild.textContent = name
+        row.insertBefore(chip, to)
+      }
+      function close() {
+        list.hidden = true
+        to.setAttribute('aria-expanded', 'false')
+        list.innerHTML = ''
+      }
+      to.addEventListener('input', () => {
+        const q = to.value.trim().toLowerCase()
+        list.innerHTML = ''
+        const hits = q ? contacts.filter(([n, e]) => n.toLowerCase().includes(q) || e.includes(q)) : []
+        hits.forEach(([n, e], i) => {
+          const li = document.createElement('li')
+          li.setAttribute('role', 'option')
+          li.setAttribute('aria-selected', i === 0 ? 'true' : 'false')
+          li.textContent = n + ' <' + e + '>'
+          li.addEventListener('mousedown', (ev) => {
+            ev.preventDefault()
+            addChip(n, e)
+            to.value = ''
+            close()
+          })
+          list.appendChild(li)
+        })
+        list.hidden = hits.length === 0
+        to.setAttribute('aria-expanded', hits.length ? 'true' : 'false')
+      })
+      to.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === 'Tab' || ev.key === ',') {
+          const selected = list.querySelector('[aria-selected=true]')
+          if (selected && !list.hidden) {
+            const [n, e] = contacts.find(([n]) => selected.textContent.startsWith(n))
+            addChip(n, e)
+          } else if (to.value.trim()) addChip(to.value.trim(), valid(to.value.trim()) ? to.value.trim() : '')
+          else return
+          ev.preventDefault()
+          to.value = ''
+          close()
+        }
+      })
+      row.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[aria-label="Remover destinatário"]')
+        if (btn) btn.closest('.chip').remove()
+      })
+      document.getElementById('send').addEventListener('click', () => {
+        const bad = row.querySelector('.chip[aria-invalid=true]')
+        if (!bad) {
+          document.querySelector('.compose').remove()
+          showToast('Mensagem enviada.')
+          return
+        }
+        const name = bad.textContent.replace('×', '').trim()
+        const scrim = document.createElement('div')
+        scrim.className = 'scrim'
+        scrim.innerHTML =
+          '<div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="err-t" aria-describedby="err-d">' +
+          '<h2 id="err-t">Erro</h2><p id="err-d"></p><button>OK</button></div>'
+        scrim.querySelector('#err-d').textContent =
+          'O endereço "' +
+          name +
+          '" no campo "Para" não foi reconhecido. ' +
+          'Verifique se todos os endereços estão formatados corretamente.'
+        scrim.querySelector('button').addEventListener('click', () => scrim.remove())
+        document.body.appendChild(scrim)
+      })
+      function showToast(text) {
+        const t = document.createElement('div')
+        t.setAttribute('role', 'alert')
+        t.style.cssText = 'position:fixed;left:16px;bottom:16px;background:#333;color:#fff;padding:8px'
+        t.textContent = text
+        document.body.appendChild(t)
+      }
+    </script>
+  </body>
+</html>

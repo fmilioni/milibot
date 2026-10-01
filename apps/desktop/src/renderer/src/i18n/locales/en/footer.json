@@ -1,0 +1,52 @@
+{
+  "vm": {
+    "not_created": "VM not created",
+    "stopped": "VM off",
+    "starting": "VM starting…",
+    "stopping": "VM shutting down…",
+    "running_one": "VM on · {{count}} desktop",
+    "running_other": "VM on · {{count}} desktops",
+    "suspended": "VM suspended",
+    "error": "VM error",
+    "usageHint": "Show VM usage"
+  },
+  "usage": "{{cost}} today · {{tokens}} tokens",
+  "quota": {
+    "title": "{{engine}} usage",
+    "planTooltip": "Plan of the connected {{account}} account",
+    "windows": {
+      "five_hour": "5-hour window",
+      "seven_day": "Week"
+    },
+    "windowTitles": {
+      "five_hour": "5-hour window",
+      "seven_day": "7-day window"
+    },
+    "used": "{{percent}}% used",
+    "pace": "ideal pace {{percent}}%",
+    "onPace": "on pace",
+    "abovePace": "{{points}} pts above",
+    "renewsAt": "Renews at {{time}}",
+    "renewsOn": "Renews {{day}}, {{time}}",
+    "limited": "limit reached · back at {{time}}",
+    "limitedNoTime": "limit reached"
+  },
+  "debug": "Debug and costs",
+  "settings": "Settings",
+  "usageSince": "{{cost}} since {{time}} · {{tokens}} tokens",
+  "resetCounter": "Reset counter",
+  "counterHint": "Click to reset the counter (history is kept)",
+  "activeWork": {
+    "count_one": "{{count}} in progress",
+    "count_other": "{{count}} in progress",
+    "hint": "Show what's in progress",
+    "title": "In progress",
+    "inChat": "in chat",
+    "steps": "{{done}}/{{total}} steps"
+  },
+  "systemUpdate": {
+    "title": "System update",
+    "link": "See what's new",
+    "dismiss": "Dismiss"
+  }
+}

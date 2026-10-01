@@ -1,0 +1,49 @@
+{
+  "name": "@milibot/daemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "milibotd": "./dist/main.js"
+  },
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/main.ts",
+    "start": "node dist/main.js",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:snapshot": "tsx scripts/db-snapshot.ts",
+    "gen:scripts": "tsx scripts/gen-scripts.ts"
+  },
+  "dependencies": {
+    "@fastify/websocket": "^11.3.1",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@milibot/agent": "workspace:*",
+    "@milibot/shared": "workspace:*",
+    "@milibot/vm-host": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.1",
+    "@mozilla/readability": "^0.6.0",
+    "@napi-rs/keyring": "^2.1.0",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.5",
+    "linkedom": "^0.18.13",
+    "lucide": "^1.48.0",
+    "onnxruntime-common": "1.30.0",
+    "onnxruntime-node": "1.30.0",
+    "parse5": "^8.0.1",
+    "pino": "^10.3.1",
+    "tailwindcss": "4.3.3",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2",
+    "undici": "^7.30.0",
+    "ws": "^8.22.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/turndown": "^5.0.6",
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.11",
+    "express": "^5.2.1",
+    "tsx": "^4.23.15"
+  }
+}

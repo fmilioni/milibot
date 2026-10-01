@@ -1,0 +1,133 @@
+#!/bin/bash
+# milibot-bot provision <slug> <uid> <display> | remove <slug> [--delete-home]
+set -euo pipefail
+
+BOTS_DIR=/etc/milibot/bots
+TEMPLATES=/opt/milibot/desktop
+
+fail() {
+  echo "MILIBOT_ERROR=$1" >&2
+  echo "$2" >&2
+  exit 3
+}
+
+valid_slug() {
+  [[ "$1" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ ]] && [ ${#1} -le 28 ]
+}
+
+browser_icon() {
+  if command -v google-chrome-stable >/dev/null 2>&1; then echo google-chrome; else echo chromium; fi
+}
+
+render() {
+  sed -e "s|@BROWSER_ICON@|$(browser_icon)|g" "$1"
+}
+
+install_desktop_config() {
+  local user=$1 home=$2
+  local xfconf="$home/.config/xfce4/xfconf/xfce-perchannel-xml"
+  local panel="$home/.config/xfce4/panel"
+  install -d -o "$user" -g "$user" -m 755 "$home/.config" "$home/.config/xfce4" "$home/.config/xfce4/xfconf" \
+    "$xfconf" "$panel" "$home/.config/autostart"
+  local f
+  for f in "$TEMPLATES"/xfconf/*.xml; do
+    render "$f" > "$xfconf/$(basename "$f")"
+  done
+  local i=1 launcher
+  for launcher in files browser terminal; do
+    rm -rf "${panel:?}/launcher-$i"
+    install -d -o "$user" -g "$user" "$panel/launcher-$i"
+    render "$TEMPLATES/launchers/milibot-$launcher.desktop" > "$panel/launcher-$i/milibot-$launcher.desktop"
+    i=$((i + 1))
+  done
+  local name
+  for name in xscreensaver light-locker xfce4-screensaver xfce4-power-manager blueman nm-applet print-applet \
+    xfce4-clipman-plugin-autostart xiccd; do
+    printf '[Desktop Entry]\nType=Application\nName=%s\nHidden=true\n' "$name" > "$home/.config/autostart/$name.desktop"
+  done
+  chown -R "$user:$user" "$home/.config/xfce4" "$home/.config/autostart"
+}
+
+provision() {
+  local slug=$1 uid=$2 display=$3
+  local user="bot-$slug" home="/home/bot-$slug"
+  valid_slug "$slug" || fail invalid_slug "invalid slug: $slug"
+  if ! { [[ "$uid" =~ ^[0-9]+$ ]] && [ "$uid" -ge 1600 ] && [ "$uid" -le 59999 ]; }; then
+    fail invalid_uid "invalid uid: $uid"
+  fi
+  if ! { [[ "$display" =~ ^[0-9]+$ ]] && [ "$display" -ge 1 ] && [ "$display" -le 50 ]; }; then
+    fail invalid_display "invalid display: $display"
+  fi
+
+  local owner
+  owner=$(getent passwd "$uid" | cut -d: -f1 || true)
+  [ -z "$owner" ] || [ "$owner" = "$user" ] || fail uid_in_use "uid $uid already belongs to $owner"
+  owner=$(getent group "$uid" | cut -d: -f1 || true)
+  [ -z "$owner" ] || [ "$owner" = "$user" ] || fail gid_in_use "gid $uid already belongs to group $owner"
+
+  local f
+  for f in "$BOTS_DIR"/*.env; do
+    [ -e "$f" ] || continue
+    [ "$(basename "$f" .env)" = "$slug" ] && continue
+    if grep -qx "DISPLAY_NUM=$display" "$f"; then fail display_in_use "display :$display is used by $(basename "$f" .env)"; fi
+  done
+
+  if getent passwd "$user" >/dev/null; then
+    [ "$(id -u "$user")" = "$uid" ] || fail user_uid_mismatch "$user exists with uid $(id -u "$user")"
+  else
+    getent group "$user" >/dev/null || groupadd -g "$uid" "$user"
+    useradd -u "$uid" -g "$uid" -G workspace,docker -d "$home" -M -s /bin/bash -c "Milibot bot $slug" "$user"
+  fi
+  usermod -a -G workspace,docker "$user"
+
+  if [ ! -d "$home" ]; then
+    mkdir -p "$home"
+    cp -a /etc/skel/. "$home/"
+    chown -R "$uid:$uid" "$home"
+    chmod 750 "$home"
+  fi
+  [ -e "$home/workspace" ] || ln -s /workspace "$home/workspace"
+  chown -h "$uid:$uid" "$home/workspace"
+
+  local env_file="$BOTS_DIR/$slug.env" wanted
+  wanted=$(printf 'BOT_UID=%s\nDISPLAY_NUM=%s' "$uid" "$display")
+  # A desktop already running with the same config keeps its session (open terminals, browser).
+  if [ -f "$env_file" ] && [ "$(cat "$env_file")" = "$wanted" ] \
+    && systemctl is-active --quiet "milibot-desktop@$slug.service"; then
+    systemctl enable "milibot-desktop@$slug.service" >/dev/null 2>&1
+    return 0
+  fi
+
+  install_desktop_config "$user" "$home"
+
+  mkdir -p "$BOTS_DIR"
+  printf '%s\n' "$wanted" > "$env_file"
+  systemctl enable "milibot-desktop@$slug.service" >/dev/null 2>&1
+  systemctl restart "milibot-desktop@$slug.service"
+}
+
+remove() {
+  local slug=$1 delete_home=${2:-}
+  local user="bot-$slug"
+  valid_slug "$slug" || fail invalid_slug "invalid slug: $slug"
+  systemctl disable --now "milibot-desktop@$slug.service" >/dev/null 2>&1 || true
+  rm -f "/etc/milibot/bots/${slug:?}.env"
+  if getent passwd "$user" >/dev/null; then
+    pkill -KILL -u "$user" 2>/dev/null || true
+    userdel "$user" 2>/dev/null || true
+  fi
+  if getent group "$user" >/dev/null; then groupdel "$user" 2>/dev/null || true; fi
+  if [ "$delete_home" = "--delete-home" ]; then rm -rf "/home/bot-${slug:?}"; fi
+}
+
+case "${1:-}" in
+  provision)
+    [ $# -eq 4 ] || fail usage "usage: milibot-bot provision <slug> <uid> <display>"
+    provision "$2" "$3" "$4"
+    ;;
+  remove)
+    [ $# -ge 2 ] || fail usage "usage: milibot-bot remove <slug> [--delete-home]"
+    remove "$2" "${3:-}"
+    ;;
+  *) fail usage "usage: milibot-bot provision|remove ..." ;;
+esac

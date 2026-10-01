@@ -1,0 +1,126 @@
+{
+  "title": "Boards",
+  "nav": "Boards",
+  "new": "New board",
+  "emptyFilter": "No boards here.",
+  "empty": {
+    "title": "No boards yet",
+    "hint": "Ask a bot to plan a large goal on a board, or create one here."
+  },
+  "filters": {
+    "active": "Active",
+    "done": "Done",
+    "archived": "Archived"
+  },
+  "status": {
+    "active": "In progress",
+    "done": "Done",
+    "archived": "Archived"
+  },
+  "columns": {
+    "todo": "To do",
+    "doing": "In progress",
+    "done": "Done",
+    "dropped": "Dropped"
+  },
+  "progress": "{{done}} of {{total}} done",
+  "progressShort": "{{done}}/{{total}}",
+  "doingCount": "{{count}} in progress",
+  "droppedCount_one": "{{count}} dropped",
+  "droppedCount_other": "{{count}} dropped",
+  "due": "Due {{date}}",
+  "until": "due {{date}}",
+  "overdue": "Overdue",
+  "createdBy": "created by {{name}}",
+  "createdByUser": "created by you",
+  "addCard": "Add card",
+  "cardTitlePlaceholder": "Card title",
+  "collapse": "Collapse",
+  "expandDropped": "Show dropped ({{count}})",
+  "hasImages": "Has images",
+  "menu": {
+    "label": "More options for “{{title}}”",
+    "edit": "Edit",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete board"
+  },
+  "delete": {
+    "title": "Delete the board “{{title}}”?",
+    "description": "Its cards, comments and images will be erased. This can't be undone.",
+    "confirm": "Delete"
+  },
+  "dialog": {
+    "newTitle": "New board",
+    "editTitle": "Edit board",
+    "save": "Save",
+    "create": "Create",
+    "fields": {
+      "title": "Title",
+      "summary": "Summary",
+      "summaryHint": "helps the bots find the board",
+      "due": "Due date"
+    }
+  },
+  "links": {
+    "plan": "Plan",
+    "session": "Session",
+    "design": "Design",
+    "pr": "Pull request",
+    "commit": "Commit",
+    "url": "Link"
+  },
+  "card": {
+    "more": "More options for “{{title}}”",
+    "delete": "Delete card",
+    "title": "Title",
+    "status": "Status",
+    "due": "Due",
+    "updated": "updated {{time}}",
+    "summary": "Summary",
+    "summaryPlaceholder": "A one or two sentence summary",
+    "description": "Description",
+    "edit": "Edit",
+    "noDescription": "No description.",
+    "addImage": "Add image",
+    "uploading": "Uploading image…",
+    "changes": "Session changes",
+    "comments": "Comments",
+    "commentsCount": "Comments · {{count}}",
+    "you": "You",
+    "deleteComment": "Delete comment",
+    "commentPlaceholder": "Write a comment…",
+    "send": "Send",
+    "links": "Links",
+    "noLinks": "No links yet.",
+    "addLink": "Link",
+    "removeLink": "Remove link",
+    "linkKind": "Link type",
+    "linkPlaceholder": {
+      "pr": "Pull request link",
+      "commit": "Commit hash or link",
+      "url": "https://…"
+    },
+    "prState": {
+      "open": "Open",
+      "review": "In review",
+      "done": "Merged",
+      "failed": "Closed"
+    },
+    "createdBy": "Created by {{name}} on {{date}}",
+    "createdByUser": "Created by you on {{date}}",
+    "deleteTitle": "Delete the card “{{title}}”?",
+    "deleteDescription": "Its comments and links will be erased. This can't be undone.",
+    "assignees": "Assignees",
+    "assign": "Assign",
+    "deletedBot": "deleted bot",
+    "labels": "Labels"
+  },
+  "labels": {
+    "search": "Find or create a label",
+    "create": "Create “{{name}}”",
+    "color": "Change the color",
+    "delete": "Delete the label",
+    "empty": "Type a name to create the first label."
+  }
+}

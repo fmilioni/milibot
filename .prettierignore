@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+dist
+out
+CHANGELOG.md
+vm/guest
+LICENSE.md
+apps/daemon/src/**/*.generated.ts

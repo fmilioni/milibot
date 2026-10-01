@@ -1,0 +1,43 @@
+#!/bin/bash
+# milibot-gh-wrapper
+# Applies the workspace's pull request rules (/etc/milibot/git-policy, written by Milibot) before running the
+# real gh: drafts when the workspace asks for them, and no merges unless merging is allowed.
+real=/usr/bin/gh
+policy=/etc/milibot/git-policy
+draft_prs=1
+auto_merge=0
+allowed=()
+if [ -r "$policy" ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in
+      DRAFT_PRS) draft_prs=$value ;;
+      AUTO_MERGE) auto_merge=$value ;;
+      ALLOW_MERGE_DIR) [ -n "$value" ] && allowed+=("$value") ;;
+    esac
+  done < "$policy"
+fi
+
+merge_allowed() {
+  [ "$auto_merge" = 1 ] && return 0
+  [ "${MILIBOT_ALLOW_MERGE:-}" = 1 ] && return 0
+  local here dir
+  here=$(pwd -P 2>/dev/null) || return 1
+  for dir in "${allowed[@]+"${allowed[@]}"}"; do
+    case "$here/" in "$dir"/*) return 0 ;; esac
+  done
+  return 1
+}
+
+if [ "${1:-}" = pr ] && [ "${2:-}" = create ] && [ "$draft_prs" = 1 ]; then
+  for arg in "$@"; do
+    case "$arg" in --draft | --draft=* | -d | --web | -w) exec "$real" "$@" ;; esac
+  done
+  exec "$real" "$@" --draft
+fi
+
+if [ "${1:-}" = pr ] && [ "${2:-}" = merge ] && ! merge_allowed; then
+  echo 'Merging pull requests is disabled in this workspace: report the PR link and let the user merge it.' >&2
+  exit 1
+fi
+
+exec "$real" "$@"

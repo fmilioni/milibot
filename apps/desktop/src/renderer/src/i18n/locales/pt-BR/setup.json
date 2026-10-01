@@ -1,0 +1,186 @@
+{
+  "title": "Vamos preparar tudo",
+  "tagline": "Sua equipe de bots que trabalham num computador de verdade.",
+  "language": "Idioma",
+  "stepLabel": "Etapa {{number}}",
+  "stepDone": "Etapa {{number}} concluída",
+  "pending": "Configuração pendente",
+  "back": "Voltar para {{name}}",
+  "providers": {
+    "title": "Como os bots pensam",
+    "summary": "Como os bots pensam · {{names}}",
+    "select": "Usar {{name}}",
+    "cli": {
+      "description": "Usa sua conta {{account}}. Roda dentro da VM, com as ferramentas nativas de código.",
+      "later": "Você entra depois de criar a VM"
+    },
+    "openRouter": {
+      "name": "OpenRouter",
+      "description": "Centenas de modelos com uma chave só. Você paga pelo uso.",
+      "keyLabel": "Chave do OpenRouter",
+      "keyPlaceholder": "Cole sua chave sk-or-…",
+      "checking": "Conferindo a chave…",
+      "valid": "Chave aceita pelo OpenRouter",
+      "credit": "{{amount}} de crédito",
+      "invalid": "O OpenRouter não aceitou essa chave",
+      "unreachable": "Não deu para falar com o OpenRouter agora. Tente de novo em instantes.",
+      "saved": "Chave já guardada neste workspace",
+      "replace": "Trocar chave"
+    },
+    "compatible": {
+      "name": "Compatível com OpenAI",
+      "description": "Qualquer serviço no padrão da API da OpenAI: OpenAI, xAI (Grok), modelos locais…",
+      "configure": "Configurar",
+      "edit": "Editar"
+    },
+    "defaultLabel": "Padrão para novos bots:",
+    "hint": "Escolha pelo menos um. Dá para mudar por bot depois.",
+    "issues": {
+      "none_selected": "Escolha pelo menos um jeito de os bots pensarem.",
+      "openrouter_key": "Cole uma chave do OpenRouter que funcione, ou desmarque o OpenRouter.",
+      "compatible_missing": "Configure o serviço compatível com OpenAI, ou desmarque essa opção."
+    }
+  },
+  "machine": {
+    "title": "Criar a máquina virtual",
+    "subtitle": "Um computador Linux só para os seus bots. Escolha o tamanho — dá para mudar depois.",
+    "presets": {
+      "light": {
+        "name": "Leve",
+        "fit": "1–2 bots ao mesmo tempo"
+      },
+      "recommended": {
+        "name": "Recomendado",
+        "fit": "~3 bots ao mesmo tempo"
+      },
+      "powerful": {
+        "name": "Potente",
+        "fit": "projetos pesados, 5+ bots"
+      }
+    },
+    "specs": "{{cpus}} CPUs · {{mem}} GB · {{disk}} GB",
+    "tooBig": "Seu computador comporta até {{cpus}} processadores e {{mem}} GB de memória para a máquina.",
+    "customize": "Personalizar",
+    "cpus": "Processadores",
+    "memory": "Memória",
+    "disk": "Espaço para arquivos",
+    "max": "máx. {{value}}",
+    "maxGb": "máx. {{value}} GB",
+    "grows": "cresce conforme o uso",
+    "diskNote": "O disco cresce conforme o uso — não reserva espaço no SSD. Dá para aumentar depois nas Configurações.",
+    "legacyOffice": {
+      "label": "Ler arquivos antigos do Office (.doc, .xls, .ppt)",
+      "hint": "Instala o LibreOffice na máquina · +{{size}} MB de disco. Dá para mudar depois em Configurações › Conhecimento."
+    },
+    "decrease": "Diminuir {{name}}",
+    "increase": "Aumentar {{name}}",
+    "create": "Criar máquina (~{{minutes}} min)",
+    "saving": "Preparando…",
+    "continue": "Continuar",
+    "failed": "Não foi possível começar a criar a máquina: {{error}}",
+    "summary": "{{cpus}} processadores · {{mem}} GB de memória · {{disk}} GB para o /workspace",
+    "ready": "Máquina virtual pronta · {{cpus}} CPUs · {{mem}} GB · {{disk}} GB",
+    "items": {
+      "download": "Baixar imagem Debian 13",
+      "downloadSize": "Baixar imagem Debian 13 ({{size}})",
+      "install": "Instalar área de trabalho, Chrome e ferramentas de desenvolvimento",
+      "save": "Salvar imagem base (para restaurar se algo quebrar)",
+      "create": "Preparar os discos da máquina",
+      "boot": "Ligar a máquina",
+      "desktop": "Criar o desktop do seu primeiro bot"
+    },
+    "percent": "{{percent}}%",
+    "eta": "~{{minutes}} min restantes",
+    "etaSoon": "menos de 1 min",
+    "keepGoing": "pode fechar a janela, o daemon continua",
+    "goldenFailed": "A imagem base não ficou pronta: {{error}}",
+    "updatingSystem": "Preparando a versão mais nova do sistema…",
+    "updateFailed": "A versão mais nova do sistema não ficou pronta: {{error}}",
+    "useCurrent": "Usar a versão atual",
+    "useCurrentHint": "Cria a máquina com o sistema que já está no computador. A atualização aparece depois em Configurações › Máquina virtual.",
+    "vmFailed": "A máquina não ligou: {{error}}",
+    "qemu": {
+      "title": "Instalar QEMU",
+      "description": "O Milibot usa o QEMU para ligar a máquina virtual dos bots. Instale pelo Homebrew no Terminal:",
+      "copy": "Copiar comando",
+      "copied": "Copiado",
+      "openTerminal": "Abrir no Terminal",
+      "check": "Verificar de novo",
+      "stillMissing": "O QEMU ainda não foi encontrado. Quando o Terminal terminar, verifique de novo.",
+      "noBrew": "Não tem o Homebrew? Veja como instalar em brew.sh",
+      "openFailed": "Não foi possível abrir o Terminal: {{error}}",
+      "descriptionLinux": "O Milibot usa o {{qemu}} para ligar a máquina virtual dos bots. Rode este comando num terminal:",
+      "descriptionWindows": "O Milibot usa o {{qemu}} para ligar a máquina virtual dos bots. Rode este comando no PowerShell ou no Terminal do Windows:",
+      "descriptionNoManager": "O Milibot usa o QEMU para ligar a máquina virtual dos bots. Instale pelo gerenciador de pacotes da sua distribuição: o {{qemu}}, o qemu-img e o firmware UEFI (OVMF no x86, AAVMF no ARM).",
+      "stillMissingLinux": "O {{qemu}} ainda não foi encontrado. Quando o comando terminar, verifique de novo.",
+      "setupFailed": "O Milibot precisa do {{qemu}} para ligar a máquina virtual dos bots, mas não conseguiu descobrir como instalá-lo neste computador. Instale e verifique de novo.",
+      "firmwareMissing": "O QEMU está instalado, mas faltam os arquivos de firmware UEFI dele. Reinstale-o com o Homebrew no Terminal:",
+      "firmwareMissingLinux": "O QEMU está instalado, mas falta o firmware UEFI dele (pacote ovmf, ou qemu-efi-aarch64 em ARM). Instale-o e verifique de novo.",
+      "firmwareMissingWindows": "O QEMU está instalado, mas faltam os arquivos de firmware UEFI dele. Reinstale o QEMU e verifique de novo."
+    },
+    "kvm": {
+      "noDeviceTitle": "Sem aceleração KVM: a máquina vai ficar lenta",
+      "noDevice": "Não encontramos o /dev/kvm. Sem ele, a máquina roda em modo emulado (TCG), bem mais devagar. Ative a virtualização (Intel VT-x ou AMD-V) no firmware do computador e confira se o módulo kvm está carregado. Dá para continuar assim mesmo.",
+      "noPermissionTitle": "Falta permissão para usar o KVM",
+      "noPermission": "Seu usuário não consegue abrir o /dev/kvm. Entre no grupo kvm com o comando abaixo e depois saia e entre de novo na sessão. Sem isso, a máquina roda em modo emulado, bem mais devagar.",
+      "reloginTitle": "Saia e entre de novo na sessão",
+      "relogin": "Seu usuário já está no grupo kvm, mas esta sessão começou antes disso. Saia e entre de novo para a máquina usar o KVM."
+    },
+    "whpx": {
+      "feature_disabled": {
+        "title": "Ative a Plataforma do Hipervisor do Windows",
+        "body": "Sem ela, a máquina roda em modo emulado (TCG), bem mais devagar. Ative em \"Ativar ou desativar recursos do Windows\" (optionalfeatures) ou rode este comando no PowerShell como administrador:"
+      },
+      "reboot_pending": {
+        "title": "Reinicie o Windows para concluir",
+        "body": "A Plataforma do Hipervisor do Windows já está ativada, mas só passa a funcionar depois de reiniciar o computador. Reinicie e volte aqui."
+      },
+      "virtualization_disabled": {
+        "title": "Virtualização desligada no computador",
+        "body": "A virtualização está desligada no firmware. Ative o Intel VT-x ou o AMD-V (SVM) na BIOS/UEFI do computador e reinicie. Sem isso, a máquina roda em modo emulado, bem mais devagar. Dá para continuar assim mesmo."
+      },
+      "unavailable": {
+        "title": "Sem aceleração WHPX: a máquina vai ficar lenta",
+        "body": "A Plataforma do Hipervisor do Windows não está disponível, então a máquina roda em modo emulado (TCG), bem mais devagar. Ative o recurso em \"Ativar ou desativar recursos do Windows\" (optionalfeatures) ou rode este comando no PowerShell como administrador:",
+        "note": "Depois, reinicie o computador. Se não resolver, confira se a virtualização (Intel VT-x ou AMD-V) está ativada na BIOS/UEFI."
+      },
+      "restartNote": "Depois, reinicie o computador e verifique de novo. Dá para continuar sem isso, com a máquina mais lenta."
+    }
+  },
+  "firstBot": {
+    "title": "Conhecer o seu primeiro bot",
+    "hintPending": "Se escolheu Claude Code ou Codex, você faz o login no terminal da VM. Depois, o seu primeiro bot se apresenta.",
+    "hint": "Ele conversa com você, faz as tarefas e monta a equipe quando você pedir."
+  },
+  "login": {
+    "title": "Entrar na sua conta {{account}}",
+    "description": "Este é o terminal da VM rodando o {{engine}} oficial. Escolha “{{option}}” e conclua no navegador — sua senha e o token ficam só dentro da VM.",
+    "screenLabel": "Desktop do seu primeiro bot com o terminal do {{engine}}",
+    "windowTitle": "agent@{{name}} — terminal da VM",
+    "waiting": "Aguardando login…",
+    "opening": "Abrindo o terminal na VM…",
+    "useKey": "Usar chave de API em vez disso",
+    "changeProviders": "Voltar e escolher outro jeito de os bots pensarem",
+    "keyTitle": "Chave de API da {{vendor}}",
+    "keyHint": "O {{engine}} dos bots usa essa chave e você paga pelo uso direto na {{vendor}}.",
+    "saveKey": "Salvar e continuar",
+    "back": "Voltar para o login",
+    "failed": "Não foi possível abrir o terminal da VM. Tente de novo.",
+    "retry": "Abrir o terminal de novo",
+    "openHint": "Clique na tela para abrir o desktop do bot numa janela maior.",
+    "reopen": "Reabrir terminal de login",
+    "terminalClosed": "O terminal de login foi fechado. Reabra para continuar.",
+    "wrongTerminal": "Você entrou pelo terminal errado — use o terminal de login (usuário agent)."
+  },
+  "team": {
+    "title": "Sua equipe começa aqui",
+    "hint": "Peça a {{name}} para montar bots para as suas tarefas, ou use o + para criar um você mesmo."
+  },
+  "suggestions": {
+    "label": "Sugestões para começar",
+    "finances": "Organizar minhas finanças e montar relatórios mensais",
+    "repos": "Revisar PRs e manter meus repositórios em dia",
+    "research": "Pesquisar um assunto a fundo e me entregar um resumo",
+    "news": "Todo dia às 8h, me mandar um resumo das notícias do meu setor"
+  }
+}

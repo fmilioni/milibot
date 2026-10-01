@@ -1,0 +1,15 @@
+[Unit]
+Description=Milibot guest agent
+After=network.target milibot-data.service
+Wants=milibot-data.service
+
+[Service]
+Type=simple
+Environment=MILIBOT_AGENT_PORT=8765
+Environment=MILIBOT_AGENT_TOKEN_FILE=/etc/milibot/agent.token
+ExecStart=/usr/bin/node /opt/milibot/guest-agent/guest-agent.mjs
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+.vite/
+*.tsbuildinfo
+.DS_Store
+coverage/
+*.log
+CLAUDE.local.md
+.local/
+.claude/settings.local.json
+.mcp.json

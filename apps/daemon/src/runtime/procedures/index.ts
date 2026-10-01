@@ -1,0 +1,1 @@
+export { ProcedureService } from './service'

@@ -1,0 +1,157 @@
+name: CI
+
+# Pull requests and pushes to main run the Linux job (checks, tests and build). The other
+# platforms and the VM E2E run only when started by hand (Actions → CI → Run workflow).
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      vm_e2e:
+        description: Also build the golden image and run the VM E2E on Linux x64 (KVM, ~90 min)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux x64 · typecheck, lint, format, shellcheck, unit, build, integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # check:migrations compares against the base branch (pull requests) or the previous commit (pushes).
+          fetch-depth: 0
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm knip
+      - run: pnpm format:check
+      - name: shellcheck
+        run: |
+          shell_bins=$(grep -lE '^#!.*\b(ba)?sh\b' vm/guest/bin/*)
+          daemon_scripts=$(find apps/daemon/src -path '*/scripts/*.sh')
+          shellcheck -x vm/*.sh vm/provision.d/*.sh vm/guest/*.sh scripts/*.sh $shell_bins $daemon_scripts
+      - name: Migrations (against the base branch)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: pnpm check:migrations "origin/$BASE_REF"
+      - name: Migrations (against the previous commit)
+        # A push to main is one squashed pull request (on the root commit the script compares against no migrations).
+        if: github.event_name == 'push'
+        run: pnpm check:migrations HEAD~1
+      - run: pnpm test:unit
+      - run: pnpm build
+      - run: pnpm test:integration
+
+  linux-vm-e2e:
+    name: Linux x64 · golden build + VM E2E (KVM)
+    if: github.event_name == 'workflow_dispatch' && inputs.vm_e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: linux
+    env:
+      MILIBOT_HOME: /mnt/milibot
+      MILIBOT_BUILD_DIR: /mnt/milibot-build
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Enable KVM and install QEMU
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo apt-get update -q
+          sudo apt-get install -y -q qemu-system-x86 qemu-utils ovmf
+          sudo mkdir -p "$MILIBOT_HOME" "$MILIBOT_BUILD_DIR"
+          sudo chown -R "$USER" "$MILIBOT_HOME" "$MILIBOT_BUILD_DIR"
+          test -w /dev/kvm
+      - name: Cache the golden image
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /mnt/milibot/images
+          key: golden-amd64-${{ hashFiles('vm/provision.sh', 'vm/provision.d/**', 'vm/versions.env', 'vm/golden-revision', 'vm/guest/**', 'vm/guest-agent/src/**', 'vm/host/src/**', 'packages/shared/src/portable/**') }}
+      - name: Build the golden image (amd64)
+        run: node vm/host/src/cli/build-golden.ts --cpus 4 --mem-gb 8
+      - name: Workspace VM E2E
+        run: |
+          mkdir -p /mnt/milibot-e2e
+          MILIBOT_E2E_DIR=/mnt/milibot-e2e node vm/host/src/cli/e2e.ts --screenshot /mnt/milibot-e2e/vm-shot.png
+      - name: Logs and screenshot
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: vm-e2e-linux-x64
+          path: |
+            /mnt/milibot-e2e/vm-shot.png
+            /mnt/milibot-e2e/ws/vm/serial.log
+            /mnt/milibot-e2e/ws/vm/qemu.log
+            /mnt/milibot/images/logs/*.serial.log
+          if-no-files-found: ignore
+
+  linux-arm64:
+    name: Linux arm64 · unit
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit
+
+  windows:
+    name: Windows x64 · typecheck, unit
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    # Informational until Windows support is verified on real hardware.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+
+  macos:
+    name: macOS arm64 · unit
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit

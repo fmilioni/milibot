@@ -1,0 +1,69 @@
+{
+  "status": {
+    "draft": "Rascunho",
+    "awaiting_approval": "Aguardando aprovação",
+    "approved": "Aprovado",
+    "executing": "Em execução",
+    "done": "Concluído",
+    "rejected": "Rejeitado",
+    "cancelled": "Cancelado"
+  },
+  "stepStatus": {
+    "pending": "A fazer",
+    "in_progress": "Em andamento",
+    "done": "Feito",
+    "skipped": "Pulado"
+  },
+  "steps": "{{done}} de {{total}} passos",
+  "revision": "Revisão {{n}}",
+  "general": "Geral",
+  "card": {
+    "label": "Plano",
+    "labelRevision": "Plano · revisão {{n}}",
+    "view": "Ver plano",
+    "approve": "Aprovar",
+    "requestChanges": "Pedir mudanças",
+    "reject": "Rejeitar",
+    "changesPlaceholder": "O que deve mudar no plano?",
+    "rejectPlaceholder": "Por que não seguir com este plano? (opcional)",
+    "sendChanges": "Enviar pedido",
+    "rejectConfirm": "Rejeitar plano",
+    "changesRequested": "Você pediu mudanças: “{{comment}}”",
+    "rejectedWith": "Rejeitado: “{{comment}}”",
+    "removed": "Plano removido: {{title}}",
+    "preview": "Plano: {{title}}",
+    "inSession": "Executar numa sessão de trabalho",
+    "inSessionHint": "Roda em paralelo ao chat, com contexto próprio, e avisa aqui quando terminar. Desligado, o bot executa aqui na conversa.",
+    "mergePr": "Mergear o PR ao final",
+    "mergePrHint": "Se o trabalho abrir um PR, o bot faz o merge quando os checks passarem. Desligado, você faz o merge.",
+    "sessionModel": "Modelo da sessão",
+    "sessionModelHint": "O bot sugeriu pelo que você pediu no chat.",
+    "botModel": "Modelo do bot",
+    "effort": "Esforço"
+  },
+  "dialog": {
+    "title": "Plano",
+    "byBot": "por {{name}}",
+    "project": "Projeto: {{name}}",
+    "summary": "Resumo",
+    "steps": "Passos",
+    "noSteps": "Nenhum passo.",
+    "revisions": "Revisões",
+    "changes": "Mudanças em relação à revisão anterior",
+    "markDone": "Marcar como concluído",
+    "cancelPlan": "Cancelar plano",
+    "delete": "Excluir plano",
+    "deleteQuestion": "Excluir este plano? Ele some da lista e os cards no chat mostram que foi removido.",
+    "deleteConfirm": "Excluir",
+    "save": "Salvar como arquivo",
+    "saveTitle": "Salvar plano",
+    "loadFailed": "Não foi possível carregar o plano."
+  },
+  "settings": {
+    "subtitle": "O que os bots planejaram antes de trabalhos grandes: aprove, acompanhe os passos e reveja os planos antigos.",
+    "empty": "Nenhum plano ainda. Peça a um bot para planejar algo grande (uma mudança no código, uma viagem) antes de começar.",
+    "emptyFiltered": "Nenhum plano com esses filtros.",
+    "search": "Buscar por título ou resumo",
+    "updated": "Atualizado {{when}}"
+  }
+}

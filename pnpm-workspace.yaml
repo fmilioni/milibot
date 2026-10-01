@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+  - vm/guest-agent
+  - vm/host
+
+onlyBuiltDependencies:
+  - esbuild
+
+# Electron has no install script: its binary comes from `install-electron` (desktop dev, pnpm package).
+ignoredBuiltDependencies:
+  # Ships N-API prebuilds for every target; its implicit node-gyp build needs a C++ toolchain.
+  - better-sqlite3
+  - electron-winstaller
+  # Only downloads CUDA binaries on Linux; the darwin-arm64 binary ships in the package.
+  - onnxruntime-node
+  - protobufjs

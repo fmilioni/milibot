@@ -1,0 +1,156 @@
+{
+  "app": {
+    "loading": "Conectando ao Milibot…",
+    "bootErrorTitle": "Não foi possível conectar ao Milibot",
+    "retry": "Tentar novamente",
+    "reconnecting": "Reconectando…",
+    "crash": {
+      "title": "Algo deu errado nesta janela",
+      "body": "A tela encontrou um erro inesperado. Recarregar costuma resolver: suas conversas e o trabalho dos bots continuam intactos.",
+      "reload": "Recarregar",
+      "copyDetails": "Copiar detalhes",
+      "copied": "Copiado"
+    },
+    "areaError": "Não foi possível mostrar esta parte da tela.",
+    "messageError": "Não foi possível mostrar esta mensagem."
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "save": "Salvar",
+    "retry": "Tentar de novo",
+    "loading": "Carregando…",
+    "filters": {
+      "allProjects": "Todos os projetos",
+      "allBots": "Todos os bots",
+      "allStatuses": "Todos os status"
+    },
+    "gb": "{{value}} GB",
+    "gbUnit": "GB"
+  },
+  "time": {
+    "now": "agora",
+    "today": "Hoje",
+    "yesterday": "ontem",
+    "yesterdayTitle": "Ontem"
+  },
+  "newSection": {
+    "title": "Nova seção",
+    "name": "Nome",
+    "placeholder": "Ex.: Dev, Times, Finanças",
+    "create": "Criar seção"
+  },
+  "newGroup": {
+    "title": "Novo grupo",
+    "name": "Nome do grupo",
+    "namePlaceholder": "Ex.: Squad Dev",
+    "members": "Membros",
+    "create": "Criar grupo",
+    "failed": "Não foi possível criar o grupo."
+  },
+  "deleteDialog": {
+    "botTitle": "Excluir {{name}}?",
+    "groupTitle": "Excluir o grupo {{name}}?",
+    "botBody": "O bot sai da barra lateral e para de trabalhar. O histórico continua guardado.",
+    "groupBody": "O grupo sai da barra lateral. As mensagens continuam guardadas.",
+    "lastBot": "Este é o único bot do workspace e não pode ser excluído. Crie outro bot antes.",
+    "confirm": "Excluir"
+  },
+  "avatar": {
+    "preview": "Prévia do avatar",
+    "color": "Cor",
+    "shape": "Forma",
+    "eyes": "Olhos",
+    "random": "Aleatório",
+    "shapes": {
+      "square": "Quadrado",
+      "triangle": "Triângulo",
+      "hexagon": "Hexágono",
+      "cloud": "Nuvem",
+      "drop": "Gota",
+      "ghost": "Fantasma",
+      "blob": "Bolha",
+      "arch": "Arco",
+      "tv": "TV",
+      "shield": "Escudo",
+      "diamond": "Diamante"
+    },
+    "eyeStyles": {
+      "capsule": "Cápsula",
+      "oval": "Oval",
+      "slit": "Fenda"
+    }
+  },
+  "colors": {
+    "blue": "Azul",
+    "orange": "Laranja",
+    "teal": "Verde-azulado",
+    "violet": "Violeta",
+    "pink": "Rosa",
+    "red": "Vermelho",
+    "green": "Verde",
+    "amber": "Âmbar",
+    "brown": "Marrom",
+    "gray": "Cinza"
+  },
+  "models": {
+    "defaultTag": "padrão",
+    "descriptions": {
+      "fable": "o mais capaz · o mais caro",
+      "opus": "mais capaz · mais caro",
+      "sonnet": "equilíbrio entre custo e qualidade",
+      "haiku": "rápido e barato",
+      "astra": "o mais capaz",
+      "sol": "equilíbrio entre velocidade e qualidade",
+      "terra": "equilibrado, geração anterior",
+      "luna": "rápido e leve"
+    }
+  },
+  "screenshot": {
+    "double": "2×",
+    "right": "dir.",
+    "middle": "meio"
+  },
+  "vmWindow": {
+    "title": "Desktop · {{name}} — Milibot",
+    "heading": "Desktop · {{name}}",
+    "open": "Abrir em janela maior",
+    "yourControl": "Você está no controle",
+    "fullScreen": "Tela cheia",
+    "exitFullScreen": "Sair da tela cheia",
+    "pasteHint": "⌘V cola o texto deste computador aqui",
+    "unavailable": "A tela deste bot não está disponível agora."
+  },
+  "reasoningEffort": {
+    "levels": {
+      "low": "Baixo",
+      "medium": "Médio",
+      "high": "Alto",
+      "xhigh": "Muito alto",
+      "max": "Máximo"
+    },
+    "short": {
+      "low": "baixo",
+      "medium": "médio",
+      "high": "alto",
+      "xhigh": "muito alto",
+      "max": "máx"
+    },
+    "hints": {
+      "low": "rápido e barato",
+      "max": "mais lento e caro"
+    },
+    "modelDefault": "Padrão do modelo",
+    "contextFull": "Janela inteira ({{size}})",
+    "contextUnlimited": "Sem limite",
+    "contextTokens": "{{size}} tokens",
+    "none": "Não usa"
+  },
+  "datePicker": {
+    "none": "Sem data",
+    "clear": "Limpar",
+    "today": "Hoje",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês"
+  }
+}

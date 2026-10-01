@@ -1,0 +1,67 @@
+import { CLI_ENGINE_INFO, CLI_ENGINES, type CliEngine, type Provider } from '@milibot/shared'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { useAppStore } from '@/features/workspace/store'
+
+import { CliProviderCard } from './CliProviderCard'
+
+const getCliInstall = vi.fn()
+
+vi.mock('@/features/providers/api', () => ({
+  getCliInstall: (...args: unknown[]) => getCliInstall(...args),
+  installCli: vi.fn(),
+  checkProvider: vi.fn(),
+  openCliLoginTerminal: vi.fn(),
+  updateProvider: vi.fn(),
+  deleteProvider: vi.fn(),
+}))
+
+const provider = (engine: CliEngine): Provider =>
+  ({
+    id: `prv_${engine}`,
+    type: engine,
+    name: CLI_ENGINE_INFO[engine].displayName,
+    authMode: 'subscription',
+    baseUrl: null,
+    hasSecret: false,
+    isDefault: false,
+  }) as Provider
+
+function show(engine: CliEngine) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={client}>
+      <CliProviderCard provider={provider(engine)} engine={engine} onChanged={() => {}} />
+    </QueryClientProvider>,
+  )
+}
+
+beforeEach(() => {
+  getCliInstall.mockReset()
+  getCliInstall.mockResolvedValue({ version: null, expected: '1.0.0', installing: false, error: null })
+  useAppStore.setState({ workspaceId: 'ws_1', vm: { state: 'running' } as never, bots: {}, cliUsage: {} })
+})
+
+describe('CliProviderCard', () => {
+  it.each(CLI_ENGINES)('words the %s card from its engine info', async (engine) => {
+    const info = CLI_ENGINE_INFO[engine]
+    show(engine)
+    expect(
+      screen.getByText(`Sign in once in the VM's terminal with your ${info.account} account`, {
+        exact: false,
+      }),
+    ).toBeTruthy()
+    expect(screen.getByRole('radio', { name: `${info.account} account` })).toBeTruthy()
+    if (info.needsInstall) {
+      expect(await screen.findByText(`${info.displayName} is not installed in the VM yet`)).toBeTruthy()
+      expect(getCliInstall).toHaveBeenCalledWith('ws_1', engine)
+    } else {
+      expect(getCliInstall).not.toHaveBeenCalled()
+    }
+    fireEvent.click(screen.getByRole('radio', { name: 'API key' }))
+    expect(screen.getByText(`${info.vendor} API key`)).toBeTruthy()
+    expect(screen.getByPlaceholderText(info.keyPlaceholder)).toBeTruthy()
+  })
+})

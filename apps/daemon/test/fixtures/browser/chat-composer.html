@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Portuguese on purpose: a pt-BR page with accented labels, as bots meet on real sites. -->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>geral (canal) - Equipe</title>
+    <style>
+      body {
+        margin: 0;
+        font: 14px sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .messages {
+        flex: 1;
+        overflow: auto;
+        padding: 8px;
+      }
+      .composer {
+        border: 1px solid #ccc;
+        margin: 8px;
+        padding: 8px;
+        position: relative;
+      }
+      .editor {
+        min-height: 22px;
+        outline: none;
+      }
+      .editor:empty::before {
+        content: attr(data-placeholder);
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="messages" role="log" aria-label="Mensagens em geral">
+      <div role="listitem"><b>Ana</b> Bom dia, pessoal!</div>
+      <div role="listitem"><b>Rui</b> Alguém revisou o relatório?</div>
+    </div>
+    <div class="composer">
+      <div
+        class="editor"
+        id="editor"
+        role="textbox"
+        aria-multiline="true"
+        contenteditable="true"
+        aria-labelledby="composer-label"
+        data-placeholder="Enviar mensagem para #geral"
+      ></div>
+      <span id="composer-label" hidden>Mensagem para geral</span>
+      <button aria-label="Enviar agora" id="send">➤</button>
+    </div>
+    <p id="sent" role="status"></p>
+    <script>
+      const editor = document.getElementById('editor')
+      editor.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+          ev.preventDefault()
+          document.getElementById('sent').textContent = 'Enviado: ' + editor.innerText.trim()
+          editor.innerHTML = ''
+        }
+      })
+    </script>
+  </body>
+</html>

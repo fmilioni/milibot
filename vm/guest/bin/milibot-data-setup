@@ -1,0 +1,60 @@
+#!/bin/bash
+# Runs on every boot before local-fs.target: formats the data disk when blank, grows it, and bind mounts
+# /data/home -> /home and /data/workspace -> /workspace.
+set -euo pipefail
+
+DEV_LINK=/dev/disk/by-id/virtio-milidata
+AGENT_UID=1500
+WORKSPACE_GID=1450
+
+udevadm settle --timeout=15 || true
+for _ in $(seq 1 50); do
+  [ -e "$DEV_LINK" ] && break
+  sleep 0.2
+done
+if [ ! -e "$DEV_LINK" ]; then
+  echo "milibot-data: no data disk attached, skipping"
+  exit 0
+fi
+DEV=$(readlink -f "$DEV_LINK")
+
+if ! blkid -p "$DEV" >/dev/null 2>&1; then
+  echo "milibot-data: formatting blank data disk $DEV"
+  mkfs.ext4 -q -F -L MILIDATA -m 0 -E lazy_itable_init=1,lazy_journal_init=1 "$DEV"
+fi
+fstype=$(blkid -p -s TYPE -o value "$DEV" || true)
+if [ "$fstype" != "ext4" ]; then
+  echo "milibot-data: data disk has unexpected filesystem '$fstype', refusing to mount" >&2
+  exit 1
+fi
+
+mkdir -p /data
+if ! mountpoint -q /data; then
+  fsck.ext4 -p "$DEV" || [ $? -le 1 ]
+  mount -o noatime,acl "$DEV" /data
+fi
+resize2fs "$DEV" >/dev/null 2>&1 || true
+
+if [ ! -d /data/home ]; then
+  mkdir -p /data/home.init
+  cp -a /home/. /data/home.init/
+  mv /data/home.init /data/home
+fi
+chmod 755 /data/home
+
+if [ ! -d /data/home/agent ]; then
+  mkdir -p /data/home/agent
+  cp -a /etc/skel/. /data/home/agent/
+  chown -R "$AGENT_UID:$AGENT_UID" /data/home/agent
+  chmod 750 /data/home/agent
+fi
+
+mkdir -p /data/workspace
+chown root:"$WORKSPACE_GID" /data/workspace
+chmod 2775 /data/workspace
+setfacl -m d:g::rwx,d:m::rwx /data/workspace || true
+
+mkdir -p /home /workspace
+mountpoint -q /home || mount --bind /data/home /home
+mountpoint -q /workspace || mount --bind /data/workspace /workspace
+echo "milibot-data: /data mounted from $DEV"

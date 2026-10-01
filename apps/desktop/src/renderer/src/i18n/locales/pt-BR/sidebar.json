@@ -1,0 +1,42 @@
+{
+  "label": "Conversas",
+  "newMenu": "Novo",
+  "newBot": "Novo bot",
+  "newGroup": "Novo grupo",
+  "newSection": "Nova seção",
+  "search": "Buscar bots e grupos",
+  "sections": {
+    "pinned": "Fixados",
+    "bots": "Bots",
+    "groups": "Grupos",
+    "none": "Sem seção"
+  },
+  "noResults": "Nada encontrado",
+  "noMessages": "Nenhuma mensagem ainda",
+  "youPrefix": "Você: {{text}}",
+  "authorPrefix": "{{name}}: {{text}}",
+  "pinned": "Fixado",
+  "unread_one": "{{count}} mensagem não lida",
+  "unread_other": "{{count}} mensagens não lidas",
+  "groupFallback": "Grupo",
+  "dragHint": "Arraste para reordenar ou soltar em outra seção",
+  "emptySection": "Arraste conversas para cá",
+  "collapseSection": "Recolher seção",
+  "expandSection": "Expandir seção",
+  "renameSection": "Renomear seção",
+  "deleteSection": "Excluir seção",
+  "menu": {
+    "label": "Ações da conversa",
+    "pin": "Fixar no topo",
+    "unpin": "Desafixar",
+    "moveTo": "Mover para",
+    "createSection": "Criar seção…",
+    "markUnread": "Marcar como não lido",
+    "customizeAvatar": "Personalizar avatar",
+    "rename": "Renomear",
+    "copyId": "Copiar ID da conversa",
+    "hide": "Ocultar da barra lateral",
+    "delete": "Excluir"
+  },
+  "nav": "Navegação"
+}

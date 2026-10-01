@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Busca de pacotes</title>
+    <style>
+      body {
+        font: 14px sans-serif;
+        margin: 16px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border: 1px solid #ccc;
+        width: 300px;
+      }
+      li[aria-selected='true'] {
+        background: #def;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="q">Pacote</label>
+    <div role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-owns="results" id="box">
+      <input
+        id="q"
+        type="search"
+        aria-autocomplete="list"
+        aria-controls="results"
+        placeholder="Nome do pacote"
+      />
+    </div>
+    <ul id="results" role="listbox" aria-label="Resultados" hidden></ul>
+    <p>Escolhido: <output id="chosen">nenhum</output></p>
+    <script>
+      const pkgs = ['debian-archive-keyring', 'debianutils', 'debconf', 'dbus']
+      const q = document.getElementById('q')
+      const box = document.getElementById('box')
+      const list = document.getElementById('results')
+      q.addEventListener('input', () => {
+        const hits = pkgs.filter((p) => p.startsWith(q.value.trim()))
+        list.innerHTML = hits
+          .map((p, i) => '<li role="option" aria-selected="' + (i === 0) + '">' + p + '</li>')
+          .join('')
+        list.hidden = !q.value || hits.length === 0
+        box.setAttribute('aria-expanded', String(!list.hidden))
+      })
+      q.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Enter') return
+        const sel = list.querySelector('[aria-selected=true]')
+        if (sel) {
+          document.getElementById('chosen').textContent = sel.textContent
+          q.value = sel.textContent
+          list.hidden = true
+        }
+      })
+    </script>
+  </body>
+</html>

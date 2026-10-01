@@ -1,0 +1,84 @@
+{
+  "helpersRunning_one": "Helper working",
+  "helpersRunning_other": "{{count}} helpers working",
+  "notFound": "This session no longer exists.",
+  "backToChat": "Back to the chat",
+  "backTo": "Back to {{name}}",
+  "conversation": "Session conversation",
+  "panel": "Plan and changes",
+  "resize": "Resize the panel",
+  "tabs": {
+    "plan": "Plan",
+    "changes": "Changes"
+  },
+  "stop": "Stop session",
+  "stopping": "Stopping…",
+  "stopHint": "Stops the work and ends the session. The bot stays available in the chat.",
+  "menu": "Session options",
+  "copyWhere": "Copy {{value}}",
+  "copyFolder": "Copy folder path",
+  "copyBranch": "Copy branch name",
+  "delete": "Delete session",
+  "deleteRunning": "Delete (stop the session first)",
+  "deleteTitle": "Delete work session?",
+  "deleteBody": "The conversation of “{{title}}” and its history leave the app. The files in the virtual machine and the branch stay there.",
+  "deleteConfirm": "Delete",
+  "plan": {
+    "result": "Result",
+    "planSteps": "Plan steps",
+    "steps": "Steps",
+    "noSteps": "The bot listed no steps in this session.",
+    "noStepsYet": "The bot has not listed its steps yet. They show up here once it starts.",
+    "goal": "Goal"
+  },
+  "changes": {
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "refresh": "Refresh",
+    "loadFailed": "Could not read the changes.",
+    "empty": "No files changed yet.",
+    "filter": "Filter files",
+    "noMatch": "No file with that name.",
+    "renamedFrom": "renamed from {{path}}",
+    "binary": "binary",
+    "status": {
+      "added": "New",
+      "modified": "Modified",
+      "deleted": "Deleted",
+      "renamed": "Renamed"
+    },
+    "unavailable": {
+      "no_baseline": "Changes show up once the virtual machine is on and the session has prepared its folder.",
+      "vm_not_running": "Turn on the virtual machine to see the changes.",
+      "too_large": "This session’s folder is too large to follow its changes (over 20 thousand files or 200 MB).",
+      "failed": "Could not read the changes right now."
+    }
+  },
+  "diff": {
+    "add": "Added line",
+    "del": "Removed line",
+    "noNewline": "no newline at end of file",
+    "noTextChanges": "No text differences in this file.",
+    "truncated": "The file is too large: only the start of the differences shows here.",
+    "binary": "Binary file: its differences cannot be shown.",
+    "imageBefore": "Before",
+    "imageAfter": "After",
+    "imageMeta": "{{width}}×{{height}} · {{size}}",
+    "imageTooLarge": "Image too large to preview ({{size}}).",
+    "imageLoadFailed": "Could not open the image.",
+    "imageBackdropLight": "Show on a light background",
+    "imageBackdropDark": "Show on a dark background",
+    "loadFailed": "Could not open this file’s differences.",
+    "mode": {
+      "split": "Side by side",
+      "unified": "Unified"
+    }
+  },
+  "settings": {
+    "subtitle": "Long work the bots do alongside the chat: follow the steps and what changed in each one.",
+    "empty": "No sessions yet. Bots open one when the work is large (a change across many files, for example) or when you approve a plan to run in a session.",
+    "emptyFiltered": "No sessions with these filters.",
+    "updated": "Updated {{when}}"
+  },
+  "modelBadge": "This session's model"
+}

@@ -1,0 +1,32 @@
+{
+  "nav": "Designs",
+  "title": "Designs",
+  "search": "Buscar designs",
+  "filters": {
+    "active": "Ativos",
+    "archived": "Arquivados"
+  },
+  "empty": {
+    "title": "Nenhum design ainda",
+    "hint": "Peça a um bot para criar telas, um site ou uma identidade visual. Os designs que ele fizer aparecem aqui."
+  },
+  "goToChat": "Ir para a conversa",
+  "subtitle": "Telas, sites e identidades visuais que os bots desenharam. Clique para abrir no canvas.",
+  "total_one": "{{count}} design · {{frames}}",
+  "total_other": "{{count}} designs · {{frames}}",
+  "openCanvas": "Abrir no canvas",
+  "emptyFilter": {
+    "active": {
+      "title": "Nenhum design ativo",
+      "hint": "Os designs que você arquivou continuam na aba Arquivados."
+    },
+    "archived": {
+      "title": "Nenhum design arquivado",
+      "hint": "Arquive um design para tirá-lo da vista dos bots sem apagá-lo."
+    }
+  },
+  "emptySearch": {
+    "title": "Nenhum design encontrado",
+    "hint": "Tente outro nome ou limpe a busca."
+  }
+}

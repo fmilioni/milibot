@@ -1,0 +1,57 @@
+{
+  "nav": "Files",
+  "title": "Files",
+  "search": "Search files",
+  "filters": {
+    "label": "Where files come from",
+    "all": "All",
+    "bots": "From bots",
+    "user": "Sent by you"
+  },
+  "empty": {
+    "title": "No files yet",
+    "hint": "Files you attach in conversations and the ones bots send you are kept here, stored in the VM."
+  },
+  "more": "Load more",
+  "fromYou": "You",
+  "fromBot": "Bot",
+  "open": "Open",
+  "goToChat": "Go to the conversation",
+  "moreOptions": "More options for “{{name}}”",
+  "rename": {
+    "action": "Rename",
+    "title": "Rename file",
+    "label": "File name",
+    "taken": "A file with this name already exists in that folder."
+  },
+  "delete": {
+    "action": "Delete",
+    "title": "Delete “{{name}}”?",
+    "description": "The file is erased from the VM and leaves this list; the conversation shows it as removed. This cannot be undone.",
+    "confirm": "Delete",
+    "failed": "Could not delete it. Check that the VM is on and try again."
+  },
+  "subtitle": "Everything you and the bots sent in conversations. Files stay in the VM and come to your computer when you download them.",
+  "total_one": "{{count}} file · {{size}} in the VM",
+  "total_other": "{{count}} files · {{size}} in the VM",
+  "groups": {
+    "week": "Last 7 days"
+  },
+  "columns": {
+    "name": "Name",
+    "sender": "Sent by",
+    "chat": "Conversation",
+    "size": "Size",
+    "when": "When"
+  },
+  "emptySource": {
+    "all": "No files yet",
+    "bots": "No files from the bots yet",
+    "user": "You have not sent any files yet",
+    "hint": "Files show up here as soon as someone sends one in a conversation."
+  },
+  "emptySearch": {
+    "title": "No files found",
+    "hint": "Try another name or clear the search."
+  }
+}

@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { whpxUsable, type Workspace, type WorkspaceSummary } from '@milibot/shared'
+import { type VmState, whpxUsable, type Workspace, type WorkspaceSummary } from '@milibot/shared'
 import type { FastifyInstance } from 'fastify'
 
 import { type DaemonConfig, readDaemonConfig } from '../config/env'
@@ -24,7 +24,7 @@ import { selectAutoStart } from './autostart'
 import { SharedEmbeddingModels } from './embedding-models'
 import { EventHub } from './event-hub'
 import { type AppHandlers, createHttpApp, generateToken, registerRoutes } from './http'
-import { workspaceOverview } from './overview'
+import { probeVmState, workspaceOverview } from './overview'
 import { type RuntimeLauncher, RuntimeManager } from './runtime-manager'
 import { createWorkspaceHandlers } from './workspace-handlers'
 
@@ -72,9 +72,13 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
   const app = createHttpApp({ token, logLevel: config.logLevel, logRequests: config.logRequests })
   const startedAt = Date.now()
 
+  /** The last `vm.status` of each workspace whose runtime is up. */
+  const vmStates = new Map<string, VmState>()
+
   const summarize = (workspace: Workspace): WorkspaceSummary => ({
     ...workspace,
     runtimeStatus: runtimes.status(workspace.id),
+    vmState: vmStates.get(workspace.id) ?? probeVmState(workspace),
   })
 
   const embeddingModels = new SharedEmbeddingModels({
@@ -89,10 +93,17 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
     calls: runtimeCalls,
     onEvent: (workspaceId, event) => {
       hub.publishWorkspace(workspaceId, event)
-      if (event.type === 'vm.status') watchPortConflict(workspaceId, event.payload.vm.errorCode)
+      if (event.type !== 'vm.status') return
+      watchPortConflict(workspaceId, event.payload.vm.errorCode)
+      const { state } = event.payload.vm
+      if (vmStates.get(workspaceId) === state) return
+      vmStates.set(workspaceId, state)
+      const workspace = store.findWorkspace(workspaceId)
+      if (workspace) publishWorkspace(workspace)
     },
     onStatus: (workspaceId, status) => {
       if (status === 'running') store.setLastRunning(workspaceId, true)
+      if (status === 'stopped' || status === 'crashed') vmStates.delete(workspaceId)
       hub.publishWorkspace(workspaceId, { type: 'runtime.status', payload: { status } })
       const workspace = store.findWorkspace(workspaceId)
       if (workspace) publishWorkspace(workspace)

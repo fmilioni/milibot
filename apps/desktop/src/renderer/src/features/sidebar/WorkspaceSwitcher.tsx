@@ -1,4 +1,4 @@
-import type { WorkspaceSummary } from '@milibot/shared'
+import type { VmState, WorkspaceSummary } from '@milibot/shared'
 import { AppWindow, Check, ChevronsUpDown, ExternalLink, Plus, Settings2, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -172,15 +172,13 @@ function WorkspaceRow({
     const vmText = t(`workspace.vmState.${state}`)
     statusText =
       busyBots > 0 ? `${vmText}${META_SEPARATOR}${t('workspace.botsWorking', { count: busyBots })}` : vmText
-    dot = state === 'running' ? 'bg-success' : state === 'error' ? 'bg-danger' : 'bg-fg-muted'
+    dot = vmDot(state)
+  } else if (workspace.runtimeStatus === 'crashed') {
+    statusText = t('workspace.runtimeCrashed')
+    dot = 'bg-danger'
   } else {
-    statusText = t(`workspace.runtime.${workspace.runtimeStatus}`)
-    dot =
-      workspace.runtimeStatus === 'running'
-        ? 'bg-success'
-        : workspace.runtimeStatus === 'crashed'
-          ? 'bg-danger'
-          : 'bg-fg-muted'
+    statusText = t(`workspace.vmState.${workspace.vmState}`)
+    dot = vmDot(workspace.vmState)
   }
 
   return (
@@ -229,6 +227,10 @@ function WorkspaceRow({
       )}
     </div>
   )
+}
+
+function vmDot(state: VmState): string {
+  return state === 'running' ? 'bg-success' : state === 'error' ? 'bg-danger' : 'bg-fg-muted'
 }
 
 function MenuRow({

@@ -50,6 +50,6 @@
     "electron-vite": "^5.0.0",
     "happy-dom": "^20.14.5",
     "tailwindcss": "^4.3.3",
-    "vite": "^7.3.6"
+    "vite": "^8.3.1"
   }
 }

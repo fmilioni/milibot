@@ -17,30 +17,44 @@ function qemuPidFileAlive(pidFile: string): boolean {
   }
 }
 
+function readVmConfigFile(file: string): Partial<VmConfigFile> | null {
+  try {
+    const parsed = VmConfigFile.partial().safeParse(JSON.parse(readFileSync(file, 'utf8')))
+    return parsed.success ? parsed.data : {}
+  } catch {
+    return null
+  }
+}
+
+function vmStateOf(config: Partial<VmConfigFile> | null, qemuPid: string): WorkspaceOverview['vmState'] {
+  if (config === null) return 'not_created'
+  return qemuPidFileAlive(qemuPid) ? 'running' : 'stopped'
+}
+
+/** The VM state of a workspace without a runtime to ask, from its files. */
+export function probeVmState(workspace: Workspace): WorkspaceOverview['vmState'] {
+  const paths = workspacePaths(workspace.dir)
+  return vmStateOf(readVmConfigFile(paths.vmConfig), paths.qemuPid)
+}
+
 /**
  * Reads what the settings screen lists for a workspace straight from its files: the VM config and
  * disks, and bot/group counts from `workspace.db` (read-only; the runtime may hold it open in WAL).
  */
 export function workspaceOverview(workspace: Workspace): WorkspaceOverview {
   const paths = workspacePaths(workspace.dir)
-  let config: Partial<VmConfigFile> | null
-  try {
-    const parsed = VmConfigFile.partial().safeParse(JSON.parse(readFileSync(paths.vmConfig, 'utf8')))
-    config = parsed.success ? parsed.data : {}
-  } catch {
-    config = null
-  }
+  const config = readVmConfigFile(paths.vmConfig)
   const disks = [paths.systemDisk, paths.dataDisk].map(diskBytes)
   const counts = workspaceCounts(paths.db)
-  const running = config !== null && qemuPidFileAlive(paths.qemuPid)
+  const vmState = vmStateOf(config, paths.qemuPid)
   return {
     id: workspace.id,
-    vmState: config === null ? 'not_created' : running ? 'running' : 'stopped',
+    vmState,
     cpus: config?.cpus ?? null,
     memGb: config?.memGb ?? null,
     dataGb: config?.dataGb ?? null,
     diskUsedBytes: disks.some((d) => d !== null) ? disks.reduce<number>((sum, d) => sum + (d ?? 0), 0) : null,
     ...counts,
-    workingBots: running ? counts.workingBots : 0,
+    workingBots: vmState === 'running' ? counts.workingBots : 0,
   }
 }

@@ -18,10 +18,5 @@
     "suspended": "VM suspensa",
     "error": "VM com erro"
   },
-  "runtime": {
-    "stopped": "Fechado",
-    "starting": "Abrindo",
-    "running": "Ativo em segundo plano",
-    "crashed": "Parou de responder"
-  }
+  "runtimeCrashed": "Parou de responder"
 }

@@ -32,6 +32,8 @@ export type Workspace = z.infer<typeof Workspace>
 
 export const WorkspaceSummary = Workspace.extend({
   runtimeStatus: RuntimeStatus,
+  /** The running runtime's last `vm.status`; otherwise read from the workspace's files. */
+  vmState: VmState,
 })
 export type WorkspaceSummary = z.infer<typeof WorkspaceSummary>
 

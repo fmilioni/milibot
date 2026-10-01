@@ -34,6 +34,8 @@
     "iconHint": "Letra ou emoji do ícone",
     "iconReset": "Usar a inicial",
     "behavior": "Comportamento",
+    "vmAutostart": "Ligar a VM ao abrir",
+    "vmAutostartHint": "Desligado, a VM só liga quando você mandar",
     "closeLabel": "Ao fechar a última janela",
     "closeHint": "O que acontece com a VM e os bots deste workspace",
     "close": {

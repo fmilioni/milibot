@@ -33,6 +33,7 @@ export const PREFERENCE_SETTING_KEYS = {
   routinesCatchUp: 'routines.catch_up',
   promptUpdates: 'prompts.update_mode',
   legacyOffice: 'office.legacy_formats',
+  vmAutostart: 'vm.autostart',
   userLanguage: 'user.language',
 } as const
 

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { createAgentHost } from '@milibot/agent'
 import { FakeProvider } from '@milibot/agent/testing'
+import { PREFERENCE_SETTING_KEYS } from '@milibot/shared'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { readRuntimeConfig } from '../../src/config/env'
@@ -67,6 +68,16 @@ describe('a runtime built from its environment', () => {
     expect(proc.vm.info().state).not.toBe('running')
     proc.opened()
     await until(() => proc.vm.info().state === 'running', 8000)
+  })
+
+  it('leaves the VM off on start and open when the workspace turned autostart off', async () => {
+    const { proc, cli } = start({ [RUNTIME_ENV.background]: '1' })
+    proc.runtime.store.settings.set(PREFERENCE_SETTING_KEYS.vmAutostart, false)
+    await proc.start()
+    proc.opened()
+    await new Promise((r) => setTimeout(r, 50))
+    expect(proc.vm.info().state).not.toBe('running')
+    expect(cli.calls).toEqual([])
   })
 
   it('runs without a VM when it is disabled', async () => {

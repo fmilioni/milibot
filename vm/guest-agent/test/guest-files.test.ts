@@ -28,6 +28,7 @@ describe('embedded guest files', () => {
   it('are the executable scripts of vm/guest/bin', () => {
     expect(CLI_WRAPPER).toBe(source('cli-wrapper'))
     expect(guestFile('/usr/local/bin/codex').content).toBe(CLI_WRAPPER)
+    expect(guestFile('/usr/local/bin/agy').content).toBe(CLI_WRAPPER)
     expect(guestFile('/usr/local/bin/gh').content).toBe(source('gh'))
     expect(guestFile('/usr/local/bin/milibot-browser').content).toBe(source('milibot-browser'))
     expect(guestFile('/opt/milibot/bin/milibot-desktop-session').content).toBe(
@@ -73,7 +74,12 @@ describe('ensureGuestFile', () => {
 })
 
 /** The wrapper with its lib dir moved to a temp dir, `id` and `exec` stubbed: prints the argv it would exec. */
-function runCli(name: 'claude' | 'codex', user: string, args: string[], env: Record<string, string> = {}) {
+function runCli(
+  name: 'claude' | 'codex' | 'agy',
+  user: string,
+  args: string[],
+  env: Record<string, string> = {},
+) {
   const lib = mkdtempSync(join(TMP, 'lib-'))
   writeFileSync(join(lib, `${name}-real`), '')
   const script = CLI_WRAPPER.replaceAll('/usr/local/lib/milibot', lib)
@@ -86,7 +92,7 @@ function runCli(name: 'claude' | 'codex', user: string, args: string[], env: Rec
   return { argv: out.split('\n').slice(0, -1), real: join(lib, `${name}-real`) }
 }
 
-describe('CLI wrapper (claude, codex)', () => {
+describe('CLI wrapper (claude, codex, agy)', () => {
   it('runs the real binary directly for agent (the daemon never goes through sudo)', () => {
     const { argv, real } = runCli('claude', 'agent', ['-p', '--verbose', 'a b'])
     expect(argv).toEqual([real, '-p', '--verbose', 'a b'])
@@ -118,6 +124,24 @@ describe('CLI wrapper (claude, codex)', () => {
       { encoding: 'utf8' },
     )
     expect(direct.stdout.trim()).toBe('/home/agent/.codex')
+  })
+
+  it('runs agy without a session bus, so its login is the same file for every process', () => {
+    const run = (name: 'agy' | 'claude') =>
+      spawnSync(
+        'bash',
+        [
+          '-c',
+          `exec() { echo "\${DBUS_SESSION_BUS_ADDRESS:-none}"; exit 0; }\nid() { echo agent; }\n${runnable(name)}`,
+          name,
+        ],
+        {
+          encoding: 'utf8',
+          env: { PATH: process.env.PATH ?? '/usr/bin:/bin', DBUS_SESSION_BUS_ADDRESS: 'unix:x' },
+        },
+      ).stdout.trim()
+    expect(run('agy')).toBe('none')
+    expect(run('claude')).toBe('unix:x')
   })
 
   it('starts in the caller directory when agent can enter it, else in /workspace', () => {

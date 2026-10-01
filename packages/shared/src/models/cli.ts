@@ -1,13 +1,14 @@
 import { z } from 'zod'
 
 import { endpoint } from '../http/endpoint'
+import { ANTIGRAVITY_MODELS } from './antigravity'
 import { CLAUDE_CODE_MODELS } from './claude-code'
 import { CODEX_MODELS } from './codex'
 import type { ProviderType } from './providers'
 import type { ReasoningEffort } from './reasoning'
 
 /** Providers whose bots run as a coding CLI inside the VM (one process per lane) instead of the native loop. */
-export const CLI_ENGINES = ['claude_code', 'codex'] as const satisfies readonly ProviderType[]
+export const CLI_ENGINES = ['claude_code', 'codex', 'antigravity'] as const satisfies readonly ProviderType[]
 export type CliEngine = (typeof CLI_ENGINES)[number]
 
 export function isCliEngine(type: string | null | undefined): type is CliEngine {
@@ -88,6 +89,21 @@ export const CLI_ENGINE_INFO: Record<CliEngine, CliEngineInfo> = {
     subscriptionImages: true,
     compactSystemPrompt: false,
   },
+  antigravity: {
+    displayName: 'Antigravity',
+    account: 'Google',
+    vendor: 'Google',
+    keyPlaceholder: 'AIza…',
+    loginOption: 'Google OAuth',
+    models: ANTIGRAVITY_MODELS,
+    defaultModel: 'gemini-3.8-flash',
+    lightModel: 'gemini-3.8-flash',
+    authModes: ['subscription'],
+    needsInstall: true,
+    detectsWrongAccount: false,
+    subscriptionImages: true,
+    compactSystemPrompt: false,
+  },
 }
 
 /** A model of the engine's catalog (the default one when unset); Claude Code's `[1m]` suffix is ignored. */
@@ -106,7 +122,10 @@ export const CliUsageWindow = z.object({
 })
 export type CliUsageWindow = z.infer<typeof CliUsageWindow>
 
-/** Latest subscription quota of a CLI provider: Claude Code's `rate_limit_event`, Codex's rate limits. */
+/**
+ * Latest subscription quota of a CLI provider: Claude Code's `rate_limit_event`, Codex's rate limits,
+ * Antigravity's `/usage` buckets.
+ */
 export const CliUsage = z.object({
   providerId: z.string(),
   engine: z.enum(CLI_ENGINES),

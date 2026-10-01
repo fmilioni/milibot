@@ -109,17 +109,19 @@ export function CliProviderCard({
         <ProviderMenu provider={provider} onChanged={onChanged} />
       </div>
       {info.needsInstall && <CliInstallLine engine={engine} vmRunning={vmState === 'running'} />}
-      <div className="w-fit">
-        <Segmented
-          label={t('settings.providers.cli.auth', params)}
-          value={mode}
-          options={info.authModes.map((value) => ({ value, label: authModeLabel(value) }))}
-          onChange={(next) => {
-            setMode(next)
-            if (next === 'subscription') void save({ authMode: next })
-          }}
-        />
-      </div>
+      {info.authModes.length > 1 && (
+        <div className="w-fit">
+          <Segmented
+            label={t('settings.providers.cli.auth', params)}
+            value={mode}
+            options={info.authModes.map((value) => ({ value, label: authModeLabel(value) }))}
+            onChange={(next) => {
+              setMode(next)
+              if (next === 'subscription') void save({ authMode: next })
+            }}
+          />
+        </div>
+      )}
       {mode === 'subscription' ? (
         <div className="flex flex-wrap items-center gap-2">
           {connected ? (

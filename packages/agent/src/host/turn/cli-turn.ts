@@ -144,6 +144,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         ...(session ? { cwd: session.cwd } : {}),
         startup: this.startup(engine, bot, turn, where),
         externalMcp: external,
+        mcpTools: prompt.mcpTools,
       },
       input,
       {

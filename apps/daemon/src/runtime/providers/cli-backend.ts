@@ -1,10 +1,17 @@
-import { CLI_PROC_LABEL_PREFIXES, cliKeys, type GuestCliBackend, KILL_GRACE_MS } from '@milibot/agent/cli'
-import { type CliEngine, CliUsage, type LogFn, type WorkspaceEvent } from '@milibot/shared'
+import {
+  CLI_ENGINE_DRIVERS,
+  CLI_PROC_LABEL_PREFIXES,
+  cliKeys,
+  type GuestCliBackend,
+  KILL_GRACE_MS,
+} from '@milibot/agent/cli'
+import { type CliEngine, CliUsage, isCliEngine, type LogFn, type WorkspaceEvent } from '@milibot/shared'
 
 import { errorMessage } from '../../errors'
 import type { McpToolServer } from '../mcp-server'
 import type { GuestClient, VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
+import { cliEngineHost } from './cli-engines'
 import { CliPlanTracker, readCliPlan } from './cli-plan'
 import type { ProviderStore } from './store'
 
@@ -96,7 +103,7 @@ export function createCliBackend(deps: {
         await vm.guest()
       ).exec({
         user: 'agent',
-        cmd: 'umask 077 && mkdir -p "$HOME/.milibot" && cat > "$HOME/.milibot/$FILE_NAME" && printf %s "$HOME/.milibot/$FILE_NAME"',
+        cmd: 'umask 077 && f="$HOME/.milibot/$FILE_NAME" && mkdir -p "${f%/*}" && cat > "$f" && printf %s "$f"',
         env: { FILE_NAME: name },
         stdin: content,
         timeoutMs: 15_000,
@@ -120,6 +127,10 @@ export function createCliPlanTracker(deps: {
   log: LogFn
 }): CliPlanTracker {
   const { vm, store, providers, emit } = deps
+  const loadUsage = (providerId: string): CliUsage | null => {
+    const parsed = CliUsage.safeParse(store.settings.get<unknown>(USAGE_KEY(providerId), null))
+    return parsed.success ? parsed.data : null
+  }
   return new CliPlanTracker({
     now: deps.now,
     readPlan: async (providerId) =>
@@ -128,9 +139,29 @@ export function createCliPlanTracker(deps: {
         const guest = vm.status().state === 'starting' ? await vm.guest() : vm.runningGuest()
         return guest.exec({ user: 'agent', cmd, timeoutMs: 30_000 })
       }),
-    loadUsage: (providerId) => {
-      const parsed = CliUsage.safeParse(store.settings.get<unknown>(USAGE_KEY(providerId), null))
-      return parsed.success ? parsed.data : null
+    loadUsage,
+    readQuota: async (providerId) => {
+      const provider = await providers.get(providerId)
+      const quota = cliEngineHost(provider.type)?.quota
+      if (
+        !quota ||
+        !isCliEngine(provider.type) ||
+        (provider.authMode && provider.authMode !== 'subscription')
+      )
+        return undefined
+      if (vm.status().state !== 'running') return null
+      const result = await vm.runningGuest().exec({ user: 'agent', cmd: quota.command, timeoutMs: 45_000 })
+      const update = quota.parse(result.stdout)
+      if (update === null) return null
+      const merged = CLI_ENGINE_DRIVERS[provider.type].mergeQuota(
+        loadUsage(providerId),
+        providerId,
+        update,
+        deps.now(),
+      )
+      if (!merged) return null
+      const { providerId: _id, plan: _plan, updatedAt: _at, ...info } = merged
+      return info
     },
     saveUsage: (usage) => {
       store.settings.set(USAGE_KEY(usage.providerId), usage)

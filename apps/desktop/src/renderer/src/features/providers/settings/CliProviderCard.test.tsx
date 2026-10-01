@@ -53,13 +53,16 @@ describe('CliProviderCard', () => {
         exact: false,
       }),
     ).toBeTruthy()
-    expect(screen.getByRole('radio', { name: `${info.account} account` })).toBeTruthy()
+    if (info.authModes.length > 1)
+      expect(screen.getByRole('radio', { name: `${info.account} account` })).toBeTruthy()
+    else expect(screen.queryByRole('radio')).toBeNull()
     if (info.needsInstall) {
       expect(await screen.findByText(`${info.displayName} is not installed in the VM yet`)).toBeTruthy()
       expect(getCliInstall).toHaveBeenCalledWith('ws_1', engine)
     } else {
       expect(getCliInstall).not.toHaveBeenCalled()
     }
+    if (!info.authModes.includes('api_key')) return
     fireEvent.click(screen.getByRole('radio', { name: 'API key' }))
     expect(screen.getByText(`${info.vendor} API key`)).toBeTruthy()
     expect(screen.getByPlaceholderText(info.keyPlaceholder)).toBeTruthy()

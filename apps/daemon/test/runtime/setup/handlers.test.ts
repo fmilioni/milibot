@@ -56,7 +56,7 @@ describe('setup runtime', () => {
     await handlers.finishSetup(noArgs)
     expect(store.settings.get(SETUP_PENDING_KEY, true)).toBe(false)
     expect(introduceFirstBot).toHaveBeenCalledTimes(1)
-    expect(killProcs.mock.calls).toEqual([['login:claude'], ['login:codex']])
+    expect(killProcs.mock.calls).toEqual([['login:claude'], ['login:codex'], ['login:agy']])
   })
 
   it('validates an OpenRouter key and reports its credit', async () => {

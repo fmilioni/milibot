@@ -114,6 +114,7 @@
       "notLoggedIn": "O {{engine}} ainda não está conectado na VM",
       "keyLabel": "Chave de API da {{vendor}}",
       "missing": "O {{engine}} roda dentro da VM, com a sua conta {{account}} ou uma chave de API da {{vendor}}.",
+      "missingAccount": "O {{engine}} roda dentro da VM, com a sua conta {{account}}.",
       "add": "Adicionar {{engine}}",
       "installing": "Instalando o {{engine}} na VM…",
       "notInstalled": "O {{engine}} ainda não está instalado na VM",
@@ -131,6 +132,9 @@
       },
       "codex": {
         "note": "Usa a cota do Codex do seu plano do ChatGPT; muitos bots 24/7 podem esgotá-la. Com chave de API você paga a OpenAI pelo uso."
+      },
+      "antigravity": {
+        "note": "Usa a cota do Antigravity do seu plano Google AI, dividida entre o Gemini e os outros modelos que ele oferece; muitos bots 24/7 podem esgotá-la. Também gera imagens pelo plano."
       }
     },
     "form": {

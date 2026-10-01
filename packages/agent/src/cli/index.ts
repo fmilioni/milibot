@@ -1,3 +1,7 @@
+export { ANTIGRAVITY_IMAGE_MODEL, antigravityGenerateImages } from '../antigravity/images'
+export { ANTIGRAVITY_AGENTS_DIR } from '../antigravity/profile'
+export { ANTIGRAVITY_TOOLS } from '../antigravity/tools'
+export { ANTIGRAVITY_USAGE_CMD, parseAntigravityUsage } from '../antigravity/usage'
 export { HIDDEN_CLAUDE_CODE_TOOLS } from '../claude-code/tools'
 export { CODEX_IMAGE_MODEL, codexGenerateImages } from '../codex/images'
 export { CODEX_TOOLS } from '../codex/items'

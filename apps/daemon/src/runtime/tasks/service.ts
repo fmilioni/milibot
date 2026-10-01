@@ -1,5 +1,5 @@
 import type { NewAgentMessage, ToolCallFinish, ToolCallStart } from '@milibot/agent'
-import { CODEX_TOOLS } from '@milibot/agent/cli'
+import { ANTIGRAVITY_TOOLS, CODEX_TOOLS } from '@milibot/agent/cli'
 import {
   type Bot,
   type ExecResult,
@@ -23,8 +23,8 @@ import {
 
 export type TaskCard = Omit<TaskPayload, 'type'>
 
-/** Shell tools whose commands are checked for `gh pr …` (the bash tool, Claude Code's Bash, Codex's shell). */
-const SHELL_TOOLS = new Set<string>(['bash', 'Bash', CODEX_TOOLS.exec])
+/** Shell tools whose commands are checked for `gh pr …` (the bash tool and the CLI engines' shells). */
+const SHELL_TOOLS = new Set<string>(['bash', 'Bash', CODEX_TOOLS.exec, ANTIGRAVITY_TOOLS.command])
 
 export const STATUS_WORDS: Record<TaskStatus, string> = {
   open: 'open',

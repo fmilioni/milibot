@@ -1,7 +1,7 @@
 #!/bin/bash
 # milibot-cli-wrapper
-# Installed as /usr/local/bin/claude and /usr/local/bin/codex: the CLI always runs as agent, whose login in
-# /home/agent is the one the bots use.
+# Installed as /usr/local/bin/claude, /usr/local/bin/codex and /usr/local/bin/agy: the CLI always runs as agent,
+# whose login in /home/agent is the one the bots use.
 name=${0##*/}
 real=/usr/local/lib/milibot/$name-real
 vars=()
@@ -9,6 +9,9 @@ if [ "$name" = codex ]; then
   export CODEX_HOME=/home/agent/.codex
   vars+=(CODEX_HOME="$CODEX_HOME")
 fi
+# Without a session bus agy keeps its login in a file: the same one for the desktop's terminal and the bots'
+# processes, which have no bus.
+[ "$name" = agy ] && unset DBUS_SESSION_BUS_ADDRESS
 if [ ! -e "$real" ]; then
   echo "$name is not installed in this VM" >&2
   exit 127

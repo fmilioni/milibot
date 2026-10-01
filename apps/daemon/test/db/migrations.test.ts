@@ -69,10 +69,11 @@ describe('migrations', () => {
 
   it('refuses a database whose tables differ from its version, naming the file to delete', () => {
     const db = openDatabase(':memory:')
-    migrate(db, workspaceMigrations)
-    expect(() => assertSchemaMatchesVersion(db, workspaceMigrations, 'ws.db')).not.toThrow()
+    const baseline = workspaceMigrations.slice(0, 1)
+    migrate(db, baseline)
+    expect(() => assertSchemaMatchesVersion(db, baseline, 'ws.db')).not.toThrow()
     db.exec('ALTER TABLE bots ADD COLUMN stale INTEGER')
-    expect(() => assertSchemaMatchesVersion(db, workspaceMigrations, 'ws.db')).toThrow(
+    expect(() => assertSchemaMatchesVersion(db, baseline, 'ws.db')).toThrow(
       /ws\.db was migrated by another draft of migration 1 \(unexpected bots\.stale\)\. Delete ws\.db$/,
     )
   })

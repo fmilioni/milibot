@@ -1,4 +1,4 @@
-import { CLI_ENGINES, type CliEngine, isCliEngine } from '@milibot/shared'
+import { CLI_ENGINE_INFO, CLI_ENGINES, type CliEngine, isCliEngine } from '@milibot/shared'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -99,7 +99,12 @@ export function ProvidersSettings() {
                     className="flex items-center gap-3 rounded-xl border border-dashed border-border px-3.5 py-3"
                   >
                     <span className="min-w-0 flex-1 text-base text-fg-secondary">
-                      {t('settings.providers.cli.missing', cliTextParams(engine))}
+                      {t(
+                        CLI_ENGINE_INFO[engine].authModes.length > 1
+                          ? 'settings.providers.cli.missing'
+                          : 'settings.providers.cli.missingAccount',
+                        cliTextParams(engine),
+                      )}
                     </span>
                     <Button size="sm" disabled={addCli.busy} onClick={() => void addCli.run(engine)}>
                       <Plus size={13} />

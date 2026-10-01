@@ -114,6 +114,7 @@
       "notLoggedIn": "{{engine}} is not signed in inside the VM yet",
       "keyLabel": "{{vendor}} API key",
       "missing": "{{engine}} runs inside the VM, with your {{account}} account or a {{vendor}} API key.",
+      "missingAccount": "{{engine}} runs inside the VM, with your {{account}} account.",
       "add": "Add {{engine}}",
       "installing": "Installing {{engine}} in the VM…",
       "notInstalled": "{{engine}} is not installed in the VM yet",
@@ -131,6 +132,9 @@
       },
       "codex": {
         "note": "Uses the Codex quota of your ChatGPT plan; many bots running 24/7 can use it up. With an API key you pay OpenAI for what you use."
+      },
+      "antigravity": {
+        "note": "Uses the Antigravity quota of your Google AI plan, shared by Gemini and the other models it offers; many bots running 24/7 can use it up. It also draws pictures with the plan."
       }
     },
     "form": {

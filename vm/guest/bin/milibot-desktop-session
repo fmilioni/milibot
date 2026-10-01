@@ -25,6 +25,7 @@ XVNC=$(command -v Xtigervnc || command -v Xvnc)
   -SecurityTypes None \
   -AcceptSetDesktopSize=0 \
   -AlwaysShared \
+  -SendPrimary=0 \
   -auth "$XAUTHORITY" \
   -nolisten tcp \
   -desktop "$SLUG" \

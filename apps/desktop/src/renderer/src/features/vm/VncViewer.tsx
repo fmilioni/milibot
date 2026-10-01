@@ -30,7 +30,8 @@ const RETRY_MS = [500, 1000, 2000, 4000, 8000]
 
 /**
  * noVNC canvas scaled to fit (the guest is always 1280×800). The WebSocket goes to the main-process
- * bridge, which dials the bot's loopback VNC port with a per-window ticket.
+ * bridge, which dials the bot's loopback VNC port with a per-window ticket. While interactive, what is
+ * copied in the VM goes to the host clipboard.
  */
 export function VncViewer({
   workspaceId,
@@ -74,6 +75,11 @@ export function VncViewer({
       rfb.addEventListener('connect', () => {
         attempt = 0
         reportStatus('connected')
+      })
+      // Focus check: a bot copying while the user is in another app never overwrites the host clipboard.
+      rfb.addEventListener('clipboard', (event) => {
+        const { text } = event.detail
+        if (text && document.hasFocus()) void navigator.clipboard.writeText(text).catch(() => {})
       })
       rfb.addEventListener('disconnect', () => {
         if (rfbRef.current === rfb) rfbRef.current = null

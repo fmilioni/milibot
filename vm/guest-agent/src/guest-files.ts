@@ -4,6 +4,7 @@ import { dirname } from 'node:path'
 import cliWrapper from '../../guest/bin/cli-wrapper?raw'
 import ghWrapper from '../../guest/bin/gh?raw'
 import browserLauncher from '../../guest/bin/milibot-browser?raw'
+import desktopSession from '../../guest/bin/milibot-desktop-session?raw'
 
 export interface GuestFile {
   path: string
@@ -22,6 +23,7 @@ export const GUEST_FILES: readonly GuestFile[] = [
   { path: '/usr/local/bin/codex', content: cliWrapper, mode: 0o755 },
   { path: '/usr/local/bin/gh', content: ghWrapper, mode: 0o755 },
   { path: '/usr/local/bin/milibot-browser', content: browserLauncher, mode: 0o755 },
+  { path: '/opt/milibot/bin/milibot-desktop-session', content: desktopSession, mode: 0o755 },
 ]
 
 export type EnsureResult = 'installed' | 'updated' | 'unchanged'

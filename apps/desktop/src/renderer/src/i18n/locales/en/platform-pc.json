@@ -32,7 +32,7 @@
     }
   },
   "vmWindow": {
-    "pasteHint": "Ctrl+V pastes text from this computer here"
+    "pasteHint": "Ctrl+V pastes text from this computer here; what you copy here goes to it"
   },
   "backup": {
     "errors": {

@@ -118,7 +118,7 @@
     "yourControl": "Você está no controle",
     "fullScreen": "Tela cheia",
     "exitFullScreen": "Sair da tela cheia",
-    "pasteHint": "⌘V cola o texto deste computador aqui",
+    "pasteHint": "⌘V cola o texto deste computador aqui; o que você copia aqui vai para ele",
     "unavailable": "A tela deste bot não está disponível agora."
   },
   "reasoningEffort": {

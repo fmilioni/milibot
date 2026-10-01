@@ -30,7 +30,10 @@ describe('embedded guest files', () => {
     expect(guestFile('/usr/local/bin/codex').content).toBe(CLI_WRAPPER)
     expect(guestFile('/usr/local/bin/gh').content).toBe(source('gh'))
     expect(guestFile('/usr/local/bin/milibot-browser').content).toBe(source('milibot-browser'))
-    for (const name of ['cli-wrapper', 'gh', 'milibot-browser']) {
+    expect(guestFile('/opt/milibot/bin/milibot-desktop-session').content).toBe(
+      source('milibot-desktop-session'),
+    )
+    for (const name of ['cli-wrapper', 'gh', 'milibot-browser', 'milibot-desktop-session']) {
       expect(statSync(new URL(name, BIN)).mode & 0o111).toBe(0o111)
     }
     for (const file of GUEST_FILES) expect(file.mode).toBe(0o755)

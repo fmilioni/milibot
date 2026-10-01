@@ -118,7 +118,7 @@
     "yourControl": "You are in control",
     "fullScreen": "Full screen",
     "exitFullScreen": "Exit full screen",
-    "pasteHint": "⌘V pastes text from this computer here",
+    "pasteHint": "⌘V pastes text from this computer here; what you copy here goes to it",
     "unavailable": "This bot's screen is not available right now."
   },
   "reasoningEffort": {

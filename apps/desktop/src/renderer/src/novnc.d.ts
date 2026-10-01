@@ -26,5 +26,8 @@ declare module '@novnc/novnc' {
     sendKey(keysym: number, code: string | null, down?: boolean): void
     /** Sets the server's clipboard (ClientCutText). */
     clipboardPasteFrom(text: string): void
+    /** The server's clipboard changed (ServerCutText); not fired while view-only. */
+    addEventListener(type: 'clipboard', listener: (event: CustomEvent<{ text: string }>) => void): void
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject | null): void
   }
 }

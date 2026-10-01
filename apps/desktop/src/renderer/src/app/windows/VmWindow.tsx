@@ -130,10 +130,7 @@ export function VmWindow({ params }: { params: URLSearchParams }) {
             {badge.text}
           </span>
         )}
-        {/* ⌘V paste from the host clipboard is macOS only: the hint is empty on Linux and Windows. */}
-        {!viewOnly && t('vmWindow.pasteHint') && (
-          <span className="truncate text-xs text-fg-muted">{t('vmWindow.pasteHint')}</span>
-        )}
+        {!viewOnly && <span className="truncate text-xs text-fg-muted">{t('vmWindow.pasteHint')}</span>}
         <span className="flex-1" />
         <div className="no-drag flex items-center gap-1.5">
           {ready && !loginMode && control === 'user' && (

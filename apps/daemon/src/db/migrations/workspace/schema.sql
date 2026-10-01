@@ -852,9 +852,9 @@ UNIQUE (provider_id, kind, model_id)
 );
 
 -- table providers
-CREATE TABLE providers (
+CREATE TABLE "providers" (
 id TEXT PRIMARY KEY,
-type TEXT NOT NULL CHECK (type IN ('openai_compatible', 'anthropic', 'claude_code', 'codex')),
+type TEXT NOT NULL CHECK (type IN ('openai_compatible', 'anthropic', 'claude_code', 'codex', 'antigravity')),
 name TEXT NOT NULL,
 preset TEXT,
 base_url TEXT,

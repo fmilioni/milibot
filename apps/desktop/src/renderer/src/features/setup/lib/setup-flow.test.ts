@@ -20,7 +20,7 @@ const openRouter = provider('p_or', { preset: 'openrouter', baseUrl: 'https://op
 const compatible = provider('p_local', { baseUrl: 'http://localhost:1234/v1' })
 
 const state = (patch: Partial<ProviderStepState>): ProviderStepState => ({
-  checked: { claude_code: false, codex: false, openrouter: false, compatible: false },
+  checked: { claude_code: false, codex: false, antigravity: false, openrouter: false, compatible: false },
   openRouterKey: '',
   openRouterCheck: { status: 'empty' },
   compatibleIds: [],
@@ -56,7 +56,7 @@ describe('planProviderSave', () => {
   it('creates the checked CLI engines and makes the chosen row the default', () => {
     const plan = planProviderSave(
       state({
-        checked: { claude_code: true, codex: true, openrouter: false, compatible: false },
+        checked: { claude_code: true, codex: true, antigravity: false, openrouter: false, compatible: false },
         defaultRow: 'codex',
       }),
       [],
@@ -70,7 +70,15 @@ describe('planProviderSave', () => {
 
   it('keeps what is there, removes the unchecked rows, in row order', () => {
     const plan = planProviderSave(
-      state({ checked: { claude_code: true, codex: false, openrouter: false, compatible: false } }),
+      state({
+        checked: {
+          claude_code: true,
+          codex: false,
+          antigravity: false,
+          openrouter: false,
+          compatible: false,
+        },
+      }),
       [claude, codexKey, openRouter, compatible],
     )
     expect(plan.ops).toEqual([
@@ -83,7 +91,13 @@ describe('planProviderSave', () => {
   })
 
   it('creates OpenRouter with the key, or stores a new key on the one there', () => {
-    const checked = { claude_code: false, codex: false, openrouter: true, compatible: true }
+    const checked = {
+      claude_code: false,
+      codex: false,
+      antigravity: false,
+      openrouter: true,
+      compatible: true,
+    }
     const fresh = planProviderSave(
       state({ checked, openRouterKey: ' sk-or-1 ', compatibleIds: ['p_local'], defaultRow: 'compatible' }),
       [compatible],

@@ -25,7 +25,10 @@ export interface GuestCliBackend {
   events(procId: string, since: number, signal: AbortSignal): AsyncIterable<GuestProcEvent>
   writeStdin(procId: string, data: string, eof?: boolean): Promise<void>
   signal(procId: string, signal: 'SIGINT' | 'SIGTERM' | 'SIGKILL'): Promise<void>
-  /** Writes a private (0600) file owned by the `agent` user, returns its absolute path. */
+  /**
+   * Writes a private (0600) file owned by the `agent` user under `~/.milibot` (`name` may hold folders),
+   * returns its absolute path.
+   */
   writeAgentFile(name: string, content: string): Promise<string>
   /**
    * URL (as seen from the guest) and bearer token of the daemon's MCP server for this bot; the token

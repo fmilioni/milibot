@@ -1,4 +1,4 @@
-import { CODEX_TOOLS } from '@milibot/agent/cli'
+import { ANTIGRAVITY_TOOLS, CODEX_TOOLS } from '@milibot/agent/cli'
 import type {
   SessionChangedFile,
   SessionChangesUnavailable,
@@ -23,10 +23,11 @@ export const MAX_SAVED_PATCHES_BYTES = 2 * 1024 * 1024
 /** Files kept with the stored changes (the bot's state block shows fewer). */
 export const STORED_FILES = 200
 
-/** Tools that may change files in the session's folder (native, Claude Code and Codex). */
+/** Tools that may change files in the session's folder (native, Claude Code, Codex and Antigravity). */
 export const FILE_CHANGING_TOOLS = new Set<string>([
   CODEX_TOOLS.exec,
   CODEX_TOOLS.patch,
+  ...Object.values(ANTIGRAVITY_TOOLS),
   'bash',
   'file_write',
   'file_edit',

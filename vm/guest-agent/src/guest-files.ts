@@ -12,7 +12,7 @@ export interface GuestFile {
   mode: number
 }
 
-/** `/usr/local/bin/claude` and `/usr/local/bin/codex`: every user's CLI runs as `agent`. */
+/** `/usr/local/bin/{claude,codex,agy}`: every user's CLI runs as `agent`. */
 export const CLI_WRAPPER = cliWrapper
 
 /**
@@ -21,6 +21,7 @@ export const CLI_WRAPPER = cliWrapper
  */
 export const GUEST_FILES: readonly GuestFile[] = [
   { path: '/usr/local/bin/codex', content: cliWrapper, mode: 0o755 },
+  { path: '/usr/local/bin/agy', content: cliWrapper, mode: 0o755 },
   { path: '/usr/local/bin/gh', content: ghWrapper, mode: 0o755 },
   { path: '/usr/local/bin/milibot-browser', content: browserLauncher, mode: 0o755 },
   { path: '/opt/milibot/bin/milibot-desktop-session', content: desktopSession, mode: 0o755 },

@@ -1,4 +1,4 @@
-import { cliModelInfo, type ReasoningEffort } from '@milibot/shared'
+import { type CliEngine, cliModelInfo, type ReasoningEffort } from '@milibot/shared'
 
 import type { PriceTable } from './usage'
 
@@ -189,9 +189,12 @@ export function anthropicPrices(model: string): PriceTable | null {
   }
 }
 
-/** OpenAI price of a Codex model (its catalog in `CODEX_MODELS`); OpenAI bills cache writes as input. */
-export function codexPrices(model: string | null): PriceTable | null {
-  const info = cliModelInfo('codex', model)
+/**
+ * Price of a CLI engine's model from its catalog (`CLI_ENGINE_INFO.models`), for engines that report no cost
+ * (Codex, Antigravity); cache writes cost as input. Null for a model the catalog prices not.
+ */
+export function cliCatalogPrices(engine: CliEngine, model: string | null): PriceTable | null {
+  const info = cliModelInfo(engine, model)
   if (info?.input === undefined || info.output === undefined || info.cacheRead === undefined) return null
   return {
     priceInputPerMtokUsd: info.input,

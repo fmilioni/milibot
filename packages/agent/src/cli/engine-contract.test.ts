@@ -1,6 +1,7 @@
 import type { CliEngine } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
+import { agyLine, FakeAntigravityBackend, readAntigravityFixture } from '../test-support/antigravity'
 import { FakeBackend, turnFixture } from '../test-support/claude-code'
 import { FakeCodexBackend, readCodexFixture } from '../test-support/codex'
 import { makeBot } from '../test-support/env'
@@ -37,8 +38,8 @@ interface Harness<B extends Fake> {
   exitMidTurn(backend: B): void
   /** Stdout lines longer than 100 characters arrive in pieces. */
   splitLines(backend: B): void
-  /** The next turn edits a file with a native tool. */
-  editFile(backend: B): void
+  /** The next turn edits a file with a native tool (null: the engine reports no per-step diffs). */
+  editFile: ((backend: B) => void) | null
   /** The next one-shot answers `text`. */
   answerOneShot(backend: B, text: string): void
 }
@@ -232,6 +233,51 @@ const codex: Harness<FakeCodexBackend> = {
   },
 }
 
+const antigravity: Harness<FakeAntigravityBackend> = {
+  engine: 'antigravity',
+  backend: () => new FakeAntigravityBackend(),
+  create: (backend, timing) => CLI_ENGINE_DRIVERS.antigravity.createSessions(backend, undefined, timing),
+  answer: '2',
+  hang: (backend) => {
+    const recorded = readAntigravityFixture('turn-tools.ndjson')
+    backend.script = recorded.slice(0, recorded.findIndex((l) => l.includes('"ACTIVE"')) + 1)
+  },
+  ignoreInterrupt: (backend) => backend.ignoredSignals.add('SIGINT'),
+  // The fake resumes only conversations it started: any other id is lost.
+  loseSession: () => undefined,
+  takeMidTurn: (backend) => {
+    const command = { CommandLine: 'sleep 5' }
+    backend.scriptFor = (_procId, n) =>
+      n === 1
+        ? [agyLine.input(0), agyLine.answer(1, ''), agyLine.tool(2, 'ACTIVE', 'run_command', command)]
+        : [
+            agyLine.tool(2, 'DONE', 'run_command', command, ''),
+            agyLine.answer(3, 'Done.'),
+            agyLine.result('Done.'),
+            agyLine.input(4),
+            agyLine.answer(5, MID_TURN_ANSWER),
+            agyLine.result(MID_TURN_ANSWER),
+          ]
+  },
+  exitMidTurn: (backend) => {
+    backend.scriptFor = (procId) => {
+      setTimeout(() => backend.push(procId, { type: 'exit', code: 1, signal: null }), 5)
+      return []
+    }
+  },
+  splitLines: (backend) => {
+    backend.splitLinesOver = 100
+  },
+  // agy's tool events carry no file contents.
+  editFile: null,
+  answerOneShot: (backend, text) => {
+    backend.scriptFor = (procId) => {
+      setTimeout(() => backend.push(procId, { type: 'exit', code: 0, signal: null }), 5)
+      return [agyLine.input(0), agyLine.answer(1, text), agyLine.result(text)]
+    }
+  },
+}
+
 const fast: CliTiming = { interruptGraceMs: 40, killGraceMs: 40 }
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const bot = makeBot({ slug: 'iris', displayNum: 3 })
@@ -267,221 +313,224 @@ function startups(calls: boolean[]): (fresh: boolean) => CliStartup {
   }
 }
 
-describe.each([claudeCode, codex] as Array<Harness<Fake>>)('CLI engine contract: $engine', (h) => {
-  const setup = () => {
-    const backend = h.backend()
-    return { backend, sessions: h.create(backend, fast) }
-  }
-
-  it('runs a fresh turn, stores its session and reuses the process for the next one', async () => {
-    const { backend, sessions } = setup()
-    const calls: boolean[] = []
-    const { io, text, tools } = recorder()
-    const first = await sessions.runTurn(launch({ startup: startups(calls) }), 'hi', io)
-    expect(first).toMatchObject({ ok: true, text: h.answer, error: null })
-    expect(first.launched?.fresh).toBe(true)
-    expect(calls).toEqual([true])
-    expect(text.join('')).toContain(h.answer)
-    expect(tools.filter((t) => t.startsWith('finish:')).length).toBeGreaterThan(0)
-    expect(first.requests).toBeGreaterThan(0)
-    expect(first.usage).not.toBeNull()
-    expect(first.billing.usage.costSource).not.toBe('unknown')
-    expect(first.sessionId).not.toBeNull()
-    expect(sessions.storedSessionId(bot.id)).toBe(first.sessionId)
-    expect(backend.specs[0]).toMatchObject({ user: 'agent', display: 3, bot: 'iris' })
-
-    const second = await sessions.runTurn(launch({ startup: startups(calls) }), 'again', recorder().io)
-    expect(second.ok).toBe(true)
-    expect(second.launched).toBeNull()
-    expect(backend.specs).toHaveLength(1)
-    expect(sessions.activeLanes()).toEqual([bot.id])
-    await sessions.closeAll()
-  })
-
-  it('resumes the stored session in a new process', async () => {
-    const { backend, sessions } = setup()
-    const first = await sessions.runTurn(launch(), 'hi', recorder().io)
-    await sessions.close(bot.id)
-    const calls: boolean[] = []
-    const resumed = await sessions.runTurn(launch({ startup: startups(calls) }), 'again', recorder().io)
-    expect(resumed.ok).toBe(true)
-    expect(resumed.launched?.fresh).toBe(false)
-    expect(calls).toEqual([false])
-    expect(backend.specs).toHaveLength(2)
-    expect(sessions.storedSessionId(bot.id)).toBe(first.sessionId)
-    await sessions.closeAll()
-  })
-
-  it('starts over with the memory recap when the stored session is gone', async () => {
-    const { sessions, backend } = setup()
-    backend.sessions.set(bot.id, 'lost-session')
-    h.loseSession(backend, 'lost-session')
-    const calls: boolean[] = []
-    const result = await sessions.runTurn(launch({ startup: startups(calls) }), 'hi', recorder().io)
-    expect(result).toMatchObject({ ok: true, text: h.answer })
-    expect(result.launched?.fresh).toBe(true)
-    expect(calls).toEqual([false, true])
-    expect(sessions.storedSessionId(bot.id)).not.toBe('lost-session')
-    expect(sessions.storedSessionId(bot.id)).toBe(result.sessionId)
-    await sessions.closeAll()
-  })
-
-  it('interrupts a running turn when the Milibot turn is stopped', async () => {
-    const { sessions, backend } = setup()
-    h.hang(backend)
-    const abort = new AbortController()
-    const pending = sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
-    await wait(15)
-    abort.abort()
-    expect(await pending).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
-    expect(backend.signals).not.toContain('SIGKILL')
-    await sessions.closeAll()
-  })
-
-  it('interrupts a turn stopped before its process was ready', async () => {
-    const { sessions, backend } = setup()
-    h.hang(backend)
-    const abort = new AbortController()
-    abort.abort()
-    const result = await sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
-    expect(result).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
-    await sessions.closeAll()
-  })
-
-  it('kills a process that ignores the interrupt', async () => {
-    const { sessions, backend } = setup()
-    h.hang(backend)
-    h.ignoreInterrupt(backend)
-    const abort = new AbortController()
-    const pending = sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
-    await wait(15)
-    abort.abort()
-    expect(await pending).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
-    expect(backend.signals).toContain('SIGKILL')
-    expect(sessions.activeLanes()).toEqual([])
-  })
-
-  it('hands a message sent mid-turn to the running turn', async () => {
-    const { sessions, backend } = setup()
-    h.takeMidTurn(backend, 'also: say hi')
-    const rec = recorder()
-    let accepted: boolean | null = null
-    rec.io.onAcceptingInput = (send) => {
-      accepted = send('also: say hi')
+describe.each([claudeCode, codex, antigravity] as unknown as Array<Harness<Fake>>)(
+  'CLI engine contract: $engine',
+  (h) => {
+    const setup = () => {
+      const backend = h.backend()
+      return { backend, sessions: h.create(backend, fast) }
     }
-    const result = await sessions.runTurn(launch(), 'run the slow thing', rec.io)
-    expect(accepted).toBe(true)
-    expect(rec.taken()).toBe(1)
-    expect(result).toMatchObject({ ok: true, text: MID_TURN_ANSWER })
-    await sessions.closeAll()
-  })
 
-  it('refuses messages once the turn is over', async () => {
-    const { sessions } = setup()
-    const rec = recorder()
-    let send: ((text: string) => boolean) | null = null
-    rec.io.onAcceptingInput = (s) => (send = s)
-    await sessions.runTurn(launch(), 'hi', rec.io)
-    expect(send).not.toBeNull()
-    expect((send as unknown as (text: string) => boolean)('too late')).toBe(false)
-    await sessions.closeAll()
-  })
+    it('runs a fresh turn, stores its session and reuses the process for the next one', async () => {
+      const { backend, sessions } = setup()
+      const calls: boolean[] = []
+      const { io, text, tools } = recorder()
+      const first = await sessions.runTurn(launch({ startup: startups(calls) }), 'hi', io)
+      expect(first).toMatchObject({ ok: true, text: h.answer, error: null })
+      expect(first.launched?.fresh).toBe(true)
+      expect(calls).toEqual([true])
+      expect(text.join('')).toContain(h.answer)
+      expect(tools.filter((t) => t.startsWith('finish:')).length).toBeGreaterThan(0)
+      expect(first.requests).toBeGreaterThan(0)
+      expect(first.usage).not.toBeNull()
+      expect(first.billing.usage.costSource).not.toBe('unknown')
+      expect(first.sessionId).not.toBeNull()
+      expect(sessions.storedSessionId(bot.id)).toBe(first.sessionId)
+      expect(backend.specs[0]).toMatchObject({ user: 'agent', display: 3, bot: 'iris' })
 
-  it('reports a process that exits mid-turn as a failed turn', async () => {
-    const { sessions, backend } = setup()
-    h.exitMidTurn(backend)
-    const result = await sessions.runTurn(launch(), 'hi', recorder().io)
-    expect(result).toMatchObject({ ok: false, subtype: 'process_exited' })
-    expect(result.error?.code).toBe('cli_error')
-    expect(result.error?.message).toMatch(/exited \(code 1/)
-    expect(sessions.activeLanes()).toEqual([])
-  })
-
-  it('reports a process that cannot start as a failed turn', async () => {
-    const { sessions, backend } = setup()
-    backend.startProcess = async () => {
-      throw new Error('VM_UNAVAILABLE')
-    }
-    const result = await sessions.runTurn(launch(), 'hi', recorder().io)
-    expect(result).toMatchObject({ ok: false, launched: null })
-    expect(result.error?.code).toBe('cli_error')
-    expect(result.error?.message).toMatch(/VM_UNAVAILABLE/)
-    expect(sessions.activeLanes()).toEqual([])
-  })
-
-  it('joins stdout lines the guest split', async () => {
-    const { sessions, backend } = setup()
-    h.splitLines(backend)
-    const result = await sessions.runTurn(launch(), 'hi', recorder().io)
-    expect(result).toMatchObject({ ok: true, text: h.answer })
-    await sessions.closeAll()
-  })
-
-  it('closes one lane, a bot’s lanes or every lane, and rotates a lane’s session', async () => {
-    const { sessions, backend } = setup()
-    const internal = `${bot.id}:internal`
-    await sessions.runTurn(launch(), 'hi', recorder().io)
-    await sessions.runTurn(launch({ key: internal }), 'hi', recorder().io)
-    await sessions.runTurn(launch({ bot: other }), 'hi', recorder().io)
-    expect(backend.specs.map((s) => s.label)).toEqual([
-      expect.stringMatching(/:iris$/),
-      expect.stringMatching(/:iris:internal$/),
-      expect.stringMatching(/:noa$/),
-    ])
-    expect(sessions.activeLanes().sort()).toEqual([bot.id, internal, other.id].sort())
-
-    await sessions.close(internal)
-    expect(sessions.activeLanes().sort()).toEqual([bot.id, other.id].sort())
-    expect(backend.signals).toEqual(['SIGTERM'])
-    expect(sessions.storedSessionId(internal)).not.toBeNull()
-
-    await sessions.rotate(internal)
-    expect(sessions.storedSessionId(internal)).toBeNull()
-
-    await sessions.closeBot(bot.id)
-    expect(sessions.activeLanes()).toEqual([other.id])
-    await sessions.closeAll()
-    expect(sessions.activeLanes()).toEqual([])
-    expect(sessions.storedSessionId(other.id)).not.toBeNull()
-  })
-
-  it('reports the files a native tool changed', async () => {
-    const { sessions, backend } = setup()
-    h.editFile(backend)
-    const edits: string[] = []
-    const rec = recorder()
-    rec.io.onNativeToolFinish = (_id, isError, _output, diffs) => {
-      if (!isError) edits.push(...diffs.map((d) => `${d.status} ${d.path}`))
-    }
-    const result = await sessions.runTurn(launch(), 'edit it', rec.io)
-    expect(result.ok).toBe(true)
-    expect(edits.length).toBeGreaterThan(0)
-    expect(edits.every((e) => /^(added|modified) \/workspace\//.test(e))).toBe(true)
-    await sessions.closeAll()
-  })
-
-  it('answers a one-shot in a process of its own, labelled for the orphan sweep', async () => {
-    const { sessions, backend } = setup()
-    h.answerOneShot(backend, 'Short summary.')
-    const result = await sessions.oneShot({
-      bot,
-      model: null,
-      env: {},
-      systemPrompt: 'Summarize.',
-      prompt: 'long text',
-      label: 'draw',
+      const second = await sessions.runTurn(launch({ startup: startups(calls) }), 'again', recorder().io)
+      expect(second.ok).toBe(true)
+      expect(second.launched).toBeNull()
+      expect(backend.specs).toHaveLength(1)
+      expect(sessions.activeLanes()).toEqual([bot.id])
+      await sessions.closeAll()
     })
-    expect(result).toMatchObject({ text: 'Short summary.', error: null })
-    expect(backend.specs[0]?.label).toBe(`${CLI_ENGINE_DRIVERS[h.engine].procLabel}-draw:iris`)
-    expect(sessions.activeLanes()).toEqual([])
-  })
 
-  it('closes an idle process after its timeout', async () => {
-    const { sessions, backend } = setup()
-    await sessions.runTurn(launch({ idleTimeoutMs: 20 }), 'hi', recorder().io)
-    expect(sessions.activeLanes()).toEqual([bot.id])
-    await wait(40)
-    expect(sessions.activeLanes()).toEqual([])
-    expect(backend.signals).toEqual(['SIGTERM'])
-  })
-})
+    it('resumes the stored session in a new process', async () => {
+      const { backend, sessions } = setup()
+      const first = await sessions.runTurn(launch(), 'hi', recorder().io)
+      await sessions.close(bot.id)
+      const calls: boolean[] = []
+      const resumed = await sessions.runTurn(launch({ startup: startups(calls) }), 'again', recorder().io)
+      expect(resumed.ok).toBe(true)
+      expect(resumed.launched?.fresh).toBe(false)
+      expect(calls).toEqual([false])
+      expect(backend.specs).toHaveLength(2)
+      expect(sessions.storedSessionId(bot.id)).toBe(first.sessionId)
+      await sessions.closeAll()
+    })
+
+    it('starts over with the memory recap when the stored session is gone', async () => {
+      const { sessions, backend } = setup()
+      backend.sessions.set(bot.id, 'lost-session')
+      h.loseSession(backend, 'lost-session')
+      const calls: boolean[] = []
+      const result = await sessions.runTurn(launch({ startup: startups(calls) }), 'hi', recorder().io)
+      expect(result).toMatchObject({ ok: true, text: h.answer })
+      expect(result.launched?.fresh).toBe(true)
+      expect(calls).toEqual([false, true])
+      expect(sessions.storedSessionId(bot.id)).not.toBe('lost-session')
+      expect(sessions.storedSessionId(bot.id)).toBe(result.sessionId)
+      await sessions.closeAll()
+    })
+
+    it('interrupts a running turn when the Milibot turn is stopped', async () => {
+      const { sessions, backend } = setup()
+      h.hang(backend)
+      const abort = new AbortController()
+      const pending = sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
+      await wait(15)
+      abort.abort()
+      expect(await pending).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
+      expect(backend.signals).not.toContain('SIGKILL')
+      await sessions.closeAll()
+    })
+
+    it('interrupts a turn stopped before its process was ready', async () => {
+      const { sessions, backend } = setup()
+      h.hang(backend)
+      const abort = new AbortController()
+      abort.abort()
+      const result = await sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
+      expect(result).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
+      await sessions.closeAll()
+    })
+
+    it('kills a process that ignores the interrupt', async () => {
+      const { sessions, backend } = setup()
+      h.hang(backend)
+      h.ignoreInterrupt(backend)
+      const abort = new AbortController()
+      const pending = sessions.runTurn(launch(), 'run forever', recorder(abort.signal).io)
+      await wait(15)
+      abort.abort()
+      expect(await pending).toMatchObject({ ok: false, subtype: 'interrupted', error: null })
+      expect(backend.signals).toContain('SIGKILL')
+      expect(sessions.activeLanes()).toEqual([])
+    })
+
+    it('hands a message sent mid-turn to the running turn', async () => {
+      const { sessions, backend } = setup()
+      h.takeMidTurn(backend, 'also: say hi')
+      const rec = recorder()
+      let accepted: boolean | null = null
+      rec.io.onAcceptingInput = (send) => {
+        accepted = send('also: say hi')
+      }
+      const result = await sessions.runTurn(launch(), 'run the slow thing', rec.io)
+      expect(accepted).toBe(true)
+      expect(rec.taken()).toBe(1)
+      expect(result).toMatchObject({ ok: true, text: MID_TURN_ANSWER })
+      await sessions.closeAll()
+    })
+
+    it('refuses messages once the turn is over', async () => {
+      const { sessions } = setup()
+      const rec = recorder()
+      let send: ((text: string) => boolean) | null = null
+      rec.io.onAcceptingInput = (s) => (send = s)
+      await sessions.runTurn(launch(), 'hi', rec.io)
+      expect(send).not.toBeNull()
+      expect((send as unknown as (text: string) => boolean)('too late')).toBe(false)
+      await sessions.closeAll()
+    })
+
+    it('reports a process that exits mid-turn as a failed turn', async () => {
+      const { sessions, backend } = setup()
+      h.exitMidTurn(backend)
+      const result = await sessions.runTurn(launch(), 'hi', recorder().io)
+      expect(result).toMatchObject({ ok: false, subtype: 'process_exited' })
+      expect(result.error?.code).toBe('cli_error')
+      expect(result.error?.message).toMatch(/exited \(code 1/)
+      expect(sessions.activeLanes()).toEqual([])
+    })
+
+    it('reports a process that cannot start as a failed turn', async () => {
+      const { sessions, backend } = setup()
+      backend.startProcess = async () => {
+        throw new Error('VM_UNAVAILABLE')
+      }
+      const result = await sessions.runTurn(launch(), 'hi', recorder().io)
+      expect(result).toMatchObject({ ok: false, launched: null })
+      expect(result.error?.code).toBe('cli_error')
+      expect(result.error?.message).toMatch(/VM_UNAVAILABLE/)
+      expect(sessions.activeLanes()).toEqual([])
+    })
+
+    it('joins stdout lines the guest split', async () => {
+      const { sessions, backend } = setup()
+      h.splitLines(backend)
+      const result = await sessions.runTurn(launch(), 'hi', recorder().io)
+      expect(result).toMatchObject({ ok: true, text: h.answer })
+      await sessions.closeAll()
+    })
+
+    it('closes one lane, a bot’s lanes or every lane, and rotates a lane’s session', async () => {
+      const { sessions, backend } = setup()
+      const internal = `${bot.id}:internal`
+      await sessions.runTurn(launch(), 'hi', recorder().io)
+      await sessions.runTurn(launch({ key: internal }), 'hi', recorder().io)
+      await sessions.runTurn(launch({ bot: other }), 'hi', recorder().io)
+      expect(backend.specs.map((s) => s.label)).toEqual([
+        expect.stringMatching(/:iris$/),
+        expect.stringMatching(/:iris:internal$/),
+        expect.stringMatching(/:noa$/),
+      ])
+      expect(sessions.activeLanes().sort()).toEqual([bot.id, internal, other.id].sort())
+
+      await sessions.close(internal)
+      expect(sessions.activeLanes().sort()).toEqual([bot.id, other.id].sort())
+      expect(backend.signals).toEqual(['SIGTERM'])
+      expect(sessions.storedSessionId(internal)).not.toBeNull()
+
+      await sessions.rotate(internal)
+      expect(sessions.storedSessionId(internal)).toBeNull()
+
+      await sessions.closeBot(bot.id)
+      expect(sessions.activeLanes()).toEqual([other.id])
+      await sessions.closeAll()
+      expect(sessions.activeLanes()).toEqual([])
+      expect(sessions.storedSessionId(other.id)).not.toBeNull()
+    })
+
+    it.runIf(h.editFile)('reports the files a native tool changed', async () => {
+      const { sessions, backend } = setup()
+      h.editFile?.(backend)
+      const edits: string[] = []
+      const rec = recorder()
+      rec.io.onNativeToolFinish = (_id, isError, _output, diffs) => {
+        if (!isError) edits.push(...diffs.map((d) => `${d.status} ${d.path}`))
+      }
+      const result = await sessions.runTurn(launch(), 'edit it', rec.io)
+      expect(result.ok).toBe(true)
+      expect(edits.length).toBeGreaterThan(0)
+      expect(edits.every((e) => /^(added|modified) \/workspace\//.test(e))).toBe(true)
+      await sessions.closeAll()
+    })
+
+    it('answers a one-shot in a process of its own, labelled for the orphan sweep', async () => {
+      const { sessions, backend } = setup()
+      h.answerOneShot(backend, 'Short summary.')
+      const result = await sessions.oneShot({
+        bot,
+        model: null,
+        env: {},
+        systemPrompt: 'Summarize.',
+        prompt: 'long text',
+        label: 'draw',
+      })
+      expect(result).toMatchObject({ text: 'Short summary.', error: null })
+      expect(backend.specs[0]?.label).toBe(`${CLI_ENGINE_DRIVERS[h.engine].procLabel}-draw:iris`)
+      expect(sessions.activeLanes()).toEqual([])
+    })
+
+    it('closes an idle process after its timeout', async () => {
+      const { sessions, backend } = setup()
+      await sessions.runTurn(launch({ idleTimeoutMs: 20 }), 'hi', recorder().io)
+      expect(sessions.activeLanes()).toEqual([bot.id])
+      await wait(40)
+      expect(sessions.activeLanes()).toEqual([])
+      expect(backend.signals).toEqual(['SIGTERM'])
+    })
+  },
+)

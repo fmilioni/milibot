@@ -80,6 +80,11 @@ export interface CliLaunch {
   startup?: (fresh: boolean) => CliStartup
   /** External MCP servers next to Milibot's (`CliEngineDriver.externalMcp`). */
   externalMcp?: CliMcpConfig | null
+  /**
+   * Milibot's tools its MCP server offers the lane: an engine whose model never sees MCP schemas (Antigravity)
+   * puts them in its prompt.
+   */
+  mcpTools?: ToolDefinition[]
 }
 
 /** What a CLI call cost, as `llm_calls` records it (per model when the engine reports several). */

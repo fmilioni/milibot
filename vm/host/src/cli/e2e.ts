@@ -246,9 +246,9 @@ async function main(): Promise<void> {
 
   const wrappers = await guestExec({
     user: 'agent',
-    cmd: 'test -x /usr/local/bin/claude && test -x /usr/local/bin/codex && test -x /usr/local/bin/gh && test -x /usr/local/bin/milibot-browser',
+    cmd: 'for f in claude codex agy gh milibot-browser; do test -x /usr/local/bin/$f || exit 1; done',
   })
-  check(wrappers.code === 0, 'guest agent installed the claude, codex, gh and milibot-browser wrappers')
+  check(wrappers.code === 0, 'guest agent installed the claude, codex, agy, gh and milibot-browser wrappers')
 
   const final = await vm<VmCliStopResult>('stop', WS)
   log(`final stop via ${'method' in final ? final.method : 'nothing (already stopped)'}`)

@@ -1,3 +1,4 @@
+export * from './antigravity'
 export * from './claude-code'
 export * from './cli'
 export * from './codex'

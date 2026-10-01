@@ -6,6 +6,7 @@ import {
   CliPlanTracker,
   PLAN_REFRESH_MS,
   PLAN_RETRY_MS,
+  QUOTA_REFRESH_MS,
   type RateLimitInfo,
   readCliPlan,
 } from '../../../src/runtime/providers/cli-plan'
@@ -221,5 +222,34 @@ describe('CliPlanTracker', () => {
     expect(Object.keys(JSON.parse(stored) as object).sort()).toEqual(
       ['engine', 'plan', 'providerId', 'rateLimitType', 'resetsAt', 'status', 'updatedAt', 'windows'].sort(),
     )
+  })
+})
+
+describe('CliPlanTracker on-demand quota', () => {
+  it('reads it when usage is looked at, at most once per interval, and stops for engines without one', async () => {
+    let now = 0
+    const saved: CliUsage[] = []
+    const reads: string[] = []
+    const tracker = new CliPlanTracker({
+      now: () => now,
+      readPlan: async () => undefined,
+      loadUsage: () => saved.at(-1) ?? null,
+      saveUsage: (usage) => saved.push(usage),
+      readQuota: async (providerId) => {
+        reads.push(providerId)
+        return providerId === 'agy' ? { ...INFO, engine: 'antigravity' } : undefined
+      },
+    })
+    await tracker.refreshQuota('agy')
+    await tracker.refreshQuota('agy')
+    expect(reads).toEqual(['agy'])
+    expect(saved.at(-1)).toMatchObject({ providerId: 'agy', engine: 'antigravity', updatedAt: 0 })
+    now += QUOTA_REFRESH_MS
+    tracker.usage('agy')
+    await tracker.refreshQuota('claude')
+    now += QUOTA_REFRESH_MS
+    await tracker.refreshQuota('claude')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(reads).toEqual(['agy', 'agy', 'claude'])
   })
 })

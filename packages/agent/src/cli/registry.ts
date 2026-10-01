@@ -1,5 +1,6 @@
 import { CLI_ENGINES, type CliEngine } from '@milibot/shared'
 
+import { antigravityDriver } from '../antigravity'
 import { claudeCodeDriver } from '../claude-code'
 import { codexDriver } from '../codex'
 import type { CliEngineDriver } from './engine'
@@ -8,6 +9,7 @@ import type { CliEngineDriver } from './engine'
 export const CLI_ENGINE_DRIVERS: Record<CliEngine, CliEngineDriver> = {
   claude_code: claudeCodeDriver,
   codex: codexDriver,
+  antigravity: antigravityDriver,
 }
 
 /** Prefixes of the labels the CLI engines give their processes in the VM (lanes and one-shots). */

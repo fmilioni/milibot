@@ -5,6 +5,8 @@ import { cliEngineHost } from './cli-engines'
 
 export const PLAN_REFRESH_MS = 6 * 60 * 60 * 1000
 export const PLAN_RETRY_MS = 10 * 60 * 1000
+/** Least time between two quota readings of an engine that reports it only on demand (Antigravity's `/usage`). */
+export const QUOTA_REFRESH_MS = 2 * 60 * 1000
 
 export type RunAsAgent = (command: string) => Promise<{ code: number | null; stdout: string }>
 
@@ -34,6 +36,11 @@ export interface CliPlanTrackerDeps {
   loadUsage: (providerId: string) => CliUsage | null
   /** Persists and broadcasts (`provider.usage`). */
   saveUsage: (usage: CliUsage) => void
+  /**
+   * Reads the quota of an engine whose turns stream none (`CliEngineHost.quota`): undefined when the provider
+   * has no such reading, null when it gave nothing usable.
+   */
+  readQuota?: (providerId: string) => Promise<RateLimitInfo | null | undefined>
   log?: (message: string, extra?: Record<string, unknown>) => void
 }
 
@@ -46,6 +53,8 @@ export class CliPlanTracker {
   private readonly plans = new Map<string, string>()
   private readonly nextCheckAt = new Map<string, number>()
   private readonly inFlight = new Map<string, Promise<void>>()
+  private readonly nextQuotaAt = new Map<string, number>()
+  private readonly quotaInFlight = new Set<string>()
 
   constructor(private readonly deps: CliPlanTrackerDeps) {}
 
@@ -66,7 +75,26 @@ export class CliPlanTracker {
   usage(providerId: string): CliUsage | null {
     const usage = this.deps.loadUsage(providerId)
     if (usage && !usage.plan) void this.refresh(providerId)
+    void this.refreshQuota(providerId)
     return usage
+  }
+
+  /** Reads an on-demand quota when one is due (at most once per `QUOTA_REFRESH_MS`); never rejects. */
+  async refreshQuota(providerId: string): Promise<void> {
+    const readQuota = this.deps.readQuota
+    if (!readQuota || this.quotaInFlight.has(providerId)) return
+    if (this.deps.now() < (this.nextQuotaAt.get(providerId) ?? 0)) return
+    this.quotaInFlight.add(providerId)
+    this.nextQuotaAt.set(providerId, this.deps.now() + QUOTA_REFRESH_MS)
+    try {
+      const info = await readQuota(providerId)
+      if (info === undefined) this.nextQuotaAt.set(providerId, Number.POSITIVE_INFINITY)
+      else if (info) this.recordRateLimit(providerId, info)
+    } catch (err) {
+      this.deps.log?.('cli quota check failed', { providerId, err: errorMessage(err) })
+    } finally {
+      this.quotaInFlight.delete(providerId)
+    }
   }
 
   /** Resolves when the check (if one was due) finished; never rejects. */
@@ -83,6 +111,7 @@ export class CliPlanTracker {
   forget(providerId: string): void {
     this.plans.delete(providerId)
     this.nextCheckAt.delete(providerId)
+    this.nextQuotaAt.delete(providerId)
   }
 
   private async check(providerId: string): Promise<void> {

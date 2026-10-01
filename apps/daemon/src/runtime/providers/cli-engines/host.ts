@@ -97,6 +97,11 @@ export interface CliEngineHost {
   loggedInElsewhere?(guest: Pick<GuestClient, 'exec'>, slugs: string[]): Promise<boolean>
   /** Where the account plan comes from: the CLI (command + parser) or the quota updates themselves. */
   plan: { command: string; parse(stdout: string): string | null } | 'quota'
+  /**
+   * For engines whose turns stream no quota: the CLI command that prints it, and its output as the update
+   * `CliEngineDriver.mergeQuota` takes (null when unusable). Read after turns and usage views, throttled.
+   */
+  quota?: { command: string; parse(stdout: string): unknown }
   /** An image model every new provider gets, drawn with the subscription only. */
   imageModel?: CreateProviderModelBody
   /** The settings' "Test": the CLI answers and, with the subscription, the agent account is logged in. */

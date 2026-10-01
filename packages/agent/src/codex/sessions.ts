@@ -9,7 +9,7 @@ import { laneKeyOf, type LaneProcess, LaneSessions } from '../cli/lane-pool'
 import { TurnInterrupt } from '../cli/process'
 import { type CliStartup, emptyStartup } from '../cli/startup'
 import { addTokens } from '../cli/usage'
-import { codexPrices } from '../llm/pricing'
+import { cliCatalogPrices } from '../llm/pricing'
 import { EMPTY_TOKENS, type TokenUsage, usageWithCost } from '../llm/usage'
 import { MILIBOT_MCP_SERVER } from '../mcp/names'
 import { CODEX_PROC_LABEL, codexErrorCode } from './config'
@@ -84,7 +84,7 @@ function codexTokens(u: TokenUsageBreakdown): TokenUsage {
  * have charged).
  */
 function codexBilling(usage: TokenUsage | null, model: string | null) {
-  return { usage: usageWithCost(usage ?? EMPTY_TOKENS, null, codexPrices(model)) }
+  return { usage: usageWithCost(usage ?? EMPTY_TOKENS, null, cliCatalogPrices('codex', model)) }
 }
 
 /**

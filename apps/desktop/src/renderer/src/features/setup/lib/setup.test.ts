@@ -48,7 +48,7 @@ function provider(patch: Partial<Provider>): Provider {
 }
 
 const base: ProviderStepState = {
-  checked: { claude_code: false, codex: false, openrouter: false, compatible: false },
+  checked: { claude_code: false, codex: false, antigravity: false, openrouter: false, compatible: false },
   openRouterKey: '',
   openRouterCheck: { status: 'empty' },
   compatibleIds: [],
@@ -58,10 +58,11 @@ const base: ProviderStepState = {
 describe('provider step', () => {
   it('lists a row per CLI engine, named by its brand, before the API rows', () => {
     const t = ((key: string) => `t:${key}`) as unknown as TFunction
-    expect(PROVIDER_ROWS).toEqual(['claude_code', 'codex', 'openrouter', 'compatible'])
+    expect(PROVIDER_ROWS).toEqual(['claude_code', 'codex', 'antigravity', 'openrouter', 'compatible'])
     expect(PROVIDER_ROWS.map((row) => providerRowName(t, row))).toEqual([
       'Claude Code',
       'Codex',
+      'Antigravity',
       't:setup.providers.openRouter.name',
       't:setup.providers.compatible.name',
     ])
@@ -69,7 +70,13 @@ describe('provider step', () => {
 
   it('starts with Claude Code on a fresh workspace and mirrors copied providers', () => {
     const fresh = initialProviderStep([])
-    expect(fresh.checked).toEqual({ claude_code: true, codex: false, openrouter: false, compatible: false })
+    expect(fresh.checked).toEqual({
+      claude_code: true,
+      codex: false,
+      antigravity: false,
+      openrouter: false,
+      compatible: false,
+    })
     expect(fresh.defaultRow).toBe('claude_code')
     const copied = initialProviderStep([
       provider({ id: 'a', type: 'claude_code' }),
@@ -77,7 +84,13 @@ describe('provider step', () => {
       provider({ id: 'c', baseUrl: 'http://10.0.0.2:1234/v1' }),
       provider({ id: 'd', type: 'codex' }),
     ])
-    expect(copied.checked).toEqual({ claude_code: true, codex: true, openrouter: true, compatible: true })
+    expect(copied.checked).toEqual({
+      claude_code: true,
+      codex: true,
+      antigravity: false,
+      openrouter: true,
+      compatible: true,
+    })
     expect(copied.openRouterCheck).toEqual({ status: 'saved' })
     expect(copied.compatibleIds).toEqual(['c'])
     expect(copied.defaultRow).toBe('openrouter')
@@ -105,7 +118,7 @@ describe('provider step', () => {
   it('falls back to the first checked provider as the default', () => {
     const state = {
       ...base,
-      checked: { claude_code: false, codex: false, openrouter: true, compatible: true },
+      checked: { claude_code: false, codex: false, antigravity: false, openrouter: true, compatible: true },
     }
     expect(effectiveDefault({ ...state, defaultRow: 'claude_code' })).toBe('openrouter')
     expect(effectiveDefault({ ...state, defaultRow: 'compatible' })).toBe('compatible')

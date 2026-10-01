@@ -14,7 +14,7 @@ export function isOpenRouterServer(
   return preset === 'openrouter' || (baseUrl ?? '').includes('openrouter.ai')
 }
 
-export const ProviderType = z.enum(['openai_compatible', 'anthropic', 'claude_code', 'codex'])
+export const ProviderType = z.enum(['openai_compatible', 'anthropic', 'claude_code', 'codex', 'antigravity'])
 export type ProviderType = z.infer<typeof ProviderType>
 
 /**

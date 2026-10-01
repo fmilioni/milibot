@@ -50,7 +50,11 @@ function routes(vm: VmController, installer?: CodexInstaller, now?: () => number
   return new CliEngineRoutes({
     store,
     vm,
-    runtimes: { claude_code: { name: 'claude-code' }, codex: { name: 'codex', installer: codexInstaller } },
+    runtimes: {
+      claude_code: { name: 'claude-code' },
+      codex: { name: 'codex', installer: codexInstaller },
+      antigravity: { name: 'antigravity' },
+    },
     now,
     log: () => {},
   }).handlers()

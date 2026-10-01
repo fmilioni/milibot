@@ -217,6 +217,14 @@ export function GeneralSettings() {
       </SettingsCard>
 
       <SettingsCard title={t('settings.general.behavior')}>
+        <SettingsRow label={t('settings.general.vmAutostart')} hint={t('settings.general.vmAutostartHint')}>
+          <Switch
+            checked={prefs.vmAutostart}
+            disabled={!loaded}
+            label={t('settings.general.vmAutostart')}
+            onChange={(vmAutostart) => void set({ vmAutostart })}
+          />
+        </SettingsRow>
         <SettingsRow label={t('settings.general.closeLabel')} hint={t('settings.general.closeHint')}>
           <div className="w-[210px]">
             <Select

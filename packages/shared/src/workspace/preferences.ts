@@ -48,6 +48,8 @@ export const WorkspacePreferences = z.object({
   promptUpdates: PromptUpdateMode,
   /** LibreOffice in the VM reads .doc/.xls/.ppt/.ods/.odp (installed on demand). */
   legacyOffice: z.boolean(),
+  /** Off: the VM boots only when the user starts it (a VM already running is still adopted). */
+  vmAutostart: z.boolean(),
   /** The app's language, kept in sync by the daemon (not a setting of its own). */
   userLanguage: Language,
 })
@@ -78,6 +80,7 @@ export const DEFAULT_WORKSPACE_PREFERENCES: WorkspacePreferences = {
   routinesCatchUp: 'once',
   promptUpdates: 'auto',
   legacyOffice: false,
+  vmAutostart: true,
   userLanguage: 'pt-BR',
 }
 

@@ -34,6 +34,8 @@
     "iconHint": "Icon letter or emoji",
     "iconReset": "Use the initial",
     "behavior": "Behavior",
+    "vmAutostart": "Start the VM on open",
+    "vmAutostartHint": "When off, the VM only starts when you tell it to",
     "closeLabel": "When the last window closes",
     "closeHint": "What happens to this workspace's VM and bots",
     "close": {

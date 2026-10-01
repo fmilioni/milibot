@@ -65,6 +65,7 @@ export function createRuntimeFromConfig(
   const db = openWorkspaceDb(workspacePaths(config.workspaceDir).db)
   const runtimeRef = lazy<WorkspaceRuntime>('runtime')
   const store = () => runtimeRef.get().store
+  const preferences = () => readPreferences((key, fallback) => store().settings.get(key, fallback))
   const vmEnabled = !config.vmDisabled
   let closeBehavior = config.closeBehavior
   let background = config.background
@@ -80,8 +81,7 @@ export function createRuntimeFromConfig(
         cli: overrides.vmCli ?? createShellVmCli(vmScript),
         agentBundle: () => loadGuestAgentBundle(vmScript),
         latestGoldenRevision: () => expectedGoldenRevision(vmRootDir(vmScript)),
-        botLimits: () =>
-          botSliceLimits(readPreferences((key, fallback) => store().settings.get(key, fallback))),
+        botLimits: () => botSliceLimits(preferences()),
         golden: () => resolveGoldenImage(config.dataRoot, config.platformDataRoot, config.goldenImage),
         settings: () =>
           readVmConfig((key, fallback) => store().settings.get(key, fallback), DEFAULT_VM_CONFIG),
@@ -103,6 +103,7 @@ export function createRuntimeFromConfig(
   const vmAutostart = () =>
     vmEnabled &&
     config.vmAutostart &&
+    preferences().vmAutostart &&
     !store().settings.get<boolean>(SETUP_VM_PENDING_KEY, false) &&
     !store().settings.get<boolean>(SETUP_VM_WAIT_GOLDEN_KEY, false)
   const modelsDir = join(config.dataRoot, 'models')

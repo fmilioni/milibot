@@ -42,7 +42,7 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/turndown": "^5.0.6",
     "@types/ws": "^8.18.1",
-    "esbuild": "^0.25.11",
+    "esbuild": "^0.28.2",
     "express": "^5.2.1",
     "tsx": "^4.23.15"
   }

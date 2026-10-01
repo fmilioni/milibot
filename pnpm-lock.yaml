@@ -145,8 +145,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       esbuild:
-        specifier: ^0.25.11
-        version: 0.25.12
+        specifier: ^0.28.2
+        version: 0.28.2
       express:
         specifier: ^5.2.1
         version: 5.2.1

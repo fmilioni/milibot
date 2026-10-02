@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2](https://github.com/fmilioni/milibot/compare/v0.2.1...v0.2.2) (2026-10-02)
+
+### Bug Fixes
+
+* **desktop:** stop the packaged app from relaunching itself without end ([#16](https://github.com/fmilioni/milibot/issues/16)) ([67b8c3e](https://github.com/fmilioni/milibot/commit/67b8c3e806cc215de837afa7da968137766c1db6))
+
 ## [0.2.1](https://github.com/fmilioni/milibot/compare/v0.2.0...v0.2.1) (2026-10-02)
 
 ### Bug Fixes

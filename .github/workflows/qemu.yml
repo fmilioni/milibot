@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - vm/qemu/**
+      - '!vm/qemu/SHA256SUMS'
       - .github/workflows/qemu.yml
   workflow_dispatch:
 

@@ -46,7 +46,8 @@ rm -rf "$src" "$stage"
 tar -xJf "$tarball" -C "$work"
 
 # Only what a headless VM with virtio disks, a stream netdev, QMP and UEFI needs: no slirp (gvproxy is
-# the network), no UI, no audio, no USB.
+# the network), no UI, no audio, no USB. libfdt is QEMU's dtc subproject, which meson clones (git) at the
+# commit QEMU pins.
 cd "$src"
 ./configure \
   --prefix=/ \

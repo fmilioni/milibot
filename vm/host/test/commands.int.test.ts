@@ -31,7 +31,8 @@ describe.skipIf(process.platform === 'win32')('workspace-vm commands (fake QEMU)
   let root = ''
   let fake: FakeQemuHost
   let ws = ''
-  const portBase = 30_000 + Math.floor(Math.random() * 300) * 100
+  // Below Linux's ephemeral range (32768+): other tests' outgoing connections never hold these ports.
+  const portBase = 20_000 + Math.floor(Math.random() * 120) * 100
 
   async function run(...args: string[]): Promise<{ code: number; json: unknown }> {
     try {

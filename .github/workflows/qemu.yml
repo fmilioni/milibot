@@ -42,7 +42,7 @@ jobs:
             arch: arm64
           - name: Windows x64 (MinGW on Fedora)
             runner: ubuntu-latest
-            container: fedora:42
+            container: fedora:43
             platform: win32
             arch: x64
     runs-on: ${{ matrix.runner }}

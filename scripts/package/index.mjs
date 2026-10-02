@@ -25,6 +25,17 @@ function stageApp({ stage, desktop }, rootPackage) {
   return app
 }
 
+/**
+ * The main and preload bundles must `require('electron')` from the runtime: a bundled copy of the npm package
+ * spawns the app itself to "install" Electron, which relaunches without end.
+ */
+function assertElectronExternal({ desktop }) {
+  for (const bundle of ['out/main/index.js', 'out/preload/index.js']) {
+    if (readFileSync(join(desktop, bundle), 'utf8').includes('Electron failed to install correctly'))
+      throw new PackageError(`${bundle} bundles the electron npm package; keep "electron" external`)
+  }
+}
+
 /** Electron's binary (the `electronDist` of a native build) is downloaded on demand, not on install. */
 function ensureElectron({ desktop }) {
   const result = spawnSync(process.execPath, [join(desktop, 'node_modules/electron/install.js')], {
@@ -108,6 +119,8 @@ async function main() {
   ]) {
     if (!existsSync(file)) throw new PackageError(`missing build output ${file}`)
   }
+
+  assertElectronExternal(ctx)
 
   const appDir = stageApp(ctx, rootPackage)
   const vmScripts = await bundleVmScripts(ctx)

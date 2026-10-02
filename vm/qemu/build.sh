@@ -65,21 +65,22 @@ cd "$src"
 make -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)"
 make install DESTDIR="$stage"
 
-# Windows installs everything at the prefix's root; the other hosts in bin/ and share/qemu/.
+# Windows installs the data straight in share/ (and may leave files at the root); the layout is the same on
+# every host: bin/ and share/qemu/.
 cd "$stage"
 if [ "$platform" = win32 ]; then
   mkdir -p bin share/qemu
   find . -maxdepth 1 -type f -name '*.exe' -exec mv {} bin/ \;
-  find . -maxdepth 1 -type f ! -name '*.exe' -exec mv {} share/qemu/ \;
-  for dir in */; do
-    case "$dir" in bin/ | share/) ;; *) mv "$dir" share/qemu/ ;; esac
+  find . -maxdepth 1 -type f -exec mv {} share/qemu/ \;
+  for entry in share/*; do
+    [ "$entry" = share/qemu ] || mv "$entry" share/qemu/
   done
   exe=.exe
 else
   exe=
 fi
 find bin -type f ! -name "$emulator$exe" ! -name "qemu-img$exe" -delete
-rm -rf include lib libexec var share/applications share/icons share/man share/doc share/locale
+rm -rf include lib lib64 libexec var share/applications share/icons share/man share/doc share/locale
 # The firmware and option ROMs this machine type can load; QEMU installs every target's.
 case "$target" in
   aarch64) keep=(edk2-aarch64-code.fd edk2-arm-vars.fd) ;;

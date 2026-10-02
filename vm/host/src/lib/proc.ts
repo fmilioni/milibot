@@ -1,4 +1,5 @@
-// Process identity for pid files: after a reboot the pid in `qemu.pid` can belong to an unrelated process.
+// Process identity for pid files: after a reboot the pid in `qemu.pid` or `gvproxy.pid` can belong to an
+// unrelated process.
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -29,6 +30,10 @@ export function isQemuImage(name: string): boolean {
   return /^qemu-system-/i.test(name)
 }
 
+export function isGvproxyImage(name: string): boolean {
+  return /^gvproxy(\.exe)?$/i.test(name)
+}
+
 /** Executable name of a running pid, or null when it can't be read. */
 function processImage(pid: number, platform: string = process.platform): string | null {
   try {
@@ -48,15 +53,30 @@ function processImage(pid: number, platform: string = process.platform): string 
   }
 }
 
-export type QemuIdentity = 'yes' | 'no' | 'unknown'
+export type ProcessIdentity = 'yes' | 'no' | 'unknown'
 
 /**
- * Whether `pid` is a running QEMU: 'yes', 'no' (gone, or reused by another program) or 'unknown' (alive
- * but its name can't be read; treated as running so a live VM is never started twice).
+ * Whether `pid` runs a program whose name `matches`: 'yes', 'no' (gone, or reused by another program) or
+ * 'unknown' (alive but its name can't be read; treated as running so a live VM is never started twice).
  */
-export function qemuIdentity(pid: number): QemuIdentity {
+function processIdentity(pid: number, matches: (image: string) => boolean): ProcessIdentity {
   if (!pidAlive(pid)) return 'no'
   const image = processImage(pid)
   if (image === null) return pidAlive(pid) ? 'unknown' : 'no'
-  return isQemuImage(image) ? 'yes' : 'no'
+  return matches(image) ? 'yes' : 'no'
+}
+
+export const qemuIdentity = (pid: number): ProcessIdentity => processIdentity(pid, isQemuImage)
+
+export const gvproxyIdentity = (pid: number): ProcessIdentity => processIdentity(pid, isGvproxyImage)
+
+/** The pid in a pid file, or null when the file is missing or holds no pid. */
+export function readPidFile(file: string): number | null {
+  let pid: number
+  try {
+    pid = Number(fs.readFileSync(file, 'utf8').trim())
+  } catch {
+    return null
+  }
+  return Number.isInteger(pid) && pid > 0 ? pid : null
 }

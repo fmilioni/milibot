@@ -1,9 +1,9 @@
 # VM
 
-The host needs QEMU (install commands in the README) and Node 24. The QEMU line comes from `vmProfile` (`packages/shared/src/portable/platform.ts`): mac `virt`+`hvf`, Linux x64 `q35`+`kvm`+OVMF, Linux arm64 `virt`+`kvm`+AAVMF, Windows `q35`+`whpx`+`cpu max`; without the accelerator (Linux: `/dev/kvm` not writable) TCG with `slow: true`.
+QEMU ships with the app (below); the host needs only Node 24 (and KVM on Linux, WHPX on Windows). The QEMU line comes from `vmProfile` (`packages/shared/src/portable/platform.ts`): mac `virt`+`hvf`, Linux x64 `q35`+`kvm`+OVMF, Linux arm64 `virt`+`kvm`+AAVMF, Windows `q35`+`whpx`+`cpu max`; without the accelerator (Linux: `/dev/kvm` not writable) TCG with `slow: true`.
 
-- **E2E** (manual, a few GB free in `MILIBOT_E2E_DIR`): `node vm/host/src/cli/e2e.ts --screenshot <png>`; without KVM/HVF raise `MILIBOT_E2E_BOOT_SEC`.
-- Script-only env: `MILIBOT_VM_ACCEL=tcg` forces TCG; `MILIBOT_VM_ARCH` emulates another guest architecture (command line tests only); `MILIBOT_BUILD_DIR` moves the golden build's scratch disk; `MILIBOT_QEMU_SHARE` adds a firmware folder.
+- **E2E** (manual, a few GB free in `MILIBOT_E2E_DIR`, after `pnpm vm:tools`): `node vm/host/src/cli/e2e.ts --screenshot <png>`; without KVM/HVF raise `MILIBOT_E2E_BOOT_SEC`.
+- Script-only env: `MILIBOT_VM_ACCEL=tcg` forces TCG; `MILIBOT_VM_ARCH` emulates another guest architecture (command line tests only); `MILIBOT_BUILD_DIR` moves the golden build's scratch disk; `MILIBOT_QEMU_SHARE` adds a firmware folder; `MILIBOT_GVPROXY` replaces the gvproxy binary.
 - After changing `guest-agent/src` or the helpers it embeds (`guest/bin/{cli-wrapper,gh,milibot-browser}`), run `pnpm --filter @milibot/guest-agent build` before starting a daemon with a real VM (the runtime replaces the VM's agent with the `dist/guest-agent.mjs` bundle when the `agentSha` differs).
 
 ## Host CLIs (`host/`, `@milibot/vm-host`)
@@ -11,7 +11,7 @@ The host needs QEMU (install commands in the README) and Node 24. The QEMU line 
 - `src/cli/workspace-vm.ts`, `build-golden.ts` and `e2e.ts` are TypeScript run by **plain Node 24** (type stripping): only erasable syntax, relative imports with `.ts` extensions, and shared code only through `src/lib/shared.ts`, which reaches `packages/shared/src/portable/*` and the types of `packages/shared/src/vm/vm-cli.ts` by relative path (Node refuses to strip `.ts` under `node_modules`). Never value-import anything that pulls zod or a non-portable shared module.
 - The daemon runs them with its own Node (`scriptCommand` in `apps/daemon/src/vm-cli.ts`); the packaged app bundles them with esbuild into `Resources/vm/scripts/*.mjs` (`scripts/package/index.mjs`). `vmRootDir` (`src/lib/vm-root.ts`) finds the `vm/` folder from either layout.
 - The daemon imports the shared helpers from the package (`src/index.ts`), so they exist once.
-- Tests in `host/test/`: unit tests of the pure pieces; `commands.int.test.ts` runs the real CLI against fake `qemu-img`/`qemu-system-*` (`test/support/`; the fake QEMU runs through a symlink to Node named like QEMU (what macOS `ps` reports) and sets `process.title` to that name (Node 24 names its main thread `MainThread`, which Linux reports in `/proc/<pid>/comm`) so pid identity checks pass; run it in Docker with `--init`, or the exited fake stays a zombie that `pidAlive` counts as alive). Skipped on Windows.
+- Tests in `host/test/`: unit tests of the pure pieces; `commands.int.test.ts` runs the real CLI against fake `qemu-img`/`qemu-system-*`/gvproxy (`test/support/`; the fake QEMU runs through a symlink to Node named like QEMU (what macOS `ps` reports) and sets `process.title` to that name (Node 24 names its main thread `MainThread`, which Linux reports in `/proc/<pid>/comm`) so pid identity checks pass; run it in Docker with `--init`, or the exited fake stays a zombie that `pidAlive` counts as alive). Skipped on Windows.
 
 ## Windows
 
@@ -40,8 +40,20 @@ The host needs QEMU (install commands in the README) and Node 24. The QEMU line 
 ## Lifecycle (`host/src/cli/workspace-vm.ts`)
 
 - `vm/*.sh` are manual shortcuts. JSON on stdout; errors `{"ok":false,"error":{code,message}}` with exit 1, usage errors (`USAGE`) with exit 2. `config.json` and every command's output are typed by `packages/shared/src/vm/vm-cli.ts` (zod): the CLI writes them with those types, the daemon parses them (`parseVmCliOutput`, `VmConfigFileView`). Snapshots and `resize --port-base` need the VM stopped; `grow-disk` only grows. `maxPortBase` bounds `create` and `resize` so every bound port stays below 65536. Pid files are checked for identity (`lib/proc.ts`: a stale `qemu.pid` after a reboot can name an unrelated process).
-- Files in `<wsDir>/vm/`; the UEFI firmware pair is pinned in `config.json` (a changed code file gets a fresh vars copy). Ports: `127.0.0.1:P` → guest agent; `P+N` → VNC of display N.
+- Files in `<wsDir>/vm/`; the UEFI firmware pair is pinned in `config.json` (a changed code file gets a fresh vars copy). Ports: `127.0.0.1:P` → guest agent; `P+N` → VNC of display N; `P+51` QMP (Windows); `P+52` gvproxy's port for QEMU.
 - Unix socket paths are length-limited: QEMU runs with cwd `<wsDir>/vm` and QMP uses a relative path (use the `qmp` subcommand); Windows uses TCP (not a named pipe: QEMU's win32 pipe chardev takes a single connection and the CLI connects per command). Start waits until QMP accepts a connection.
+
+## Bundled QEMU (`qemu/`)
+
+- `qemu/build.sh <platform> <arch> <out>` builds QEMU (`qemu/version.env`) with `--without-default-features`: one `-softmmu` target, `qemu-img`, the accelerator, internal libfdt, pixman; no slirp, UI, audio or USB. It keeps only the target's firmware/option ROMs and makes the result relocatable (macOS: dylibs in `lib/` via `@rpath`, ad-hoc signed, the emulator with `qemu/hypervisor.entitlements`; Linux: libraries in `lib/` with a DT_RPATH of `$ORIGIN/../lib`, built on AlmaLinux 9 for an old glibc; Windows: MinGW DLLs next to the `.exe`, everything moved to `bin/` and `share/qemu/`).
+- `.github/workflows/qemu.yml` runs it per platform (on pushes touching `vm/qemu/`, or by hand) and publishes the release `qemu-<version>-<build>` with `SHA256SUMS`, never changing an existing one. Copy that file to `qemu/SHA256SUMS`: it pins what `pnpm vm:tools`/`pnpm package` download. A rebuild of the same version bumps `QEMU_BUILD`.
+- Lookup (`bundledQemuHome`/`vmProfile` in `platform.ts`): `MILIBOT_QEMU_HOME`, else `bin/qemu` in the `vm/` folder; when its emulator is there the profile uses absolute paths, passes `-L <share/qemu>` and tries its firmware first. Without it the PATH's QEMU (dev only). VMs keep the firmware pinned in `config.json` while that file exists.
+
+## Network (`host/src/lib/gvproxy.ts`)
+
+- No QEMU user networking (slirp): every VM (and the golden build) gets its own gvproxy (gvisor-tap-vsock), started detached right before each QEMU launch with `gvproxy.json` (JSON is YAML) and `gvproxy.{pid,log}` next to it. QEMU's NIC is `-netdev stream` to gvproxy's loopback port. gvproxy accepts **one** connection and exits when it closes, so readiness is checked by binding the port (never by connecting: the probe would become the VM's link), `stop` and failed launches stop it, and its pid file is identity-checked like QEMU's.
+- Guest addresses keep slirp's layout (`GUEST_NET` in `platform.ts`): guest `10.0.2.15` (static DHCP lease for the VM's MAC), gateway/DNS `10.0.2.1`, `10.0.2.2` NATed to the host's loopback (the daemon's MCP and design servers). No IPv6. Host forwards (agent, VNC) are in the config; with a config file gvproxy adds no SSH forward.
+- The binary is pinned with sha256 per platform in `host/src/tools/host-tools.ts`: `pnpm vm:tools` puts this host's (and QEMU) in `vm/bin/` (gitignored; the root `dev` scripts run it), `pnpm package` the target's in `Resources/vm/bin/`. `MILIBOT_GVPROXY` overrides it (tests use `test/support/fake-gvproxy.mjs`; the fake QEMU is a bundled layout under `MILIBOT_QEMU_HOME`).
 
 ## Guest agent (`guest-agent/`)
 

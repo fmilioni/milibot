@@ -60,7 +60,7 @@
     "newer_version": "Este backup é de uma versão mais nova do Milibot. Atualize o app para importar.",
     "vm_running": "Desligue a VM para copiar o disco.",
     "no_vm": "A VM deste workspace ainda não foi criada.",
-    "no_qemu": "O qemu-img não foi encontrado. Instale o QEMU (brew install qemu)."
+    "no_qemu": "O qemu-img não foi encontrado. Reinstale o Milibot."
   },
   "restoreFileMissing": "O arquivo de backup não está mais em {{path}}. Escolha onde ele está agora para restaurar o /workspace.",
   "restoreNoWorkspace": "Este backup não tem os arquivos do /workspace.",

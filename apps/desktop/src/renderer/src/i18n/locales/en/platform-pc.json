@@ -36,7 +36,7 @@
   },
   "backup": {
     "errors": {
-      "no_qemu": "qemu-img was not found. Install QEMU."
+      "no_qemu": "qemu-img was not found. Reinstall Milibot."
     }
   },
   "mcp": {

@@ -102,7 +102,6 @@ function SetupFlow() {
 
   const qemuMissing = host !== null && !host.qemu.found
   const hostSetup = host?.setup ?? null
-  const hostSetupFailed = host !== null && !host.setup
 
   return (
     <div className="flex h-full w-full">
@@ -180,15 +179,7 @@ function SetupFlow() {
                     <p className="text-sm text-fg-secondary">{t('setup.machine.subtitle')}</p>
                     {size && <MachineSizePicker size={size} host={host} onChange={flow.setSize} />}
                     <LegacyOfficeOption checked={flow.legacyOffice} onChange={flow.setLegacyOffice} />
-                    {qemuMissing && (
-                      <QemuMissing
-                        onCheck={flow.checkQemu}
-                        setup={hostSetup}
-                        setupFailed={hostSetupFailed}
-                        binary={host?.qemu.binary}
-                        firmwareMissing={host?.qemu.firmware?.found === false}
-                      />
-                    )}
+                    {qemuMissing && <QemuMissing onCheck={flow.checkQemu} />}
                     <KvmNotice setup={hostSetup} onCheck={flow.recheckHost} />
                     <WhpxNotice host={host} onCheck={flow.recheckHost} />
                     <CreateMachineButton
@@ -218,15 +209,7 @@ function SetupFlow() {
                         disk: vmConfig.dataGb,
                       })}
                     </p>
-                    {qemuMissing && (
-                      <QemuMissing
-                        onCheck={flow.checkQemu}
-                        setup={hostSetup}
-                        setupFailed={hostSetupFailed}
-                        binary={host?.qemu.binary}
-                        firmwareMissing={host?.qemu.firmware?.found === false}
-                      />
-                    )}
+                    {qemuMissing && <QemuMissing onCheck={flow.checkQemu} />}
                     <KvmNotice setup={hostSetup} onCheck={flow.recheckHost} />
                     <WhpxNotice host={host} onCheck={flow.recheckHost} />
                     <MachineProgress

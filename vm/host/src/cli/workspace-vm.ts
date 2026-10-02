@@ -2,10 +2,12 @@
 // {"ok":false,"error":{"code","message"}} and exit 1 (usage errors exit 2).
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { CliError, type Flags, parseArgs, usage } from '../lib/args.ts'
 import { isEntryPoint } from '../lib/entry.ts'
 import { searchPath, type VmCliErrorBody } from '../lib/shared.ts'
+import { vmRootDir } from '../lib/vm-root.ts'
 import { cmdCreate } from '../workspace/commands/create.ts'
 import { cmdGrowDisk, GROW_DISK_USAGE } from '../workspace/commands/grow-disk.ts'
 import { cmdQmp } from '../workspace/commands/qmp.ts'
@@ -84,7 +86,8 @@ export async function main(argv: string[]): Promise<number> {
       const vmDir = vmPaths(wsDir).vm
       if (fs.existsSync(vmDir)) process.chdir(vmDir)
     }
-    const result = await dispatch(vmHostContext(), command, rest, flags)
+    const ctx = vmHostContext(vmRootDir(fileURLToPath(import.meta.url)))
+    const result = await dispatch(ctx, command, rest, flags)
     process.stdout.write(JSON.stringify(result, null, 2) + '\n')
     return 0
   } catch (err) {

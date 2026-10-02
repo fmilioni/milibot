@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import {
+  bundledQemuProgram,
   type GoldenFs,
   type Host,
   type VmProfile,
@@ -12,7 +13,7 @@ import {
 
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-export function whichSync(name: string): string | null {
+function whichSync(name: string): string | null {
   for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
     if (dir && fs.existsSync(path.join(dir, name))) return path.join(dir, name)
   }
@@ -38,8 +39,16 @@ function whpxDllPresent(): boolean {
   return fs.existsSync(path.join(systemRoot, 'System32', 'WinHvPlatform.dll'))
 }
 
-/** Whether the accelerator is usable and where QEMU lives. Run after `process.env.PATH` is set. */
-function probeHost(host: Host): VmProfileProbe {
+/** Whether `program` (an absolute path, or a name on the PATH) exists. */
+export function programExists(program: string): boolean {
+  return path.isAbsolute(program) ? fs.existsSync(program) : whichSync(program) !== null
+}
+
+/**
+ * Whether the accelerator is usable and where QEMU lives: the bundled one in `qemuHome` when its emulator
+ * is there, else the PATH's. Run after `process.env.PATH` is set.
+ */
+function probeHost(host: Host, qemuHome: string | null): VmProfileProbe {
   const probe: VmProfileProbe = {}
   if (host.env.MILIBOT_VM_ACCEL === 'tcg') probe.accelAvailable = false
   // MILIBOT_VM_ARCH emulates another guest architecture.
@@ -47,7 +56,12 @@ function probeHost(host: Host): VmProfileProbe {
   else if (host.platform === 'linux') probe.accelAvailable = kvmAvailable()
   else if (host.platform === 'win32') probe.accelAvailable = whpxDllPresent()
   if (host.env.MILIBOT_QEMU_SHARE) probe.qemuShare = host.env.MILIBOT_QEMU_SHARE
-  const qemuPath = whichSync(vmProfile(host).qemuBinary)
+  const emulator = vmProfile(host).qemuBinary
+  if (qemuHome && fs.existsSync(bundledQemuProgram(qemuHome, emulator, host.platform))) {
+    probe.qemuHome = qemuHome
+    return probe
+  }
+  const qemuPath = whichSync(emulator)
   if (qemuPath) probe.qemuDir = path.dirname(qemuPath)
   return probe
 }
@@ -59,11 +73,18 @@ export interface ProfileOverrides {
 
 export type HostProfile = (overrides?: ProfileOverrides) => VmProfile
 
-/** The QEMU profile of this host, probed once on first use. `MILIBOT_VM_ACCEL=tcg` forces TCG. */
-export function hostProfiles(host: Host, defaults: ProfileOverrides = {}): HostProfile {
+/**
+ * The QEMU profile of this host, probed once on first use. `qemuHome`: the bundled QEMU (`bundledQemuHome`).
+ * `MILIBOT_VM_ACCEL=tcg` forces TCG.
+ */
+export function hostProfiles(
+  host: Host,
+  qemuHome: string | null,
+  defaults: ProfileOverrides = {},
+): HostProfile {
   let probe: VmProfileProbe | null = null
   return (overrides = {}) => {
-    probe ??= probeHost(host)
+    probe ??= probeHost(host, qemuHome)
     const { tcg, whpxKernelIrqchip } = { ...defaults, ...overrides }
     const current = { ...probe }
     if (tcg) current.accelAvailable = false

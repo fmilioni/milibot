@@ -38,7 +38,7 @@ export async function cmdStart(ctx: VmHostContext, wsDir: string, flags: Flags):
     launched = await launchWithFallback({
       irqchip,
       profileFor: ctx.profile,
-      launch: (prof) => launchQemu(p, config, fw, prof),
+      launch: (prof) => launchQemu(ctx, p, config, fw, prof),
       beforeRetry: (fallback, log) => {
         // Keep the failed attempt's log next to the new one.
         fs.writeFileSync(`${p.qemuLog}.1`, log + '\n')

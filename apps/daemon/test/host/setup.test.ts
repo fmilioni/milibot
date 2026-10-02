@@ -4,12 +4,9 @@ import { type HostProbe, hostSetup, kvmStatus } from '../../src/host/setup'
 
 const GROUPS = 'root:x:0:\nkvm:x:993:ana,bia\ndocker:x:994:ana\n'
 
-function probe(overrides: Partial<HostProbe> & { commands?: string[] } = {}): HostProbe {
-  const commands = new Set(overrides.commands ?? ['apt-get'])
+function probe(overrides: Partial<HostProbe> = {}): HostProbe {
   return {
     platform: 'linux',
-    arch: 'x64',
-    hasCommand: (name) => commands.has(name),
     exists: (path) => path === '/dev/kvm',
     canReadWrite: () => true,
     groupFile: () => GROUPS,
@@ -20,25 +17,6 @@ function probe(overrides: Partial<HostProbe> & { commands?: string[] } = {}): Ho
 }
 
 describe('hostSetup on Linux', () => {
-  it('gives the install command of the distro and architecture', () => {
-    expect(hostSetup(probe()).installCommand).toBe('sudo apt-get install -y qemu-system-x86 qemu-utils ovmf')
-    expect(hostSetup(probe({ arch: 'arm64' })).installCommand).toBe(
-      'sudo apt-get install -y qemu-system-arm qemu-utils qemu-efi-aarch64',
-    )
-    const dnf = hostSetup(probe({ commands: ['dnf'] }))
-    expect(dnf.packageManager).toBe('dnf')
-    expect(dnf.installCommand).toBe('sudo dnf install -y qemu-system-x86 qemu-img edk2-ovmf')
-    expect(hostSetup(probe({ commands: ['pacman'] })).installCommand).toBe(
-      'sudo pacman -S --needed qemu-system-x86 qemu-img edk2-ovmf',
-    )
-  })
-
-  it('prefers apt when several package managers exist and has no command for unknown distros', () => {
-    expect(hostSetup(probe({ commands: ['pacman', 'apt-get'] })).packageManager).toBe('apt')
-    const unknown = hostSetup(probe({ commands: ['zypper'] }))
-    expect(unknown).toMatchObject({ packageManager: null, installCommand: null })
-  })
-
   it('reports KVM ready when /dev/kvm opens', () => {
     expect(hostSetup(probe()).kvm).toEqual({ status: 'ok', fixCommand: null })
   })
@@ -60,12 +38,8 @@ describe('hostSetup on Linux', () => {
 })
 
 describe('hostSetup on macOS and Windows', () => {
-  it('keeps Homebrew on macOS and uses winget on Windows, without KVM checks', () => {
-    expect(hostSetup(probe({ platform: 'darwin' }))).toEqual({
-      packageManager: 'brew',
-      installCommand: 'brew install qemu',
-      kvm: null,
-    })
-    expect(hostSetup(probe({ platform: 'win32' }))).toMatchObject({ packageManager: 'winget', kvm: null })
+  it('has nothing to check (QEMU ships with the app)', () => {
+    expect(hostSetup(probe({ platform: 'darwin' }))).toEqual({ kvm: null })
+    expect(hostSetup(probe({ platform: 'win32' }))).toEqual({ kvm: null })
   })
 })

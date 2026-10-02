@@ -1,17 +1,12 @@
 import type { HostInfo, HostSetup } from '@milibot/shared'
-import { Check, Copy, Cpu, RotateCw, SquareTerminal } from 'lucide-react'
+import { Check, Copy, Cpu, RotateCw, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { whpxCase } from '@/features/setup/lib/setup'
 import { useCopyFlash } from '@/hooks/use-copy-flash'
-import { errorMessage } from '@/lib/errors'
-import { platformKind } from '@/lib/platform'
 import { Button } from '@/ui/Button'
 import { Spinner } from '@/ui/Spinner'
-
-const MAC_INSTALL_COMMAND = 'brew install qemu'
-const MAC_REINSTALL_COMMAND = 'brew reinstall qemu'
 
 function CommandLine({ command }: { command: string }) {
   const { t } = useTranslation()
@@ -59,108 +54,33 @@ function CheckButton({
 }
 
 /**
- * Shown in the machine step while QEMU is missing. macOS: Homebrew, with a button that runs it in
- * Terminal. Linux: the command for the distro's package manager to copy, then "check again".
- * Windows: the `winget` command to copy, then "check again".
+ * Shown in the machine step when the QEMU that ships with Milibot is not there (a damaged install): the app
+ * has to be reinstalled.
  */
-export function QemuMissing({
-  onCheck,
-  setup,
-  setupFailed,
-  binary,
-  firmwareMissing = false,
-}: {
-  onCheck: () => Promise<boolean>
-  setup: HostSetup | null
-  /** The daemon did not report the install command (Linux and Windows). */
-  setupFailed: boolean
-  /** `qemu.binary` from `GET /host` (e.g. `qemu-system-x86_64`); absent until the host is known. */
-  binary?: string
-  /** QEMU is there but its UEFI firmware is not (`qemu.firmware.found` false). */
-  firmwareMissing?: boolean
-}) {
+export function QemuMissing({ onCheck }: { onCheck: () => Promise<boolean> }) {
   const { t } = useTranslation()
   const [stillMissing, setStillMissing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const kind = platformKind()
-  const mac = kind === 'mac'
-  const command = mac
-    ? firmwareMissing
-      ? MAC_REINSTALL_COMMAND
-      : MAC_INSTALL_COMMAND
-    : (setup?.installCommand ?? null)
-  const qemu = binary ? `QEMU (${binary})` : 'QEMU'
-  const description = firmwareMissing
-    ? t(
-        mac
-          ? 'setup.machine.qemu.firmwareMissing'
-          : kind === 'windows'
-            ? 'setup.machine.qemu.firmwareMissingWindows'
-            : 'setup.machine.qemu.firmwareMissingLinux',
-      )
-    : mac
-      ? t('setup.machine.qemu.description')
-      : kind === 'windows'
-        ? t('setup.machine.qemu.descriptionWindows', { qemu })
-        : command
-          ? t('setup.machine.qemu.descriptionLinux', { qemu })
-          : t('setup.machine.qemu.descriptionNoManager', { qemu })
-
-  const openTerminal = () => {
-    setError(null)
-    window.milibot.openQemuInstaller().catch((err: unknown) => setError(errorMessage(err)))
-  }
-
   const check = async () => {
     setStillMissing(false)
     setStillMissing(!(await onCheck()))
   }
-
   return (
-    <div className="flex flex-col gap-2.5 rounded-[10px] border border-border bg-surface-2 px-3 py-3">
+    <div
+      className="flex flex-col gap-2.5 rounded-[10px] border border-border bg-surface-2 px-3 py-3"
+      role="alert"
+    >
       <div className="flex items-center gap-2 text-base font-semibold text-fg">
-        <SquareTerminal size={14} className="text-accent" aria-hidden />
+        <TriangleAlert size={14} className="text-danger" aria-hidden />
         {t('setup.machine.qemu.title')}
       </div>
-      {!mac && !setup ? (
-        setupFailed ? (
-          <p className="text-sm leading-[1.5] text-fg-secondary" role="alert">
-            {t('setup.machine.qemu.setupFailed', { qemu })}
-          </p>
-        ) : (
-          <Spinner size={14} label={t('common.loading')} className="text-fg-muted" />
-        )
-      ) : (
-        <>
-          <p className="text-sm leading-[1.5] text-fg-secondary">{description}</p>
-          {command && <CommandLine command={command} />}
-        </>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        {mac && !firmwareMissing && (
-          <Button variant="primary" size="sm" onClick={openTerminal}>
-            <SquareTerminal size={12} />
-            {t('setup.machine.qemu.openTerminal')}
-          </Button>
-        )}
-        <CheckButton onCheck={check} variant={mac && !firmwareMissing ? 'secondary' : 'primary'} />
-        {mac && (
-          <button
-            type="button"
-            onClick={() => void window.milibot.openExternal('https://brew.sh')}
-            className="focus-ring rounded text-xs text-fg-muted underline-offset-2 hover:text-fg-secondary hover:underline"
-          >
-            {t('setup.machine.qemu.noBrew')}
-          </button>
-        )}
+      <p className="text-sm leading-[1.5] text-fg-secondary">{t('setup.machine.qemu.description')}</p>
+      <div>
+        <CheckButton onCheck={check} variant="primary" />
       </div>
       {stillMissing && (
         <p className="text-xs text-fg-secondary" role="status">
-          {mac ? t('setup.machine.qemu.stillMissing') : t('setup.machine.qemu.stillMissingLinux', { qemu })}
+          {t('setup.machine.qemu.stillMissing')}
         </p>
-      )}
-      {error && (
-        <p className="selectable text-xs text-danger">{t('setup.machine.qemu.openFailed', { error })}</p>
       )}
     </div>
   )

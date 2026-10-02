@@ -140,7 +140,7 @@ export class BackupService {
       if (!existsSync(this.dataDisk()))
         throw new DaemonError('conflict', 'The workspace VM has not been created yet', { reason: 'no_vm' })
       if (!this.deps.qemuImg())
-        throw new DaemonError('conflict', 'qemu-img was not found (install QEMU)', { reason: 'no_qemu' })
+        throw new DaemonError('conflict', 'qemu-img was not found (reinstall Milibot)', { reason: 'no_qemu' })
       if (this.deps.vm.processRunning() && !body.stopVm)
         throw new DaemonError('conflict', 'Stop the VM to copy its data disk', { reason: 'vm_running' })
     }

@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
 import { parseArgs } from '../src/lib/args.ts'
-import { isQemuImage, parsePsComm, parseTasklistCsv, qemuIdentity } from '../src/lib/proc.ts'
+import {
+  gvproxyIdentity,
+  isGvproxyImage,
+  isQemuImage,
+  parsePsComm,
+  parseTasklistCsv,
+  qemuIdentity,
+} from '../src/lib/proc.ts'
 import { vmProfile } from '../src/lib/shared.ts'
 import { vmRootDir } from '../src/lib/vm-root.ts'
 import { sanitizeName } from '../src/workspace/commands/create.ts'
 import { chooseFirmware } from '../src/workspace/firmware.ts'
 import { maxPortBase, requiredPorts } from '../src/workspace/ports.ts'
-import { qemuArgs } from '../src/workspace/qemu-process.ts'
+import { qemuArgs, vmForwards } from '../src/workspace/qemu-process.ts'
 import { seedFiles } from '../src/workspace/seed.ts'
 
 const macHost = { platform: 'darwin', arch: 'arm64', env: {}, homedir: '/Users/me' }
@@ -43,27 +50,34 @@ describe('workspace VM command line', () => {
     expect(argAfter(win, '-qmp')).toBe('tcp:127.0.0.1:24051,server=on,wait=off')
   })
 
-  it('forwards the agent and 50 VNC displays from the port base', () => {
+  it('connects the NIC to gvproxy after the QMP port', () => {
     const args = qemuArgs(vmPaths, config, fw, vmProfile(macHost))
-    const netdev = argAfter(args, '-netdev')
-    expect(netdev).toContain('hostfwd=tcp:127.0.0.1:24000-:8765')
-    expect(netdev).toContain('hostfwd=tcp:127.0.0.1:24001-:5901')
-    expect(netdev).toContain('hostfwd=tcp:127.0.0.1:24050-:5950')
-    expect(netdev).not.toContain('24051')
+    expect(argAfter(args, '-netdev')).toContain('addr.host=127.0.0.1,addr.port=24052')
+    expect(args).toContain('virtio-net-pci,netdev=n0,mac=52:54:00:aa:bb:cc')
     expect(args).toContain(`if=pflash,format=raw,readonly=on,file=${fw.code}`)
   })
 
-  it('checks the QMP port too on Windows', () => {
-    expect(requiredPorts(24000, vmProfile(macHost))).toEqual({ first: 24000, last: 24050 })
-    expect(requiredPorts(24000, vmProfile(winHost))).toEqual({ first: 24000, last: 24051 })
+  it('forwards the agent and 50 VNC displays from the port base', () => {
+    const forwards = vmForwards(24000)
+    expect(forwards).toHaveLength(51)
+    expect(forwards[0]).toEqual([24000, 8765])
+    expect(forwards[1]).toEqual([24001, 5901])
+    expect(forwards.at(-1)).toEqual([24050, 5950])
+  })
+
+  it("checks the QMP port only on Windows, and gvproxy's port everywhere", () => {
+    const mac = requiredPorts(24000, vmProfile(macHost))
+    expect(mac).toHaveLength(52)
+    expect(mac).not.toContain(24051)
+    expect(mac.at(-1)).toBe(24052)
+    expect(requiredPorts(24000, vmProfile(winHost))).toHaveLength(53)
   })
 
   it('keeps every bound port below 65536', () => {
     for (const host of [macHost, winHost]) {
-      const prof = vmProfile(host)
-      expect(requiredPorts(maxPortBase(prof), prof).last).toBe(65535)
+      expect(requiredPorts(maxPortBase(), vmProfile(host)).at(-1)).toBe(65535)
     }
-    expect(maxPortBase(vmProfile(winHost))).toBe(65484)
+    expect(maxPortBase()).toBe(65483)
   })
 
   it('parses flags of both CLIs the same way', () => {
@@ -136,7 +150,7 @@ describe('workspace VM command line', () => {
   })
 })
 
-describe('QEMU process identity', () => {
+describe('VM process identity', () => {
   it('reads process names from ps and tasklist', () => {
     expect(parsePsComm('/opt/homebrew/bin/qemu-system-aarch64\n')).toBe('qemu-system-aarch64')
     expect(parsePsComm('qemu-system-x86\n')).toBe('qemu-system-x86')
@@ -154,7 +168,14 @@ describe('QEMU process identity', () => {
     expect(isQemuImage('qemu-img')).toBe(false)
   })
 
-  it('does not take a live unrelated pid for QEMU', () => {
+  it('recognizes gvproxy on every host', () => {
+    expect(isGvproxyImage('gvproxy')).toBe(true)
+    expect(isGvproxyImage('GVPROXY.EXE')).toBe(true)
+    expect(isGvproxyImage('gvproxy-darwin')).toBe(false)
+  })
+
+  it('does not take a live unrelated pid for QEMU or gvproxy', () => {
     expect(qemuIdentity(process.pid)).toBe('no')
+    expect(gvproxyIdentity(process.pid)).toBe('no')
   })
 })

@@ -1,7 +1,6 @@
-// Stands in for qemu-system-*: writes its pid file, answers QMP and the guest agent's /ping, exits on
+// Stands in for qemu-system-*: writes its pid file, connects to gvproxy's port, answers QMP, exits on
 // system_powerdown or quit. Records its arguments in fake-qemu-args.json in its cwd (the VM dir).
 import fs from 'node:fs'
-import http from 'node:http'
 import net from 'node:net'
 import path from 'node:path'
 
@@ -51,12 +50,5 @@ const qmp = net.createServer((sock) => {
 if (unix) qmp.listen(unix[1])
 else if (tcp) qmp.listen(Number(tcp[1]), '127.0.0.1')
 
-const agentPort = /hostfwd=tcp:127\.0\.0\.1:(\d+)-:/.exec(after('-netdev'))?.[1]
-if (agentPort && !process.env.FAKE_QEMU_NO_AGENT) {
-  http
-    .createServer((req, res) => {
-      res.writeHead(req.url === '/ping' ? 200 : 404, { 'content-type': 'application/json' })
-      res.end('{"ok":true}')
-    })
-    .listen(Number(agentPort), '127.0.0.1')
-}
+const netPort = /addr\.port=(\d+)/.exec(after('-netdev'))?.[1]
+if (netPort) net.connect(Number(netPort), '127.0.0.1').on('error', () => {})

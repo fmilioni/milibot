@@ -157,8 +157,11 @@ export interface VmProfile {
   platform: HostPlatform
   arch: HostArch
   goldenArch: GoldenArch
+  /** A name looked up on the PATH, or the bundled QEMU's absolute path. */
   qemuBinary: string
   qemuImgBinary: string
+  /** The bundled QEMU's data folder (`-L`: option ROMs), null for a system QEMU. */
+  qemuDataDir: string | null
   machine: string
   /** Value of `-accel` (the accelerator actually used, after the fallback). */
   accel: string
@@ -191,6 +194,20 @@ export const GUEST_AGENT_PORT = 8765
 /** Offset of the QMP TCP port from the VM's port base (after the VNC ports). */
 export const QMP_TCP_OFFSET = VNC_DISPLAYS + 1
 
+/** Offset of the loopback port where gvproxy waits for QEMU's network backend (after QMP). */
+export const NET_TCP_OFFSET = QMP_TCP_OFFSET + 1
+
+/**
+ * The guest's network, served by gvproxy with slirp's old addresses: `host` reaches the host's loopback
+ * (the daemon's MCP and design servers), `gateway` answers DHCP and DNS.
+ */
+export const GUEST_NET = {
+  subnet: '10.0.2.0/24',
+  gateway: '10.0.2.1',
+  host: '10.0.2.2',
+  guest: '10.0.2.15',
+} as const
+
 /** Contents of `vm/golden-revision`: a positive integer, else 1. */
 export function parseGoldenRevision(text: string): number {
   const value = Number(text.trim())
@@ -205,6 +222,8 @@ export interface VmProfileProbe {
   accelAvailable?: boolean
   /** Extra firmware dir to try first (`MILIBOT_QEMU_SHARE`). */
   qemuShare?: string
+  /** The QEMU shipped with Milibot (`bundledQemuHome`), when its emulator exists: used instead of the PATH's. */
+  qemuHome?: string
   /** Directory of the QEMU binary (Windows: `…\qemu`, whose `share` has the firmware). */
   qemuDir?: string
   /** WHPX's in-hypervisor interrupt controller (Windows only; see `whpxAccelArg`). */
@@ -299,7 +318,25 @@ function x86Share(dir: string, platform: string): FirmwarePair {
   }
 }
 
-/** Firmware locations per host, most specific first (distro packages, then QEMU's own `share`). */
+/** Where the QEMU shipped with Milibot lives: `MILIBOT_QEMU_HOME`, else `bin/qemu` in the `vm/` folder. */
+export function bundledQemuHome(vmRoot: string, platform: string, env: Host['env'] = {}): string {
+  return env.MILIBOT_QEMU_HOME || joinPath(platform, vmRoot, 'bin', 'qemu')
+}
+
+/** A bundled QEMU's firmware and option ROMs. */
+export function bundledQemuShare(home: string, platform: string): string {
+  return joinPath(platform, home, 'share', 'qemu')
+}
+
+/** Absolute path of a bundled QEMU program (`qemu-img`, `qemu-system-aarch64`…). */
+export function bundledQemuProgram(home: string, name: string, platform: string): string {
+  return joinPath(platform, home, 'bin', executableName(name, platform))
+}
+
+/**
+ * Firmware locations per host, most specific first (`MILIBOT_QEMU_SHARE`, the bundled QEMU, distro packages,
+ * then a system QEMU's own `share`).
+ */
 export function firmwareCandidates(
   platform: string,
   arch: string,
@@ -308,7 +345,10 @@ export function firmwareCandidates(
 ): FirmwarePair[] {
   const share = (dirs: string[], make: (dir: string, p: string) => FirmwarePair) =>
     dirs.map((d) => make(d, platform))
-  const custom = probe.qemuShare ? [probe.qemuShare] : []
+  const custom = [
+    ...(probe.qemuShare ? [probe.qemuShare] : []),
+    ...(probe.qemuHome ? [bundledQemuShare(probe.qemuHome, platform)] : []),
+  ]
   if (platform === 'darwin') {
     return share([...custom, '/opt/homebrew/share/qemu', '/usr/local/share/qemu'], aarch64Share)
   }
@@ -367,7 +407,11 @@ export function vmProfile(
   const x86 = arch === 'x64'
   const preferredAccel = platform === 'darwin' ? 'hvf' : platform === 'win32' ? 'whpx' : 'kvm'
   const accelAvailable = probe.accelAvailable ?? platform !== 'linux'
-  const qemuBinary = executableName(x86 ? 'qemu-system-x86_64' : 'qemu-system-aarch64', platform)
+  const emulator = x86 ? 'qemu-system-x86_64' : 'qemu-system-aarch64'
+  const home = probe.qemuHome
+  const program = (name: string) =>
+    home ? bundledQemuProgram(home, name, platform) : executableName(name, platform)
+  const qemuBinary = program(emulator)
   let machine = x86 ? 'q35' : 'virt'
   let accel: string
   let cpu: string
@@ -387,7 +431,8 @@ export function vmProfile(
     arch,
     goldenArch: goldenArchOf(arch),
     qemuBinary,
-    qemuImgBinary: executableName('qemu-img', platform),
+    qemuImgBinary: program('qemu-img'),
+    qemuDataDir: home ? bundledQemuShare(home, platform) : null,
     machine,
     accel,
     accelKind: accelAvailable ? preferredAccel : 'tcg',

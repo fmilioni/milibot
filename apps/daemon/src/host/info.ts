@@ -1,11 +1,11 @@
 import { existsSync, realpathSync, statSync } from 'node:fs'
 import { cpus, totalmem } from 'node:os'
 
-import { type Host, type HostInfo, type WindowsHypervisorState } from '@milibot/shared'
+import { executableName, type Host, type HostInfo, type WindowsHypervisorState } from '@milibot/shared'
 
 import { goldenVersionOf } from '../golden/revision'
 import { findExecutable } from './executables'
-import { currentHost, hostVmProfile } from './profile'
+import { bundledQemu, currentHost, hostVmProfile } from './profile'
 
 const GiB = 1024 ** 3
 
@@ -45,27 +45,50 @@ export function diskBytes(file: string): number | null {
 }
 
 /**
- * Checked on every call, so "check again" after installing QEMU sees it without a restart. On Windows
- * `%ProgramFiles%\qemu` is searched too: winget installs QEMU there without adding it to the PATH. QEMU only
- * counts as found with the UEFI firmware too (Linux packages it separately: `ovmf`, `qemu-efi-aarch64`).
+ * Checked on every call. The QEMU shipped with Milibot (`qemuHome`) counts when its emulator, `qemu-img` and
+ * firmware are there; without it a system QEMU is looked for on the PATH (on Windows also
+ * `%ProgramFiles%\\qemu`, where winget installs it), with the UEFI firmware too (Linux packages it separately:
+ * `ovmf`, `qemu-efi-aarch64`).
  */
 export function qemuStatus(
   env: NodeJS.ProcessEnv = process.env,
   host: Host = currentHost(env),
   isFile?: (file: string, platform: string) => boolean,
   fileExists: (file: string) => boolean = existsSync,
+  qemuHome: string | null = bundledQemu(host),
 ): HostInfo['qemu'] {
-  const { qemuBinary, qemuImgBinary } = hostVmProfile(host)
-  const system = findExecutable(qemuBinary, env, host, isFile)
-  const img = findExecutable(qemuImgBinary, env, host, isFile)
-  const candidates = hostVmProfile(host, system).firmware
+  const binary = executableName(hostVmProfile(host).qemuBinary, host.platform)
+  let system: string | null
+  let img: string | null
+  let candidates
+  if (qemuHome) {
+    const bundled = hostVmProfile(host, null, null, qemuHome)
+    system = fileExists(bundled.qemuBinary) ? bundled.qemuBinary : null
+    img = fileExists(bundled.qemuImgBinary) ? bundled.qemuImgBinary : null
+    candidates = bundled.firmware
+  } else {
+    const { qemuBinary, qemuImgBinary } = hostVmProfile(host)
+    system = findExecutable(qemuBinary, env, host, isFile)
+    img = findExecutable(qemuImgBinary, env, host, isFile)
+    candidates = hostVmProfile(host, system).firmware
+  }
   const firmware = candidates.some((pair) => fileExists(pair.code) && fileExists(pair.vars))
   return {
     found: Boolean(system && img && firmware),
     path: system ?? null,
-    binary: qemuBinary,
+    binary,
     firmware: { found: firmware, tried: candidates.map((pair) => pair.code) },
   }
+}
+
+/** `qemu-img` of the bundled QEMU, else the PATH's (backups). */
+export function findQemuImg(
+  host: Host = currentHost(),
+  qemuHome: string | null = bundledQemu(host),
+): string | null {
+  return qemuHome
+    ? hostVmProfile(host, null, null, qemuHome).qemuImgBinary
+    : findExecutable('qemu-img', host.env)
 }
 
 /** Platform and accelerator the next VM boot will use (TCG = slow, shown as a warning). */

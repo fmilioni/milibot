@@ -21,7 +21,7 @@ import {
   VmConfigFile,
   VmConfigFileView,
 } from '../../../packages/shared/src/vm/vm-cli.ts'
-import { pidAlive, qemuIdentity } from '../src/lib/proc.ts'
+import { gvproxyIdentity, pidAlive, qemuIdentity } from '../src/lib/proc.ts'
 import { type FakeQemuHost, fakeQemuHost } from './support/fake-qemu.ts'
 
 const execFileAsync = promisify(execFile)
@@ -58,6 +58,8 @@ describe.skipIf(process.platform === 'win32')('workspace-vm commands (fake QEMU)
     expect(result.code).toBe(exitCode)
     expect(VmCliErrorBody.parse(result.json).error.code).toBe(code)
   }
+
+  const gvproxyPid = () => Number(fs.readFileSync(path.join(ws, 'vm', 'gvproxy.pid'), 'utf8'))
 
   const config = () =>
     VmConfigFile.parse(JSON.parse(fs.readFileSync(path.join(ws, 'vm', 'config.json'), 'utf8')))
@@ -125,8 +127,14 @@ describe.skipIf(process.platform === 'win32')('workspace-vm commands (fake QEMU)
     expect(config().running).toMatchObject({ pid: started.pid, cpus: 2, memGb: 4, accel: 'tcg' })
 
     const args = JSON.parse(fs.readFileSync(path.join(ws, 'vm', 'fake-qemu-args.json'), 'utf8')) as string[]
+    expect(args.slice(0, 2)).toEqual(['-L', path.join(root, 'qemu', 'share', 'qemu')])
     expect(args[args.indexOf('-smp') + 1]).toBe('2')
     expect(args[args.indexOf('-qmp') + 1]).toBe('unix:qmp.sock,server=on,wait=off')
+    expect(gvproxyIdentity(gvproxyPid())).toBe('yes')
+    const net = JSON.parse(fs.readFileSync(path.join(ws, 'vm', 'gvproxy.json'), 'utf8')) as {
+      interfaces: { qemu: string }
+    }
+    expect(net.interfaces.qemu).toBe(`tcp://127.0.0.1:${portBase + 52}`)
 
     const status = await ok(VmCliStatus, 'status', ws)
     expect(status).toMatchObject({
@@ -150,11 +158,14 @@ describe.skipIf(process.platform === 'win32')('workspace-vm commands (fake QEMU)
     expect(config().running?.cpus).toBe(2)
   })
 
-  it('stops through ACPI and forgets the running record', async () => {
+  it('stops through ACPI, takes gvproxy down with QEMU and forgets the running record', async () => {
     const pid = config().running?.pid as number
+    const netPid = gvproxyPid()
     const stopped = await ok(VmCliStopResult, 'stop', ws, '--timeout-sec', '10')
     expect(stopped).toMatchObject({ state: 'stopped', method: 'acpi' })
     expect(pidAlive(pid)).toBe(false)
+    expect(pidAlive(netPid)).toBe(false)
+    expect(fs.existsSync(path.join(ws, 'vm', 'gvproxy.pid'))).toBe(false)
     expect(config().running).toBeUndefined()
     expect(fs.existsSync(path.join(ws, 'vm', 'qemu.pid'))).toBe(false)
     expect(await ok(VmCliStopResult, 'stop', ws)).toMatchObject({ alreadyStopped: true })
@@ -169,9 +180,9 @@ describe.skipIf(process.platform === 'win32')('workspace-vm commands (fake QEMU)
   })
 
   it('bounds the port base by the ports the host binds', async () => {
-    await fails('USAGE', 2, 'resize', ws, '--port-base', '65486')
-    const moved = await ok(VmCliResizeResult, 'resize', ws, '--port-base', '65485')
-    expect(moved.ports).toMatchObject({ agent: 65485, vncLast: 65535 })
+    await fails('USAGE', 2, 'resize', ws, '--port-base', '65484')
+    const moved = await ok(VmCliResizeResult, 'resize', ws, '--port-base', '65483')
+    expect(moved.ports).toMatchObject({ agent: 65483, vncLast: 65533 })
     await ok(VmCliResizeResult, 'resize', ws, '--port-base', String(portBase))
   })
 

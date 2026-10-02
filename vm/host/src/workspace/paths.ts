@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { type GvproxyFiles, gvproxyFiles } from '../lib/gvproxy.ts'
+
 export interface VmPaths {
   vm: string
   config: string
@@ -12,6 +14,7 @@ export interface VmPaths {
   pid: string
   serial: string
   qemuLog: string
+  net: GvproxyFiles
 }
 
 export function vmPaths(wsDir: string): VmPaths {
@@ -28,5 +31,6 @@ export function vmPaths(wsDir: string): VmPaths {
     pid: path.join(vm, 'qemu.pid'),
     serial: path.join(vm, 'serial.log'),
     qemuLog: path.join(vm, 'qemu.log'),
+    net: gvproxyFiles(vm),
   }
 }

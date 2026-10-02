@@ -1,4 +1,5 @@
 // QEMU command line and cloud-init pieces shared by the golden build and the workspace VMs.
+import { streamNetdev } from './gvproxy.ts'
 import type { FirmwarePair, VmProfile } from './shared.ts'
 
 /** Commas in a `-drive`/`-serial` option value are escaped by doubling them. */
@@ -20,14 +21,15 @@ export interface BaseVm {
   /** The first one boots. */
   disks: QemuDisk[]
   seed: string
-  hostfwd?: string[]
-  mac?: string
+  /** gvproxy's loopback port for QEMU. */
+  netPort: number
+  mac: string
   serial: string
 }
 
-/** Headless VM with UEFI firmware, virtio disks, the cidata seed, user networking and a serial log. */
+/** Headless VM with UEFI firmware, virtio disks, the cidata seed, gvproxy's network and a serial log. */
 export function baseQemuArgs(
-  prof: Pick<VmProfile, 'machine' | 'accel' | 'cpu'>,
+  prof: Pick<VmProfile, 'machine' | 'accel' | 'cpu' | 'qemuDataDir'>,
   fw: Pick<FirmwarePair, 'code'>,
   vm: BaseVm,
 ): string[] {
@@ -38,6 +40,7 @@ export function baseQemuArgs(
     `virtio-blk-pci,drive=${id},serial=${serial}${i === 0 ? ',bootindex=0' : ''}`,
   ]
   return [
+    ...(prof.qemuDataDir ? ['-L', prof.qemuDataDir] : []),
     '-name',
     vm.name,
     '-machine',
@@ -60,9 +63,9 @@ export function baseQemuArgs(
     '-device',
     'virtio-blk-pci,drive=seed,serial=miliseed',
     '-netdev',
-    ['user,id=n0', ...(vm.hostfwd ?? [])].join(','),
+    streamNetdev('n0', vm.netPort),
     '-device',
-    ['virtio-net-pci,netdev=n0', ...(vm.mac ? [`mac=${vm.mac}`] : [])].join(','),
+    `virtio-net-pci,netdev=n0,mac=${vm.mac}`,
     '-device',
     'virtio-rng-pci',
     '-display',

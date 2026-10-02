@@ -6,12 +6,12 @@ import { CLI_ENGINE_DRIVERS } from '@milibot/agent/cli'
 import { type BlobReader, toBase64, type ToolCall } from '@milibot/agent/llm'
 import { mcpInstructions } from '@milibot/agent/prompts'
 import { toolsForLane } from '@milibot/agent/tools'
-import type { Bot, CliEngine, LogFn } from '@milibot/shared'
+import { type Bot, type CliEngine, GUEST_NET, type LogFn } from '@milibot/shared'
 
 import { errorMessage } from '../../errors'
 
-/** QEMU user-mode networking maps this guest address to the host's loopback interface. */
-export const GUEST_HOST_ADDRESS = '10.0.2.2'
+/** The guest address gvproxy maps to the host's loopback interface. */
+export const GUEST_HOST_ADDRESS = GUEST_NET.host
 const PROTOCOL_VERSION = '2025-06-18'
 const MAX_BODY = 4 * 1024 * 1024
 

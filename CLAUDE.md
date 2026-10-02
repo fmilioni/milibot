@@ -29,6 +29,7 @@ pnpm knip               # unused files, exports and dependencies in every packag
 ## Running
 
 - Node 24 (nvm) + pnpm through corepack. No dependency needs a C++ toolchain: `better-sqlite3` loads the N-API prebuilds it ships, so its implicit node-gyp build stays ignored in `pnpm-workspace.yaml` (allowing it breaks Windows installs without Visual Studio). Electron has no install script: its binary is downloaded by `install-electron`, which the desktop `dev`/`preview` scripts and `pnpm package` run.
+- The VM scripts need QEMU and gvproxy in `vm/bin/` (`pnpm vm:tools` downloads the pinned, checked builds; the `dev` scripts run it first). QEMU ships with the app: it is built by `.github/workflows/qemu.yml` (`vm/qemu/`), never installed on the host; without `vm/bin/qemu` the scripts fall back to a QEMU on the PATH.
 - `pnpm dev` = daemon under `tsx watch` + Electron with `MILIBOT_DAEMON_EXTERNAL=1`. `pnpm dev:desktop` alone starts the daemon **detached** from sources (log at `<dataRoot>/logs/daemon.log`); it keeps running after the app closes (by design).
 - `pnpm build` = `apps/daemon/dist/*.js` (esbuild; native addons external) + `apps/desktop/out/`.
 - **Manual app run**: `MILIBOT_DATA_DIR=$D/devdata MILIBOT_SECRET_STORE=memory pnpm dev` (`D` = your own scratch dir). Opening a workspace boots its VM (~8 GB of RAM) unless `MILIBOT_VM_AUTOSTART=0`.
@@ -54,7 +55,8 @@ pnpm knip               # unused files, exports and dependencies in every packag
 | `MILIBOT_VM_PORT_FIRST`                            | first VM port for new workspaces (default below every OS's ephemeral range; blocks of 100)               |
 | `MILIBOT_GOLDEN_IMAGE`                             | force the golden image (the only one considered; a missing file tests "golden missing")                  |
 | `MILIBOT_VM_CLI` / `MILIBOT_VM_BUILD`              | replace the VM CLI / golden build (see below)                                                            |
-| `MILIBOT_QEMU_SHARE`                               | QEMU's data folder (UEFI firmware) when it isn't next to the binary                                      |
+| `MILIBOT_QEMU_HOME`                                | the bundled QEMU's folder (default `vm/bin/qemu`; `Resources/vm/bin/qemu` in the app)                    |
+| `MILIBOT_QEMU_SHARE`                               | extra UEFI firmware folder, tried first                                                                  |
 | `MILIBOT_BUILTIN_SKILLS` / `MILIBOT_DESIGN_ASSETS` | built-in skills folder / design compiler assets (default: found next to the code)                        |
 | `MILIBOT_FAKE_EMBEDDINGS=1`                        | deterministic embeddings (no model download)                                                             |
 | `MILIBOT_FAKE_IMAGES=1`                            | `generate_image` draws solid PNGs (an image model must still be registered)                              |

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1](https://github.com/fmilioni/milibot/compare/v0.2.0...v0.2.1) (2026-10-02)
+
+### Bug Fixes
+
+* **vm:** unpack the bundled QEMU on Windows build machines ([#15](https://github.com/fmilioni/milibot/issues/15)) ([3fd8732](https://github.com/fmilioni/milibot/commit/3fd8732a56c5d19cb8ddb5ae37dfe34430873085))
+
 ## [0.2.0](https://github.com/fmilioni/milibot/compare/v0.1.0...v0.2.0) (2026-10-02)
 
 ### Features

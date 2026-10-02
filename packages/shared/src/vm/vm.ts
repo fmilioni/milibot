@@ -55,9 +55,6 @@ export type VmInfo = z.infer<typeof VmInfo>
 export const VmAccelKind = z.enum(['hvf', 'kvm', 'whpx', 'tcg']) satisfies z.ZodType<VmAccel>
 export type VmAccelKind = z.infer<typeof VmAccelKind>
 
-export const PackageManager = z.enum(['brew', 'apt', 'dnf', 'pacman', 'winget'])
-export type PackageManager = z.infer<typeof PackageManager>
-
 /**
  * Linux hardware acceleration: `ok` (the user can open `/dev/kvm`), `no_device` (no `/dev/kvm`:
  * virtualization off or KVM missing), `no_permission` (not in the `kvm` group), `relogin` (added to
@@ -66,12 +63,8 @@ export type PackageManager = z.infer<typeof PackageManager>
 export const KvmStatus = z.enum(['ok', 'no_device', 'no_permission', 'relogin'])
 export type KvmStatus = z.infer<typeof KvmStatus>
 
-/** How to get QEMU (and KVM) ready on this computer, for the setup's machine step. */
+/** What the host needs for the VM to run at full speed, for the setup's machine step (QEMU ships with the app). */
 export const HostSetup = z.object({
-  /** Null on a Linux without apt, dnf or pacman. */
-  packageManager: PackageManager.nullable(),
-  /** Ready to paste in a terminal; null when the package manager is unknown. */
-  installCommand: z.string().nullable(),
   /** Linux only. */
   kvm: z.object({ status: KvmStatus, fixCommand: z.string().nullable() }).nullable(),
 })
@@ -84,9 +77,9 @@ export const HostInfo = z.object({
   maxVmMemoryGb: z.number().int().positive(),
   goldenImage: z.object({ bytes: z.number().int(), version: z.string().nullable() }).nullable(),
   /**
-   * The host's `qemu-system-*` (aarch64 or x86_64, see `vmProfile`), `qemu-img` and UEFI firmware; `found`
-   * needs all three. `path` is the former's, `binary` its expected name; `firmware.tried` lists the firmware
-   * code files looked for.
+   * The QEMU shipped with the app (else a system one: dev), `qemu-system-*` (aarch64 or x86_64, see
+   * `vmProfile`), `qemu-img` and UEFI firmware; `found` needs all three. `path` is the former's, `binary` its
+   * name; `firmware.tried` lists the firmware code files looked for.
    */
   qemu: z.object({
     found: z.boolean(),

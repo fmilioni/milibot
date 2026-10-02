@@ -44,7 +44,7 @@ jobs:
         run: |
           shell_bins=$(grep -lE '^#!.*\b(ba)?sh\b' vm/guest/bin/*)
           daemon_scripts=$(find apps/daemon/src -path '*/scripts/*.sh')
-          shellcheck -x vm/*.sh vm/provision.d/*.sh vm/guest/*.sh scripts/*.sh $shell_bins $daemon_scripts
+          shellcheck -x vm/*.sh vm/provision.d/*.sh vm/guest/*.sh vm/qemu/*.sh scripts/*.sh $shell_bins $daemon_scripts
       - name: Migrations (against the base branch)
         if: github.event_name == 'pull_request'
         env:
@@ -75,13 +75,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Enable KVM and install QEMU
+      - name: Enable KVM and fetch the bundled QEMU and gvproxy
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          sudo apt-get update -q
-          sudo apt-get install -y -q qemu-system-x86 qemu-utils ovmf
+          pnpm vm:tools
           sudo mkdir -p "$MILIBOT_HOME" "$MILIBOT_BUILD_DIR"
           sudo chown -R "$USER" "$MILIBOT_HOME" "$MILIBOT_BUILD_DIR"
           test -w /dev/kvm
@@ -89,7 +88,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /mnt/milibot/images
-          key: golden-amd64-${{ hashFiles('vm/provision.sh', 'vm/provision.d/**', 'vm/versions.env', 'vm/golden-revision', 'vm/guest/**', 'vm/guest-agent/src/**', 'vm/host/src/**', 'packages/shared/src/portable/**') }}
+          key: golden-amd64-${{ hashFiles('vm/provision.sh', 'vm/provision.d/**', 'vm/versions.env', 'vm/golden-revision', 'vm/guest/**', 'vm/guest-agent/src/**', 'vm/host/src/**', 'vm/qemu/**', 'packages/shared/src/portable/**') }}
       - name: Build the golden image (amd64)
         run: node vm/host/src/cli/build-golden.ts --cpus 4 --mem-gb 8
       - name: Workspace VM E2E

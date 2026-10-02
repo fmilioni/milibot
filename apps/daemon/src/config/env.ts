@@ -18,8 +18,8 @@ type DaemonLogLevel = (typeof LOG_LEVELS)[number]
 
 /**
  * Every `MILIBOT_*` variable the daemon reads (the table in the root CLAUDE.md lists the same names). Nothing
- * else in the daemon reads `process.env` for them; `MILIBOT_DATA_DIR` and `MILIBOT_QEMU_SHARE` reach the
- * platform layer through `Host.env`.
+ * else in the daemon reads `process.env` for them; `MILIBOT_DATA_DIR`, `MILIBOT_QEMU_HOME` and `MILIBOT_QEMU_SHARE`
+ * reach the platform layer through `Host.env`.
  */
 const DaemonEnvSchema = z.object({
   MILIBOT_DATA_DIR: text,
@@ -36,6 +36,7 @@ const DaemonEnvSchema = z.object({
   MILIBOT_GOLDEN_IMAGE: text,
   MILIBOT_VM_CLI: text,
   MILIBOT_VM_BUILD: text,
+  MILIBOT_QEMU_HOME: text,
   MILIBOT_QEMU_SHARE: text,
   MILIBOT_FAKE_EMBEDDINGS: flag,
   MILIBOT_FAKE_IMAGES: flag,

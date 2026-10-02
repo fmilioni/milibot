@@ -10,9 +10,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "concurrently -k -n daemon,desktop -c blue,magenta \"pnpm --filter @milibot/daemon dev\" \"cross-env MILIBOT_DAEMON_EXTERNAL=1 pnpm --filter @milibot/desktop dev\"",
-    "dev:daemon": "pnpm --filter @milibot/daemon dev",
-    "dev:desktop": "pnpm --filter @milibot/desktop dev",
+    "dev": "pnpm vm:tools && concurrently -k -n daemon,desktop -c blue,magenta \"pnpm --filter @milibot/daemon dev\" \"cross-env MILIBOT_DAEMON_EXTERNAL=1 pnpm --filter @milibot/desktop dev\"",
+    "dev:daemon": "pnpm vm:tools && pnpm --filter @milibot/daemon dev",
+    "dev:desktop": "pnpm vm:tools && pnpm --filter @milibot/desktop dev",
     "build": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" --filter \"./vm/guest-agent\" build",
     "typecheck": "pnpm -r --filter \"./apps/*\" --filter \"./packages/*\" --filter \"./vm/guest-agent\" --filter \"./vm/host\" typecheck",
     "lint": "node --max-old-space-size=8192 ./node_modules/eslint/bin/eslint.js .",
@@ -28,6 +28,7 @@
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
     "package": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/package/index.mjs",
     "package:dir": "pnpm package --dir",
+    "vm:tools": "node vm/host/src/cli/host-tools.ts",
     "dmg:background": "pnpm --filter @milibot/desktop dmg:background"
   },
   "devDependencies": {

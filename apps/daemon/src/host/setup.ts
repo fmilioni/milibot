@@ -1,17 +1,11 @@
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { userInfo } from 'node:os'
 
-import type { HostSetup, KvmStatus, PackageManager } from '@milibot/shared'
-
-import { findExecutable } from './executables'
+import type { HostSetup, KvmStatus } from '@milibot/shared'
 
 /** What the checks read from the host (injected: tests use fakes, never the real system). */
 export interface HostProbe {
   platform: NodeJS.Platform
-  /** `process.arch`: `x64`, `arm64`. */
-  arch: string
-  /** An executable with this name is on PATH (or in the usual system folders). */
-  hasCommand(name: string): boolean
   exists(path: string): boolean
   /** Read and write access (what QEMU needs to open `/dev/kvm`). */
   canReadWrite(path: string): boolean
@@ -20,36 +14,6 @@ export interface HostProbe {
   /** Groups of the running process (`process.getgroups()`): the session's, not `/etc/group`'s. */
   processGroups(): number[]
   userName(): string
-}
-
-const LINUX_MANAGERS: { manager: PackageManager; command: string }[] = [
-  { manager: 'apt', command: 'apt-get' },
-  { manager: 'dnf', command: 'dnf' },
-  { manager: 'pacman', command: 'pacman' },
-]
-
-/**
- * Packages with QEMU, `qemu-img` and the UEFI firmware the VM boots with, per distro family and
- * host architecture (x64 → `qemu-system-x86_64` + OVMF, arm64 → `qemu-system-aarch64` + AAVMF).
- */
-function linuxInstallCommand(manager: PackageManager, arch: string): string | null {
-  const arm = arch === 'arm64'
-  switch (manager) {
-    case 'apt':
-      return arm
-        ? 'sudo apt-get install -y qemu-system-arm qemu-utils qemu-efi-aarch64'
-        : 'sudo apt-get install -y qemu-system-x86 qemu-utils ovmf'
-    case 'dnf':
-      return arm
-        ? 'sudo dnf install -y qemu-system-aarch64 qemu-img edk2-aarch64'
-        : 'sudo dnf install -y qemu-system-x86 qemu-img edk2-ovmf'
-    case 'pacman':
-      return arm
-        ? 'sudo pacman -S --needed qemu-system-aarch64 qemu-img edk2-aarch64'
-        : 'sudo pacman -S --needed qemu-system-x86 qemu-img edk2-ovmf'
-    default:
-      return null
-  }
 }
 
 /** Members and gid of a group in `/etc/group` (`name:x:gid:user1,user2`). */
@@ -77,26 +41,11 @@ export function kvmStatus(probe: HostProbe): KvmStatus {
   return 'no_permission'
 }
 
-/** What the setup shows to get QEMU (and KVM on Linux) ready on this computer. */
+/** What the setup shows about this host: KVM on Linux (QEMU itself ships with the app). */
 export function hostSetup(probe: HostProbe): HostSetup {
-  if (probe.platform === 'darwin')
-    return { packageManager: 'brew', installCommand: 'brew install qemu', kvm: null }
-  if (probe.platform === 'win32')
-    return {
-      packageManager: 'winget',
-      installCommand: 'winget install --id SoftwareFreedomConservancy.QEMU -e',
-      kvm: null,
-    }
-  const found = LINUX_MANAGERS.find((m) => probe.hasCommand(m.command))
+  if (probe.platform !== 'linux') return { kvm: null }
   const status = kvmStatus(probe)
-  return {
-    packageManager: found?.manager ?? null,
-    installCommand: found ? linuxInstallCommand(found.manager, probe.arch) : null,
-    kvm: {
-      status,
-      fixCommand: status === 'no_permission' ? 'sudo usermod -aG kvm "$USER"' : null,
-    },
-  }
+  return { kvm: { status, fixCommand: status === 'no_permission' ? 'sudo usermod -aG kvm "$USER"' : null } }
 }
 
 function canAccess(path: string, mode: number): boolean {
@@ -120,8 +69,6 @@ function readText(path: string): string | null {
 export function systemHostProbe(): HostProbe {
   return {
     platform: process.platform,
-    arch: process.arch,
-    hasCommand: (name) => findExecutable(name) !== null,
     exists: existsSync,
     canReadWrite: (path) => canAccess(path, constants.R_OK | constants.W_OK),
     groupFile: () => readText('/etc/group'),

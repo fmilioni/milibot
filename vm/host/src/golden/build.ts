@@ -3,7 +3,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 
-import { actualBytes, goldenFs, type HostProfile, sleep, whichSync, writeAtomic } from '../lib/host.ts'
+import { CliError } from '../lib/args.ts'
+import {
+  type GvproxyFiles,
+  gvproxyFiles,
+  type GvproxyNetwork,
+  startGvproxy,
+  stopGvproxy,
+} from '../lib/gvproxy.ts'
+import { actualBytes, goldenFs, type HostProfile, programExists, sleep, writeAtomic } from '../lib/host.ts'
+import { freePort } from '../lib/net.ts'
 import { baseQemuArgs, CLOUD_CONFIG_BASE } from '../lib/qemu.ts'
 import {
   buildIso,
@@ -25,6 +34,7 @@ import { lastProvisionLine, parseSerial } from './serial.ts'
 
 const execFileAsync = promisify(execFile)
 const SYSTEM_DISK_GB = 40
+const BUILD_MAC = '52:54:00:12:34:56'
 /** A QEMU that exits this soon failed to start (e.g. WHPX missing) rather than finishing the build. */
 const STARTUP_MS = 5000
 
@@ -45,6 +55,8 @@ export interface BuildContext {
   baseUrl: string
   irqchip: WhpxIrqchipChoice
   profile: HostProfile
+  /** gvproxy binary (`gvproxyBinary`). */
+  gvproxy: string
 }
 
 function npm(args: string[], cwd: string): void {
@@ -95,7 +107,15 @@ function userData(runnerB64: string): string {
 export function buildVmArgs(
   prof: VmProfile,
   fw: Pick<FirmwarePair, 'code'>,
-  vm: { work: string; vars: string; seed: string; serial: string; cpus: number; memGb: number },
+  vm: {
+    work: string
+    vars: string
+    seed: string
+    serial: string
+    cpus: number
+    memGb: number
+    netPort: number
+  },
 ): string[] {
   return [
     ...baseQemuArgs(prof, fw, {
@@ -105,6 +125,8 @@ export function buildVmArgs(
       vars: vm.vars,
       disks: [{ id: 'sys', file: vm.work, serial: 'milisys' }],
       seed: vm.seed,
+      netPort: vm.netPort,
+      mac: BUILD_MAC,
       serial: vm.serial,
     }),
     '-no-reboot',
@@ -112,6 +134,20 @@ export function buildVmArgs(
 }
 
 type BuildExit = { code: number | null; signal: NodeJS.Signals | null } | { error: string }
+
+/** The build VM's gvproxy; a failure to start is a `BuildError`. */
+async function startBuildNetwork(
+  binary: string,
+  files: GvproxyFiles,
+  network: GvproxyNetwork,
+): Promise<void> {
+  try {
+    await startGvproxy(binary, files, network)
+  } catch (err) {
+    if (err instanceof CliError) throw new BuildError(err.message)
+    throw err
+  }
+}
 
 /**
  * Spawns the build VM. Exiting within STARTUP_MS rejects with `VmLaunchExited` (QEMU's stderr tail), so
@@ -189,7 +225,7 @@ export async function buildGolden(ctx: BuildContext, opts: BuildOptions): Promis
   }
 
   for (const bin of [prof.qemuBinary, prof.qemuImgBinary]) {
-    if (!whichSync(bin)) throw new BuildError(`missing ${bin} (install QEMU)`)
+    if (!programExists(bin)) throw new BuildError(`missing ${bin}`)
   }
   const fw = prof.firmware.find((pair) => fs.existsSync(pair.code) && fs.existsSync(pair.vars))
   if (!fw)
@@ -269,22 +305,27 @@ export async function buildGolden(ctx: BuildContext, opts: BuildOptions): Promis
       process.exit(1)
     })
   }
+  const net = gvproxyFiles(buildDir)
+  const netPort = await freePort()
   let launched
   try {
     launched = await launchWithFallback({
       irqchip: ctx.irqchip,
       profileFor: ctx.profile,
-      launch: (attempt) =>
-        launchBuildVm(
+      launch: async (attempt) => {
+        await startBuildNetwork(ctx.gvproxy, net, { qemuPort: netPort, mac: BUILD_MAC })
+        return launchBuildVm(
           attempt,
-          buildVmArgs(attempt, fw, { work, vars, seed, serial: serialLog, ...opts }),
+          buildVmArgs(attempt, fw, { work, vars, seed, serial: serialLog, netPort, ...opts }),
           (child) => {
             qemu = child
           },
-        ),
+        )
+      },
       beforeRetry: (fallback) => log(`qemu exited during startup; retrying (${fallback})`),
     })
   } catch (err) {
+    await stopGvproxy(net)
     if (err instanceof VmLaunchExited) throw new BuildError(err.message)
     throw err
   }
@@ -311,6 +352,7 @@ export async function buildGolden(ctx: BuildContext, opts: BuildOptions): Promis
     await Promise.race([exitPromise, sleep(5000)])
   }
   const exit = run.exited
+  await stopGvproxy(net)
   if ('error' in exit) throw new BuildError(`could not run ${prof.qemuBinary}: ${exit.error}`)
 
   const { rc, manifest: guestManifest } = parseSerial(fs.readFileSync(serialLog, 'latin1'))

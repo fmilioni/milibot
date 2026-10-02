@@ -100,23 +100,12 @@
     "useCurrentHint": "Cria a máquina com o sistema que já está no computador. A atualização aparece depois em Configurações › Máquina virtual.",
     "vmFailed": "A máquina não ligou: {{error}}",
     "qemu": {
-      "title": "Instalar QEMU",
-      "description": "O Milibot usa o QEMU para ligar a máquina virtual dos bots. Instale pelo Homebrew no Terminal:",
+      "title": "O QEMU do Milibot não foi encontrado",
+      "description": "O Milibot traz o QEMU, que liga a máquina virtual dos bots, mas ele não está nesta instalação. Reinstale o Milibot e verifique de novo.",
       "copy": "Copiar comando",
       "copied": "Copiado",
-      "openTerminal": "Abrir no Terminal",
       "check": "Verificar de novo",
-      "stillMissing": "O QEMU ainda não foi encontrado. Quando o Terminal terminar, verifique de novo.",
-      "noBrew": "Não tem o Homebrew? Veja como instalar em brew.sh",
-      "openFailed": "Não foi possível abrir o Terminal: {{error}}",
-      "descriptionLinux": "O Milibot usa o {{qemu}} para ligar a máquina virtual dos bots. Rode este comando num terminal:",
-      "descriptionWindows": "O Milibot usa o {{qemu}} para ligar a máquina virtual dos bots. Rode este comando no PowerShell ou no Terminal do Windows:",
-      "descriptionNoManager": "O Milibot usa o QEMU para ligar a máquina virtual dos bots. Instale pelo gerenciador de pacotes da sua distribuição: o {{qemu}}, o qemu-img e o firmware UEFI (OVMF no x86, AAVMF no ARM).",
-      "stillMissingLinux": "O {{qemu}} ainda não foi encontrado. Quando o comando terminar, verifique de novo.",
-      "setupFailed": "O Milibot precisa do {{qemu}} para ligar a máquina virtual dos bots, mas não conseguiu descobrir como instalá-lo neste computador. Instale e verifique de novo.",
-      "firmwareMissing": "O QEMU está instalado, mas faltam os arquivos de firmware UEFI dele. Reinstale-o com o Homebrew no Terminal:",
-      "firmwareMissingLinux": "O QEMU está instalado, mas falta o firmware UEFI dele (pacote ovmf, ou qemu-efi-aarch64 em ARM). Instale-o e verifique de novo.",
-      "firmwareMissingWindows": "O QEMU está instalado, mas faltam os arquivos de firmware UEFI dele. Reinstale o QEMU e verifique de novo."
+      "stillMissing": "Ainda não foi encontrado. Reinstale o Milibot e verifique de novo."
     },
     "kvm": {
       "noDeviceTitle": "Sem aceleração KVM: a máquina vai ficar lenta",

@@ -8,8 +8,10 @@ import { buildGolden, type BuildOptions } from '../golden/build.ts'
 import { BuildError, log } from '../golden/log.ts'
 import { allowFlags, CliError, intFlag, parseArgs } from '../lib/args.ts'
 import { isEntryPoint } from '../lib/entry.ts'
+import { gvproxyBinary } from '../lib/gvproxy.ts'
 import { hostProfiles } from '../lib/host.ts'
 import {
+  bundledQemuHome,
   defaultDataRoot,
   type Host,
   parseWhpxKernelIrqchip,
@@ -22,7 +24,7 @@ export const HELP = `usage: node vm/host/src/cli/build-golden.ts [--rebuild] [--
   (no flags)      build only if no golden image exists yet for this architecture
   --rebuild       build a new golden version (existing workspaces keep their old backing file)
   --timeout-min   default 90; x4 without hardware acceleration
-env: MILIBOT_HOME (data folder), MILIBOT_BUILD_DIR (scratch dir of the build disk; default <MILIBOT_HOME>/images/build)`
+env: MILIBOT_HOME (data folder), MILIBOT_QEMU_HOME / MILIBOT_GVPROXY (bundled QEMU / gvproxy; default vm/bin), MILIBOT_BUILD_DIR (scratch dir of the build disk; default <MILIBOT_HOME>/images/build)`
 
 const FLAGS = ['rebuild', 'cpus', 'mem-gb', 'timeout-min', 'keep-work', 'help']
 
@@ -61,15 +63,19 @@ async function main(argv: string[]): Promise<number> {
   const forced = parseWhpxKernelIrqchip(env[WHPX_KERNEL_IRQCHIP_ENV])
   const irqchip = { mode: forced ?? 'off', forced: forced !== null }
   try {
+    const vmDir = vmRootDir(fileURLToPath(import.meta.url))
     const manifest = await buildGolden(
       {
         host,
-        vmDir: vmRootDir(fileURLToPath(import.meta.url)),
+        vmDir,
         imagesDir,
         buildRoot: env.MILIBOT_BUILD_DIR || path.join(imagesDir, 'build'),
         baseUrl: env.MILIBOT_DEBIAN_BASE_URL || 'https://cloud.debian.org/images/cloud/trixie/latest',
         irqchip,
-        profile: hostProfiles(host, { whpxKernelIrqchip: irqchip.mode }),
+        profile: hostProfiles(host, bundledQemuHome(vmDir, host.platform, env), {
+          whpxKernelIrqchip: irqchip.mode,
+        }),
+        gvproxy: gvproxyBinary(vmDir, env),
       },
       opts,
     )

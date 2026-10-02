@@ -67,7 +67,6 @@ Everything runs on your computer: a background service manages one Debian virtua
 ## Requirements
 
 - macOS on Apple Silicon, Linux x64/arm64 (with KVM) or Windows x64 (with the Windows Hypervisor Platform)
-- [QEMU](https://www.qemu.org/): `brew install qemu` (macOS), `apt install qemu-system-x86 qemu-utils ovmf` or `qemu-system-arm qemu-utils qemu-efi-aarch64` (Debian/Ubuntu), `winget install SoftwareFreedomConservancy.QEMU` (Windows)
 - Enough memory for a VM (the smallest preset uses about 4 GB; the recommended one about 8 GB)
 - For development: Node.js 24 and pnpm (through corepack)
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  bundledQemuHome,
   dataLayout,
   defaultDataRoot,
   executableCandidates,
@@ -303,6 +304,21 @@ describe('vmProfile', () => {
       })
       await expect(promise).rejects.toThrow('ports busy')
     })
+  })
+
+  it('runs the bundled QEMU with its own firmware and data folder', () => {
+    const mac = vmProfile({ platform: 'darwin', arch: 'arm64' }, { qemuHome: '/app/vm/bin/qemu' })
+    expect(mac.qemuBinary).toBe('/app/vm/bin/qemu/bin/qemu-system-aarch64')
+    expect(mac.qemuImgBinary).toBe('/app/vm/bin/qemu/bin/qemu-img')
+    expect(mac.qemuDataDir).toBe('/app/vm/bin/qemu/share/qemu')
+    expect(mac.firmware[0]?.code).toBe('/app/vm/bin/qemu/share/qemu/edk2-aarch64-code.fd')
+    const win = vmProfile({ platform: 'win32', arch: 'x64' }, { qemuHome: 'C:\\M\\vm\\bin\\qemu' })
+    expect(win.qemuBinary).toBe('C:\\M\\vm\\bin\\qemu\\bin\\qemu-system-x86_64.exe')
+    expect(win.firmware[0]?.vars).toBe('C:\\M\\vm\\bin\\qemu\\share\\qemu\\edk2-i386-vars.fd')
+    const system = vmProfile({ platform: 'linux', arch: 'x64' })
+    expect(system).toMatchObject({ qemuBinary: 'qemu-system-x86_64', qemuDataDir: null })
+    expect(bundledQemuHome('/repo/vm', 'linux')).toBe('/repo/vm/bin/qemu')
+    expect(bundledQemuHome('/repo/vm', 'linux', { MILIBOT_QEMU_HOME: '/q' })).toBe('/q')
   })
 
   it('tries MILIBOT_QEMU_SHARE first', () => {

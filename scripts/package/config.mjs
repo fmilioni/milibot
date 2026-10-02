@@ -35,16 +35,23 @@ export const DMG_LAYOUT = {
 
 function signingConfig({ env, desktop }) {
   const signing = Boolean(env.CSC_LINK || env.CSC_NAME)
+  // Every nested binary gets the app's entitlements, so the bundled QEMU keeps the hypervisor one.
+  const entitlements = join(desktop, 'build/entitlements.mac.plist')
   if (!signing) {
     // Apple Silicon refuses to run unsigned code: ad-hoc sign (no hardened runtime, no notarization).
-    return { identity: '-', hardenedRuntime: false, notarize: false }
+    return {
+      identity: '-',
+      hardenedRuntime: false,
+      notarize: false,
+      entitlements,
+      entitlementsInherit: entitlements,
+    }
   }
   const notarize = Boolean(
     (env.APPLE_ID && env.APPLE_APP_SPECIFIC_PASSWORD && env.APPLE_TEAM_ID) ||
     (env.APPLE_API_KEY && env.APPLE_API_KEY_ID && env.APPLE_API_ISSUER) ||
     env.APPLE_KEYCHAIN_PROFILE,
   )
-  const entitlements = join(desktop, 'build/entitlements.mac.plist')
   return {
     identity: env.CSC_NAME || undefined,
     hardenedRuntime: true,
@@ -102,11 +109,12 @@ export function buildConfig({
   appDir,
   node,
   vmScripts,
+  vmBin,
   natives,
   skipExecutableEdit = false,
   year = new Date().getFullYear(),
 }) {
-  const { platform, arch, cross, env, root, desktop, daemon, distDir, stage } = ctx
+  const { platform, cross, env, root, desktop, daemon, distDir, stage } = ctx
   const { onnxBin } = natives
   return {
     // Also the AppUserModelID the app sets on Windows.
@@ -194,6 +202,7 @@ export function buildConfig({
         ],
       },
       { from: vmScripts, to: 'vm/scripts' },
+      { from: vmBin, to: 'vm/bin' },
     ],
     mac: {
       category: 'public.app-category.developer-tools',
@@ -228,14 +237,7 @@ export function buildConfig({
     appImage: { artifactName: 'Milibot-${version}-${arch}.${ext}' },
     deb: {
       artifactName: 'milibot_${version}_${arch}.${ext}',
-      // QEMU is installed on demand by the setup (never bundled); the .deb only recommends it.
       fpm: [
-        '--deb-recommends',
-        arch === 'x64' ? 'qemu-system-x86' : 'qemu-system-arm',
-        '--deb-recommends',
-        'qemu-utils',
-        '--deb-recommends',
-        arch === 'x64' ? 'ovmf' : 'qemu-efi-aarch64',
         // Any Secret Service provider; without one the daemon falls back to an encrypted file (with a warning).
         '--deb-recommends',
         'gnome-keyring | kwalletmanager | keepassxc',

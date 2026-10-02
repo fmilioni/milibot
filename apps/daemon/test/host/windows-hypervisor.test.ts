@@ -135,7 +135,7 @@ describe('QEMU on Windows', () => {
     ])
     const isFile = (file: string) => installed.has(file)
     const env = { Path: 'C:\\Windows\\System32;C:\\Windows' }
-    expect(qemuStatus(env, { ...host, env }, isFile, isFile)).toMatchObject({
+    expect(qemuStatus(env, { ...host, env }, isFile, isFile, null)).toMatchObject({
       found: true,
       path: `${winget}\\qemu-system-x86_64.exe`,
       binary: 'qemu-system-x86_64.exe',
@@ -150,7 +150,7 @@ describe('QEMU on Windows', () => {
       'D:\\Apps\\qemu\\share\\edk2-i386-vars.fd',
     ])
     const onDrive = (f: string) => onD.has(f)
-    expect(qemuStatus(envD, { ...host, env: envD }, onDrive, onDrive).found).toBe(true)
+    expect(qemuStatus(envD, { ...host, env: envD }, onDrive, onDrive, null).found).toBe(true)
   })
 
   it('reports QEMU missing until both binaries are there', () => {
@@ -162,12 +162,13 @@ describe('QEMU on Windows', () => {
         { ...host, env },
         () => false,
         () => false,
+        null,
       ),
     ).toMatchObject({
       found: false,
       path: null,
       binary: 'qemu-system-x86_64.exe',
     })
-    expect(qemuStatus(env, { ...host, env }, (f) => only.has(f)).found).toBe(false)
+    expect(qemuStatus(env, { ...host, env }, (f) => only.has(f), undefined, null).found).toBe(false)
   })
 })

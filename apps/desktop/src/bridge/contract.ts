@@ -130,8 +130,6 @@ const invokeEntries = {
   closeVmWindow: { args: z.tuple([z.string(), z.string()]), result: result<void>() },
   /** Text on the system clipboard (pasting into the VM). */
   readClipboard: { args: none, result: result<string>() },
-  /** macOS: opens Terminal running `brew install qemu`; rejects elsewhere. */
-  openQemuInstaller: { args: none, result: result<void>() },
   /** "Start in the background at login"; null where the platform has no login item. */
   getLoginItem: { args: none, result: result<boolean | null>() },
   setLoginItem: { args: z.tuple([z.boolean()]), result: result<boolean>() },

@@ -17,7 +17,7 @@ export async function cmdResize(ctx: VmHostContext, wsDir: string, flags: Flags)
   if (flags['port-base'] !== undefined) {
     // The running QEMU keeps forwarding the old ports.
     requireStopped(p)
-    config.portBase = intFlag(flags, 'port-base', { min: MIN_PORT_BASE, max: maxPortBase(ctx.profile()) })
+    config.portBase = intFlag(flags, 'port-base', { min: MIN_PORT_BASE, max: maxPortBase() })
   }
   writeConfig(p, config)
   return {

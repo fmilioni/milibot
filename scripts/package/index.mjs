@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url'
 
 import { Arch, build, Platform } from 'electron-builder'
 
+import { HostToolsError, installHostTools } from '../../vm/host/src/tools/host-tools.ts'
 import { checkTarget, hasWine, PackageError, packagePaths, parseArgs, USAGE } from './args.mjs'
 import { appPackageJson, buildConfig, windowsSigningNotice } from './config.mjs'
 import { resolveNatives } from './natives.mjs'
@@ -55,6 +56,18 @@ async function bundleVmScripts({ root, daemon, stage }) {
   return out
 }
 
+/** The target's gvproxy (and the other pinned host programs), shipped in Resources/vm/bin. */
+async function stageHostTools({ platform, arch, stage }) {
+  const dest = join(stage, 'vm-bin')
+  try {
+    await installHostTools({ platform, arch, dest, log: (message) => console.log(`package: ${message}`) })
+  } catch (err) {
+    if (err instanceof HostToolsError) throw new PackageError(err.message)
+    throw err
+  }
+  return dest
+}
+
 function targets({ platform, arch, dirOnly }) {
   const archOf = arch === 'x64' ? Arch.x64 : Arch.arm64
   if (platform === 'darwin') return Platform.MAC.createTarget(dirOnly ? ['dir'] : ['dmg'], archOf)
@@ -98,6 +111,7 @@ async function main() {
 
   const appDir = stageApp(ctx, rootPackage)
   const vmScripts = await bundleVmScripts(ctx)
+  const vmBin = await stageHostTools(ctx)
   const natives = resolveNatives(ctx)
   const config = buildConfig({
     ctx,
@@ -105,6 +119,7 @@ async function main() {
     appDir,
     node,
     vmScripts,
+    vmBin,
     natives,
     skipExecutableEdit: ctx.platform === 'win32' && process.platform !== 'win32' && !hasWine(),
   })

@@ -100,23 +100,12 @@
     "useCurrentHint": "Creates the machine with the system already on this computer. The update shows up later in Settings › Virtual machine.",
     "vmFailed": "The machine did not start: {{error}}",
     "qemu": {
-      "title": "Install QEMU",
-      "description": "Milibot uses QEMU to run the bots' virtual machine. Install it with Homebrew in Terminal:",
+      "title": "Milibot's QEMU was not found",
+      "description": "Milibot ships with QEMU, which runs the bots' virtual machine, but it is missing from this installation. Reinstall Milibot, then check again.",
       "copy": "Copy command",
       "copied": "Copied",
-      "openTerminal": "Open in Terminal",
       "check": "Check again",
-      "stillMissing": "QEMU was not found yet. When Terminal finishes, check again.",
-      "noBrew": "No Homebrew? See how to install it at brew.sh",
-      "openFailed": "Could not open Terminal: {{error}}",
-      "descriptionLinux": "Milibot uses {{qemu}} to run the bots' virtual machine. Run this command in a terminal:",
-      "descriptionWindows": "Milibot uses {{qemu}} to run the bots' virtual machine. Run this command in PowerShell or Windows Terminal:",
-      "descriptionNoManager": "Milibot uses QEMU to run the bots' virtual machine. Install it with your distribution's package manager: {{qemu}}, qemu-img and the UEFI firmware (OVMF on x86, AAVMF on ARM).",
-      "stillMissingLinux": "{{qemu}} was not found yet. When the command finishes, check again.",
-      "setupFailed": "Milibot needs {{qemu}} to run the bots' virtual machine, but could not find out how to install it on this computer. Install it, then check again.",
-      "firmwareMissing": "QEMU is installed, but its UEFI firmware files are missing. Reinstall it with Homebrew in Terminal:",
-      "firmwareMissingLinux": "QEMU is installed, but its UEFI firmware is missing (package ovmf, or qemu-efi-aarch64 on ARM). Install it and check again.",
-      "firmwareMissingWindows": "QEMU is installed, but its UEFI firmware files are missing. Reinstall QEMU and check again."
+      "stillMissing": "Still not found. Reinstall Milibot, then check again."
     },
     "kvm": {
       "noDeviceTitle": "No KVM acceleration: the machine will be slow",

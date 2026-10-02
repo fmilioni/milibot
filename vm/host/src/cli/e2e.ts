@@ -1,23 +1,26 @@
 // End-to-end check of a throwaway workspace VM built from the current golden image (only read).
 import { execFile } from 'node:child_process'
 import fs from 'node:fs'
+import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 
 import { intFlag, parseArgs, stringFlag } from '../lib/args.ts'
-import type {
-  ExecResult,
-  GuestFsReadResult,
-  GuestFsWriteResult,
-  GuestHealth,
-  GuestProcEvent,
-  ProvisionedBot,
-  VmCliCreateResult,
-  VmCliSnapshotResult,
-  VmCliStartResult,
-  VmCliStopResult,
+import {
+  type ExecResult,
+  GUEST_NET,
+  type GuestFsReadResult,
+  type GuestFsWriteResult,
+  type GuestHealth,
+  type GuestProcEvent,
+  type ProvisionedBot,
+  type VmCliCreateResult,
+  type VmCliSnapshotResult,
+  type VmCliStartResult,
+  type VmCliStopResult,
 } from '../lib/shared.ts'
 
 const HELP = `usage: node vm/host/src/cli/e2e.ts [--port-base 23900] [--screenshot out.png] [--keep]
@@ -107,6 +110,37 @@ async function streamingCat(): Promise<GuestProcEvent[]> {
   return events
 }
 
+/** gvproxy's network: the guest's address, DNS and HTTPS to the internet, and the host's loopback. */
+async function checkNetwork(): Promise<void> {
+  const addr = await guestExec({ user: 'agent', cmd: 'ip -4 -o addr show scope global' })
+  check(addr.stdout.includes(`${GUEST_NET.guest}/`), `guest has ${GUEST_NET.guest}`)
+
+  const web = await guestExec({
+    user: 'agent',
+    cmd: "curl -sS -o /dev/null --max-time 30 -w '%{http_code} %{speed_download}' https://deb.debian.org/debian/dists/trixie/main/binary-arm64/Packages.xz",
+    timeoutMs: 60000,
+  })
+  const [status, speed] = web.stdout.trim().split(' ')
+  check(
+    web.code === 0 && status === '200',
+    `DNS and HTTPS to the internet (${(Number(speed) / 1024 ** 2).toFixed(1)} MB/s)`,
+  )
+
+  const server = http.createServer((_req, res) => res.end('from-host'))
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const { port } = server.address() as AddressInfo
+  try {
+    const fromHost = await guestExec({
+      user: 'agent',
+      cmd: `curl -sS --max-time 10 http://${GUEST_NET.host}:${port}/`,
+      timeoutMs: 20000,
+    })
+    check(fromHost.stdout === 'from-host', `host loopback reachable at ${GUEST_NET.host}`)
+  } finally {
+    server.close()
+  }
+}
+
 async function main(): Promise<void> {
   fs.mkdirSync(ROOT, { recursive: true })
   if (fs.existsSync(WS)) {
@@ -142,6 +176,8 @@ async function main(): Promise<void> {
     health.ok && health.dataDiskMounted,
     `health ok, data disk mounted (${health.hostname}, node ${health.node})`,
   )
+
+  await checkNetwork()
 
   log('provision bot "test" on display :1')
   const bot = await api<ProvisionedBot>('POST', '/bots/provision', { slug: 'test', uid: 1601, display: 1 })

@@ -2,12 +2,14 @@ import { type ChildProcess, spawn } from 'node:child_process'
 import fs from 'node:fs'
 
 import { CliError } from '../lib/args.ts'
+import { startGvproxy, stopGvproxy } from '../lib/gvproxy.ts'
 import { sleep } from '../lib/host.ts'
-import { pidAlive, qemuIdentity } from '../lib/proc.ts'
+import { pidAlive, qemuIdentity, readPidFile } from '../lib/proc.ts'
 import { baseQemuArgs } from '../lib/qemu.ts'
 import {
   type FirmwarePair,
   GUEST_AGENT_PORT,
+  NET_TCP_OFFSET,
   type VmCliStopResult,
   type VmConfigFile,
   VmLaunchExited,
@@ -22,13 +24,8 @@ import { qmp, qmpArg, qmpEndpoint, qmpReachable } from './qmp.ts'
 
 /** QEMU's pid; a pid file left by a QEMU that died with the host (the pid may be reused) is removed. */
 export function readPid(p: VmPaths): number | null {
-  let pid: number
-  try {
-    pid = Number(fs.readFileSync(p.pid, 'utf8').trim())
-  } catch {
-    return null
-  }
-  if (!Number.isInteger(pid) || pid <= 0) return null
+  const pid = readPidFile(p.pid)
+  if (!pid) return null
   if (qemuIdentity(pid) === 'no') {
     fs.rmSync(p.pid, { force: true })
     return null
@@ -46,10 +43,6 @@ export function qemuArgs(
   fw: Pick<FirmwarePair, 'code'>,
   prof: VmProfile,
 ): string[] {
-  const hostfwd = [`hostfwd=tcp:127.0.0.1:${config.portBase}-:${GUEST_AGENT_PORT}`]
-  for (let d = 1; d <= VNC_DISPLAYS; d++) {
-    hostfwd.push(`hostfwd=tcp:127.0.0.1:${config.portBase + d}-:${VNC_PORT_BASE + d}`)
-  }
   return [
     ...baseQemuArgs(prof, fw, {
       name: `milibot-${config.name}`,
@@ -61,7 +54,7 @@ export function qemuArgs(
         { id: 'data', file: p.data, serial: 'milidata' },
       ],
       seed: p.seed,
-      hostfwd,
+      netPort: config.portBase + NET_TCP_OFFSET,
       mac: config.macAddress,
       serial: p.serial,
     }),
@@ -72,6 +65,13 @@ export function qemuArgs(
   ]
 }
 
+/** Host ports gvproxy forwards: the agent at the port base, display N's VNC at `portBase + N`. */
+export function vmForwards(portBase: number): [number, number][] {
+  const forwards: [number, number][] = [[portBase, GUEST_AGENT_PORT]]
+  for (let d = 1; d <= VNC_DISPLAYS; d++) forwards.push([portBase + d, VNC_PORT_BASE + d])
+  return forwards
+}
+
 export interface LaunchedQemu {
   child: ChildProcess
   started: number
@@ -80,10 +80,31 @@ export interface LaunchedQemu {
 type ExitInfo = { code: number | null; signal: NodeJS.Signals | null } | { error: string }
 
 /**
- * Spawns QEMU and waits until the pid file exists and QMP answers. A QEMU that exits meanwhile rejects
- * with `VmLaunchExited` (its log tail), so `launchWithFallback` can retry with TCG or `kernel-irqchip=off`.
+ * Starts the VM's gvproxy, spawns QEMU and waits until the pid file exists and QMP answers. A QEMU that
+ * exits meanwhile rejects with `VmLaunchExited` (its log tail), so `launchWithFallback` can retry with TCG
+ * or `kernel-irqchip=off`; gvproxy is stopped on any failure.
  */
 export async function launchQemu(
+  ctx: VmHostContext,
+  p: VmPaths,
+  config: VmConfigFile,
+  fw: FirmwarePair,
+  prof: VmProfile,
+): Promise<LaunchedQemu> {
+  await startGvproxy(ctx.gvproxy, p.net, {
+    qemuPort: config.portBase + NET_TCP_OFFSET,
+    mac: config.macAddress,
+    forwards: vmForwards(config.portBase),
+  })
+  try {
+    return await spawnQemu(p, config, fw, prof)
+  } catch (err) {
+    await stopGvproxy(p.net)
+    throw err
+  }
+}
+
+async function spawnQemu(
   p: VmPaths,
   config: VmConfigFile,
   fw: FirmwarePair,
@@ -134,6 +155,7 @@ export async function stopVm(
 ): Promise<VmCliStopResult> {
   const pid = readPid(p)
   if (!pid) {
+    await stopGvproxy(p.net)
     clearRunning(p)
     return { ok: true, state: 'stopped', alreadyStopped: true }
   }
@@ -167,6 +189,7 @@ export async function stopVm(
     while (pidAlive(pid)) await sleep(100)
   }
   for (const f of [p.qmp, p.pid]) fs.rmSync(f, { force: true })
+  await stopGvproxy(p.net)
   clearRunning(p)
   return { ok: true, state: 'stopped', method, stopMs: Date.now() - started }
 }

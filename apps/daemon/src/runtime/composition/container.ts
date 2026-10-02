@@ -22,7 +22,7 @@ import {
 
 import type { Db } from '../../db/sqlite'
 import { DaemonError, errorMessage } from '../../errors'
-import { findExecutable } from '../../host/executables'
+import { findQemuImg } from '../../host/info'
 import type { VmShutdownMode } from '../../ipc/protocol'
 import type { SecretStore } from '../../secrets/secret-store'
 import { startOfLocalDay } from '../../util/time'
@@ -323,7 +323,7 @@ export function createContainer(options: ContainerOptions) {
     vmPending: () => store.settings.get<boolean>(SETUP_VM_PENDING_KEY, false),
     emit,
     now,
-    qemuImg: () => findExecutable('qemu-img'),
+    qemuImg: () => findQemuImg(),
     log,
   })
   const recordLlmCall = (record: LlmCallRecord): string => {

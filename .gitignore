@@ -10,3 +10,4 @@ CLAUDE.local.md
 .local/
 .claude/settings.local.json
 .mcp.json
+vm/bin/

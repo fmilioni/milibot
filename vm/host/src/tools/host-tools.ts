@@ -114,7 +114,12 @@ async function installQemu(platform: string, arch: string, dest: string, log: (m
   const fresh = `${home}.new`
   fs.rmSync(fresh, { recursive: true, force: true })
   fs.mkdirSync(fresh)
-  execFileSync('tar', ['-xzf', tarball, '-C', fresh], { stdio: 'inherit', windowsHide: true })
+  // Relative names: GNU tar (Git Bash on Windows) reads `D:\…` as a remote `host:file`.
+  execFileSync('tar', ['-xzf', pkg.file, '-C', path.basename(fresh)], {
+    cwd: dest,
+    stdio: 'inherit',
+    windowsHide: true,
+  })
   fs.writeFileSync(path.join(fresh, '.package'), want)
   fs.rmSync(home, { recursive: true, force: true })
   fs.renameSync(fresh, home)

@@ -118,7 +118,7 @@ jobs:
           tar -xzf pkg/*.tar.gz -C qemu
           cd qemu
           bin/${{ matrix.emulator }} --version
-          bin/${{ matrix.emulator }} -netdev help | grep -x stream
+          bin/${{ matrix.emulator }} -machine none -netdev help | grep -x stream
           test -f share/qemu/efi-virtio.rom
           ls share/qemu/edk2-*-code.fd
           bin/qemu-img create -q -f qcow2 t.qcow2 1G

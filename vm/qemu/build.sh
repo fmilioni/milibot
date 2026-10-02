@@ -111,7 +111,10 @@ case "$platform" in
       for dep in $(deps "$file"); do
         system_lib "$dep" && continue
         name=$(basename "$dep")
-        case "$dep" in @*) real=$(find /opt/homebrew/lib /usr/local/lib -name "$name" 2>/dev/null | head -1) ;; *) real=$dep ;; esac
+        case "$dep" in
+          @*) real=$(find /opt/homebrew/lib /usr/local/lib -name "$name" -print -quit 2>/dev/null || true) ;;
+          *) real=$dep ;;
+        esac
         [ -n "$real" ] || { echo "cannot find $dep (from $file)" >&2; exit 1; }
         if [ ! -f "lib/$name" ]; then
           cp -L "$real" "lib/$name"

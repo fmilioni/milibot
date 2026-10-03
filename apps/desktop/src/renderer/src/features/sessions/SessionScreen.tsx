@@ -8,9 +8,15 @@ import { RightPanelContent } from '@/app/RightPanel'
 import { Composer } from '@/features/chat/Composer'
 import { MessageList } from '@/features/chat/MessageList'
 import { useProjectStore } from '@/features/projects/store'
-import { clampPanelWidth, readSessionPref, writeSessionPref } from '@/features/sessions/lib/session-view'
+import {
+  clampPanelWidth,
+  readSessionPref,
+  sessionPanelCollapsed,
+  writeSessionPref,
+} from '@/features/sessions/lib/session-view'
 import { type SessionScreen as SessionScreenState, useAppStore } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
+import { cn } from '@/lib/cn'
 import { ScreenPlaceholder } from '@/ui/AsyncView'
 import { Segmented } from '@/ui/Segmented'
 
@@ -69,11 +75,15 @@ function SessionView({ session }: { session: WorkSessionDetail }) {
   const composerSession = useMemo(() => ({ id: session.id, lane }), [session.id, lane])
   const body = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(() => Number(readSessionPref('panelWidth')) || DEFAULT_PANEL_WIDTH)
+  // Measured by the observer (null until then); the panel's width never feeds it, so dragging can't collapse.
+  const [available, setAvailable] = useState<number | null>(null)
   const rightPanel = useAppStore((s) => s.rightPanel)
+  const openedPanel = rightPanel && rightPanel !== 'debug' ? rightPanel : null
+  const collapsed = sessionPanelCollapsed(available, openedPanel !== null)
+  const shownWidth = available === null ? width : clampPanelWidth(width, available)
 
-  const available = () => body.current?.getBoundingClientRect().width ?? window.innerWidth
   const resize = (next: number, persist: boolean) => {
-    const clamped = clampPanelWidth(next, available())
+    const clamped = clampPanelWidth(next, body.current?.getBoundingClientRect().width ?? window.innerWidth)
     setWidth(clamped)
     if (persist) writeSessionPref('panelWidth', String(clamped))
   }
@@ -81,7 +91,9 @@ function SessionView({ session }: { session: WorkSessionDetail }) {
   useEffect(() => {
     const element = body.current
     if (!element) return
-    const observer = new ResizeObserver(() => setWidth((w) => clampPanelWidth(w, available())))
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setAvailable(entry.contentRect.width)
+    })
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
@@ -104,14 +116,17 @@ function SessionView({ session }: { session: WorkSessionDetail }) {
   const onDividerKey = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
-    resize(width + (event.key === 'ArrowLeft' ? 32 : -32), true)
+    resize(shownWidth + (event.key === 'ArrowLeft' ? 32 : -32), true)
   }
 
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-bg" aria-label={session.title}>
       <SessionHeader session={session} bot={bot} bots={bots} />
       <div ref={body} className="flex min-h-0 flex-1">
-        <section className="flex min-w-0 flex-1 flex-col" aria-label={t('session.conversation')}>
+        <section
+          className={cn('flex flex-1 flex-col', openedPanel ? 'min-w-[320px]' : 'min-w-0')}
+          aria-label={t('session.conversation')}
+        >
           <MessageList
             conversationId={session.conversationId}
             bots={bots}
@@ -127,25 +142,28 @@ function SessionView({ session }: { session: WorkSessionDetail }) {
             session={composerSession}
           />
         </section>
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={t('session.resize')}
-          aria-valuenow={width}
-          tabIndex={0}
-          onPointerDown={onDividerDown}
-          onKeyDown={onDividerKey}
-          className="focus-ring group relative w-px shrink-0 cursor-col-resize bg-border"
-        >
-          <span className="absolute inset-y-0 -right-1 -left-1 group-hover:bg-accent/30" />
-        </div>
-        <aside className="flex min-h-0 shrink-0 flex-col bg-surface" style={{ width }}>
-          {rightPanel && rightPanel !== 'debug' ? (
-            <RightPanelContent panel={rightPanel} />
-          ) : (
-            <SessionTabs session={session} />
-          )}
-        </aside>
+        {!collapsed && (
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={t('session.resize')}
+              aria-valuenow={shownWidth}
+              tabIndex={0}
+              onPointerDown={onDividerDown}
+              onKeyDown={onDividerKey}
+              className="focus-ring group relative w-px shrink-0 cursor-col-resize bg-border"
+            >
+              <span className="absolute inset-y-0 -right-1 -left-1 group-hover:bg-accent/30" />
+            </div>
+            <aside
+              className={cn('flex min-h-0 flex-col bg-surface', openedPanel ? 'min-w-0' : 'shrink-0')}
+              style={{ width: shownWidth }}
+            >
+              {openedPanel ? <RightPanelContent panel={openedPanel} /> : <SessionTabs session={session} />}
+            </aside>
+          </>
+        )}
       </div>
     </main>
   )

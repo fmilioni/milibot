@@ -256,6 +256,75 @@ describe('DefaultAgentHost with Claude Code', () => {
     await host.stop()
   })
 
+  it('records the turn as running at its first model request, updates it after each one, then completes it', async () => {
+    const backend = new FakeBackend()
+    const used = (id: string, content: unknown[], usage: Record<string, number>) =>
+      line({ type: 'assistant', message: { id, role: 'assistant', content, usage } })
+    let writes = 0
+    backend.scriptFor = () =>
+      ++writes === 1
+        ? [
+            line({ type: 'system', subtype: 'init', model: 'claude-sonnet-4-5', mcp_servers: [] }),
+            used('m1', [{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'ls' } }], {
+              input_tokens: 10,
+              cache_read_input_tokens: 1000,
+              output_tokens: 20,
+            }),
+          ]
+        : []
+    const env = new TestEnv(new FakeProvider({ script: [] }))
+    env.cli = { claude_code: backend }
+    env.resolveModel = async () => ({
+      kind: 'cli',
+      engine: 'claude_code',
+      providerId: 'prv_cc',
+      model: null,
+      env: {},
+      idleTimeoutMs: 60_000,
+    })
+    const bot = makeBot()
+    const conversation = env.addBot(bot)
+    const host = new DefaultAgentHost({ deltaFlushMs: 1 })
+    await host.start(env)
+    host.onMessageCreated(env.userMessage(conversation.id, 'list the folder'))
+
+    // Shown while the turn still runs.
+    await until(() => env.llmCallWrites.length === 1)
+    expect(env.llmCallWrites[0]).toMatchObject({
+      purpose: 'turn',
+      conversationId: conversation.id,
+      stopReason: 'running',
+      model: 'claude-sonnet-4-5',
+      usage: { inputTokens: 10, cachedReadTokens: 1000, outputTokens: 20 },
+      response: { requests: 1 },
+    })
+
+    const push = pushTo(backend)
+    push(toolResult('t1', 'a.ts'))
+    env.advance(2_000)
+    push(
+      used('m2', [{ type: 'text', text: 'One file: a.ts.' }], {
+        input_tokens: 10,
+        cache_read_input_tokens: 1100,
+        output_tokens: 8,
+      }),
+    )
+    await until(() => env.llmCallWrites.length === 2)
+    expect(env.llmCallWrites[1]).toMatchObject({
+      stopReason: 'running',
+      usage: { cachedReadTokens: 2100, outputTokens: 28 },
+      response: { requests: 2 },
+    })
+
+    push(result('One file: a.ts.'))
+    await host.idle(bot.id)
+    const id = env.llmCallWrites[0]?.id
+    expect(env.llmCallWrites.map((w) => w.id)).toEqual([id, id, id])
+    expect(env.llmCallWrites[2]).toMatchObject({ stopReason: 'success', response: { requests: 2 } })
+    expect(env.llmCalls.filter((c) => c.purpose === 'turn')).toHaveLength(1)
+    await host.stop()
+  })
+
   it('queues a message that arrives after the process finished its turn', async () => {
     const backend = new FakeBackend()
     let writes = 0

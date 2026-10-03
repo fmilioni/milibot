@@ -60,6 +60,8 @@ export type ClaudeCodeEvent =
       synthetic: boolean
       /** Prompt tokens of the API request that produced this message (input + cache read + cache write). */
       contextTokens: number | null
+      /** Usage of that request as the message reports it (its output count may still grow). */
+      usage: TokenUsage | null
     }
   | { type: 'tool_results'; results: ClaudeToolResult[] }
   /** A user message written to stdin, echoed (`--replay-user-messages`) when the CLI takes it in. */
@@ -295,6 +297,7 @@ export function parseStreamJsonLine(line: string): ClaudeCodeEvent | null {
         parentToolUseId: typeof raw.parent_tool_use_id === 'string' ? raw.parent_tool_use_id : null,
         synthetic: message?.model === '<synthetic>' || typeof raw.error === 'string',
         contextTokens: usage ? usage.inputTokens + usage.cachedReadTokens + usage.cacheWriteTokens : null,
+        usage,
       }
     }
     case 'user': {

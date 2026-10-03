@@ -319,6 +319,12 @@ export class AntigravitySessions extends LaneSessions<Session> {
                 const context = item.usage.inputTokens + item.usage.cachedReadTokens
                 firstContextTokens ??= context
                 lastContextTokens = context
+                io.onProgress?.({
+                  requests,
+                  model,
+                  billing: antigravityBilling(usage, model ?? launch.model),
+                  lastContextTokens,
+                })
               }
               const text = stepText.trim()
               if (text) reply = text

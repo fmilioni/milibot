@@ -1,5 +1,11 @@
 import type { LlmCallRecord } from '@milibot/agent'
-import { type LlmCallModelUsage, type LlmCallRow, newId, type WorkspaceStatus } from '@milibot/shared'
+import {
+  LLM_CALL_RUNNING,
+  type LlmCallModelUsage,
+  type LlmCallRow,
+  newId,
+  type WorkspaceStatus,
+} from '@milibot/shared'
 
 import { type Db, parseJson } from '../../db/sqlite'
 import { notFound } from '../../errors'
@@ -49,6 +55,62 @@ export class LlmCallStore {
     return id
   }
 
+  /**
+   * Replaces a call's row and per-model usage (a running CLI turn's progress, then its result). `created_at`
+   * moves to now, as if it were recorded then: like every call, it is stamped when it ends.
+   */
+  update(id: string, record: LlmCallRecord): void {
+    this.db.transaction(() => {
+      const createdAt = this.now()
+      const changed = this.db
+        .prepare(
+          `UPDATE llm_calls SET bot_id = ?, conversation_id = ?, turn_id = ?, purpose = ?, provider_id = ?,
+             provider_type = ?, model = ?, request_json = ?, response_json = ?, input_tokens = ?,
+             cached_read_tokens = ?, cache_write_tokens = ?, output_tokens = ?, reasoning_tokens = ?, cost_usd = ?,
+             cost_source = ?, context_composition = ?, stop_reason = ?, generation_id = ?, latency_ms = ?, error = ?,
+             created_at = ?
+           WHERE id = ?`,
+        )
+        .run(...this.columns(record), createdAt, id).changes
+      if (changed === 0) throw notFound('llm call', id)
+      this.db.prepare('DELETE FROM llm_call_models WHERE llm_call_id = ?').run(id)
+      this.insertModels(id, record, createdAt)
+    })()
+  }
+
+  /** Calls left running by a daemon that stopped mid-turn end as `interrupted` (run at startup). */
+  closeRunning(): number {
+    return this.db
+      .prepare(`UPDATE llm_calls SET stop_reason = 'interrupted' WHERE stop_reason = ?`)
+      .run(LLM_CALL_RUNNING).changes
+  }
+
+  private columns(record: LlmCallRecord) {
+    return [
+      record.botId,
+      record.conversationId,
+      record.turnId,
+      record.purpose,
+      record.providerId,
+      record.providerType,
+      record.model,
+      json(record.request),
+      json(record.response),
+      record.usage.inputTokens,
+      record.usage.cachedReadTokens,
+      record.usage.cacheWriteTokens,
+      record.usage.outputTokens,
+      record.usage.reasoningTokens,
+      record.usage.costUsd,
+      record.usage.costSource,
+      json(record.contextComposition),
+      record.stopReason,
+      record.generationId,
+      record.latencyMs === null ? null : Math.round(record.latencyMs),
+      record.error,
+    ] as const
+  }
+
   private insertRows(id: string, record: LlmCallRecord): void {
     const createdAt = this.now()
     this.db
@@ -59,31 +121,11 @@ export class LlmCallStore {
            error, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(
-        id,
-        record.botId,
-        record.conversationId,
-        record.turnId,
-        record.purpose,
-        record.providerId,
-        record.providerType,
-        record.model,
-        json(record.request),
-        json(record.response),
-        record.usage.inputTokens,
-        record.usage.cachedReadTokens,
-        record.usage.cacheWriteTokens,
-        record.usage.outputTokens,
-        record.usage.reasoningTokens,
-        record.usage.costUsd,
-        record.usage.costSource,
-        json(record.contextComposition),
-        record.stopReason,
-        record.generationId,
-        record.latencyMs === null ? null : Math.round(record.latencyMs),
-        record.error,
-        createdAt,
-      )
+      .run(id, ...this.columns(record), createdAt)
+    this.insertModels(id, record, createdAt)
+  }
+
+  private insertModels(id: string, record: LlmCallRecord, createdAt: number): void {
     const insertModel = this.db.prepare(
       `INSERT INTO llm_call_models (llm_call_id, model, input_tokens, cached_read_tokens, cache_write_tokens,
          output_tokens, reasoning_tokens, cost_usd, web_search_requests, created_at)

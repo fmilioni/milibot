@@ -135,6 +135,11 @@ export const WorkspaceEvent = z.discriminatedUnion('type', [
   event('work_session.updated', z.object({ session: WorkSession })),
   event('work_session.deleted', z.object({ sessionId: z.string() })),
   event('work_session.files_changed', z.object({ sessionId: z.string(), totals: SessionChangeTotals })),
+  /** An LLM call was recorded, or a running one (`LLM_CALL_RUNNING`) moved on or ended: the debug panel reloads. */
+  event(
+    'llm_call.recorded',
+    z.object({ callId: z.string(), conversationId: z.string().nullable(), turnId: z.string().nullable() }),
+  ),
   event('attachment.updated', z.object({ attachment: Attachment })),
   event('backup.job', z.object({ job: BackupJob })),
   event('backup.restore', z.object({ restore: BackupRestore })),

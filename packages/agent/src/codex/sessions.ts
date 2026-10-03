@@ -370,6 +370,7 @@ export class CodexSessions extends LaneSessions<Session> {
             firstContextTokens ??= last.inputTokens
             lastContextTokens = last.inputTokens
             contextWindow = window ?? contextWindow
+            io.onProgress?.({ requests, model, billing: codexBilling(usage, model), lastContextTokens })
           },
           onError: (message, info) => (lastError = { message, info }),
         })

@@ -18,6 +18,7 @@ export const TONE_DOT: Record<CallTone, string> = {
   retried: 'bg-warning',
   limit: 'bg-warning',
   error: 'bg-danger',
+  running: 'bg-accent animate-pulse motion-reduce:animate-none',
 }
 
 export function Stat({

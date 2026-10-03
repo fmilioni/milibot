@@ -117,6 +117,15 @@ export function turnCost(
   }
 }
 
+/**
+ * What a running turn cost so far, priced from its requests' own usage (the result's `total_cost_usd`, which
+ * replaces it, only comes at the end).
+ */
+function claudeCodeProgressBilling(usage: TokenUsage, model: string | null): CliBilling {
+  const costUsd = model ? claudeCodeTokenCost(model, usage) : null
+  return { usage: { ...usage, costUsd, costSource: costUsd === null ? 'unknown' : 'computed' } }
+}
+
 /** Public API price of `usage` for a Claude model, with 1-hour cache writes (2x input). */
 function claudeCodeTokenCost(model: string, usage: TokenUsage): number | null {
   const prices = anthropicPrices(model)
@@ -281,6 +290,8 @@ export class ClaudeCodeSessions extends LaneSessions<Session> {
     const key = laneKeyOf(launch)
     const events: unknown[] = []
     const requests = new Map<string, number | null>()
+    /** Each request's usage as its messages report it, for the progress of the running turn. */
+    const requestUsage = new Map<string, TokenUsage>()
     let argv: string[] = []
     let launched: CliTurnResult['launched'] = null
     let sessionId = this.backend.getSessionId(key)
@@ -404,11 +415,24 @@ export class ClaudeCodeSessions extends LaneSessions<Session> {
             break
           case 'assistant':
             if (item.parentToolUseId || item.synthetic) break
-            if (item.messageId)
+            if (item.messageId) {
+              const known = requests.has(item.messageId)
               requests.set(
                 item.messageId,
                 Math.max(item.contextTokens ?? 0, requests.get(item.messageId) ?? 0) || null,
               )
+              if (item.usage) requestUsage.set(item.messageId, item.usage)
+              // A message's first block arrives once its request answered: the turn has one more call done.
+              if (!known) {
+                const usage = [...requestUsage.values()].reduce(addTokens, { ...EMPTY_TOKENS })
+                io.onProgress?.({
+                  requests: requests.size,
+                  model,
+                  billing: claudeCodeProgressBilling(usage, model ?? launch.model),
+                  lastContextTokens: requestStats().lastContextTokens,
+                })
+              }
+            }
             if (item.text || item.toolUses.length) io.onTextBoundary(item.text || null)
             if (item.toolUses.length) io.onToolUse?.()
             for (const use of item.toolUses) {

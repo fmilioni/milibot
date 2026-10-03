@@ -94,6 +94,11 @@ describe('agent runtime (fake LLM + fake VM)', () => {
     )
     expect(llmCalls).toHaveLength(4)
     expect(llmCalls[1]?.request && JSON.stringify(llmCalls[1].request)).toMatch(/"sha256":"[0-9a-f]{64}"/)
+    // Each call reaches the debug panel as soon as it is recorded, not when the turn ends.
+    const recorded = events.flatMap((e) =>
+      e.type === 'llm_call.recorded' && e.payload.conversationId === chiefDm ? [e.payload.callId] : [],
+    )
+    expect(recorded).toEqual((llmCalls as Array<{ id?: string }>).map((c) => c.id))
     const toolCalls = await call<Array<{ toolName: string; status: string; screenshotSha: string | null }>>(
       'listToolCalls',
       { conversationId: chiefDm },

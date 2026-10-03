@@ -15,3 +15,12 @@ export function writePref(key: string, value: string): void {
     // Storage blocked.
   }
 }
+
+/** Forgets a kept value; a no-op with storage blocked. */
+export function removePref(key: string): void {
+  try {
+    globalThis.localStorage?.removeItem(key)
+  } catch {
+    // Storage blocked.
+  }
+}

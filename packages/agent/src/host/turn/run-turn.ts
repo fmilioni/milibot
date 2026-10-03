@@ -74,7 +74,7 @@ export class TurnRunner {
       this.errorCard(turn, 'turn_crashed', (err as Error).message)
     } finally {
       const outcome = this.finish(turn, crashed)
-      request.onFinished?.(outcome)
+      request.onFinished?.(outcome, crashed || Boolean(turn.failed))
       // A helper's turn is part of its session's: it is not a turn of the chat, nor a reply to anyone.
       if (!helper) this.turnEnded(bot, request, turn, outcome)
       // A message that joined the turn after its last step waits for the next one.

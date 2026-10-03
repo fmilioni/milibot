@@ -124,6 +124,8 @@ export const WorkspaceEvent = z.discriminatedUnion('type', [
   ),
   event('routine.updated', z.object({ routine: Routine })),
   event('routine.deleted', z.object({ routineId: z.string(), botId: z.string() })),
+  /** The bot's set-aside requests changed (one added, woken or dropped). */
+  event('set_aside.changed', z.object({ botId: z.string() })),
   event('board.updated', z.object({ board: Board })),
   /** Every card of the board, in order. */
   event('board.cards.updated', z.object({ boardId: z.string(), cards: z.array(BoardCard) })),

@@ -44,9 +44,9 @@ export class Scheduler {
       if (request.onFinished) {
         const first = duplicate.onFinished
         const second = request.onFinished
-        duplicate.onFinished = (outcome) => {
-          first?.(outcome)
-          second(outcome)
+        duplicate.onFinished = (outcome, failed) => {
+          first?.(outcome, failed)
+          second(outcome, failed)
         }
       }
     } else if (request.trigger === 'user_message') {
@@ -203,7 +203,7 @@ export class Scheduler {
         this.ctx.screen.release(lane)
         this.ctx.lanes.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
         if (lane.info.kind === 'subagent' && lane.queue.length === 0) this.forgetEphemeralLane(lane)
-        if (lane.queue.length === 0) this.ctx.otherWork.laneFreed(lane)
+        this.ctx.otherWork.turnEnded(lane)
         this.pump()
         this.notifyIdle()
       })

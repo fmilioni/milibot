@@ -46,6 +46,9 @@ describe('workspace cache updates', () => {
     const stale = (key: readonly unknown[]) => client.getQueryState(key)?.isInvalidated
     expect(stale(queryKeys.boardCard('ws1', 'brd_1', 'crd_1'))).toBe(true)
     expect(stale(queryKeys.boardCard('ws1', 'brd_2', 'crd_2'))).toBe(false)
+    expect(workspaceCacheUpdates('ws1', { type: 'set_aside.changed', payload: { botId: 'bot_1' } })).toEqual([
+      { kind: 'invalidate', key: queryKeys.setAside('ws1', 'bot_1') },
+    ])
     expect(workspaceCacheUpdates('ws1', { type: 'bot.deleted', payload: { botId: 'bot_1' } })).toEqual([])
     expect(workspaceCacheUpdates('ws1', { type: 'vm.status', payload: { vm: {} as never } })).toEqual([
       { kind: 'invalidate', key: queryKeys.vmDetails('ws1') },

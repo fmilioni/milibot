@@ -35,6 +35,8 @@ export interface HostOptions {
   screenWaitSeconds: number
   /** Helpers one work session (or one chat turn) may start. */
   maxSubagents: number
+  /** How often free bots with requests set aside are woken and the idle watch runs. */
+  idleWatchIntervalMs: number
 }
 
 /** Each CLI engine's processes (engines whose backend the environment has: none without a VM). */

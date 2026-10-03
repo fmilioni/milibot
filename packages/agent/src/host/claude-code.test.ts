@@ -636,7 +636,9 @@ describe('Claude Code memory', () => {
     await host3.start(env)
     host3.onMessageCreated(env.userMessage(conversation.id, 'again'))
     await host3.idle(bot.id)
-    expect(JSON.parse(backend.stdin.filter(Boolean).at(-1) as string).message.content[0].text).toBe('again')
+    const again = JSON.parse(backend.stdin.filter(Boolean).at(-1) as string).message.content[0].text as string
+    expect(again).not.toContain('Your memory changed')
+    expect(again.endsWith('\n\nagain')).toBe(true)
     await host3.stop()
 
     // Removed notes are reported too, so the session stops relying on them.
@@ -760,7 +762,7 @@ describe('routine runs on Claude Code', () => {
       routineId: 'rtn_1',
     })
     await host.idle(bot.id)
-    expect(input(0)).toBe(instructions)
+    expect(input(0).endsWith(`\n\n${instructions}`)).toBe(true)
     await host.stop()
   })
 

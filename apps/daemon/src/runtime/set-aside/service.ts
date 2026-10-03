@@ -38,17 +38,24 @@ export class SetAsideService {
         return toEntry(request)
       },
       waiting: (botId) => this.store.waiting(botId).map(toEntry),
+      markAttempt: (id) => this.store.markAttempt(id),
       markWoken: (id) => {
         const request = this.store.markWoken(id)
         if (request) this.changed([request.botId])
       },
       markAlerted: (ids) => this.store.markAlerted(ids),
-      drop: (botId, conversationId) => {
-        const dropped = this.store.drop({ botId, ...(conversationId ? { conversationId } : {}) })
+      drop: (botId, filter = {}) => {
+        const dropped = this.store.drop({ botId, ...filter })
         this.changed(dropped.map((r) => r.botId))
-        return dropped.length
+        return dropped.map(toEntry)
       },
     }
+  }
+
+  /** The conversation was deleted: nothing can wake the bot there anymore. */
+  dropConversation(conversationId: string): void {
+    const dropped = this.store.drop({ conversationId })
+    this.changed(dropped.map((r) => r.botId))
   }
 
   handlers(): EndpointHandlers<keyof typeof setAsideEndpoints> {

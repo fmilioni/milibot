@@ -320,6 +320,8 @@ export interface SetAsideEntry {
   waitingOn: string[]
   createdAt: number
   alertedAt: number | null
+  /** Turns queued to wake the bot with it. */
+  attempts: number
 }
 
 /** Where set-aside requests are kept (the daemon's database). */
@@ -327,12 +329,14 @@ export interface SetAsideStore {
   add(entry: { botId: string; conversationId: string; task: string; waitingOn: string[] }): SetAsideEntry
   /** Requests not taken up yet, oldest first; every bot's without `botId`. */
   waiting(botId?: string): SetAsideEntry[]
-  /** The bot was woken with it. */
+  /** A turn to wake the bot with it was queued (it stays waiting until that turn runs). */
+  markAttempt(id: string): void
+  /** The turn that woke the bot with it ran. */
   markWoken(id: string): void
   /** The idle watch reported these. */
   markAlerted(ids: string[]): void
-  /** Drops the bot's waiting requests (only this conversation's with `conversationId`); returns how many. */
-  drop(botId: string, conversationId?: string): number
+  /** Drops the bot's waiting requests: all, one conversation's or one by id. Returns the dropped ones. */
+  drop(botId: string, filter?: { conversationId?: string; id?: string }): SetAsideEntry[]
 }
 
 /** Work sessions and plans as the lanes see them. */
@@ -527,8 +531,12 @@ export interface TurnRequest {
   laneKey?: string
   /** Model of this turn instead of the lane's (a helper started on a chosen model). */
   model?: ModelChoice | null
-  /** Called once when the turn ends or the request is dropped (routines track their runs with it). */
-  onFinished?: (outcome: TurnOutcome) => void
+  /**
+   * Called once when the turn ends or the request is dropped (routines track their runs with it). `failed`:
+   * the turn could not do its work (the model failed or was unavailable, the turn crashed), unlike an `error`
+   * outcome that only says its last step failed.
+   */
+  onFinished?: (outcome: TurnOutcome, failed?: boolean) => void
 }
 
 /** One tool-less completion on behalf of a bot, logged in `llm_calls` (e.g. writing a taught procedure). */

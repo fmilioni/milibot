@@ -13,6 +13,7 @@ interface SetAsideRow {
   updated_at: number
   woken_at: number | null
   alerted_at: number | null
+  attempts: number
 }
 
 function toRequest(row: SetAsideRow): SetAsideRequest {
@@ -26,6 +27,7 @@ function toRequest(row: SetAsideRow): SetAsideRequest {
     createdAt: row.created_at,
     wokenAt: row.woken_at,
     alertedAt: row.alerted_at,
+    attempts: row.attempts,
   }
 }
 
@@ -82,6 +84,12 @@ export class SetAsideStore {
     return this.get(id)
   }
 
+  markAttempt(id: string): void {
+    this.db
+      .prepare('UPDATE set_aside_requests SET attempts = attempts + 1, updated_at = ? WHERE id = ?')
+      .run(this.now(), id)
+  }
+
   markAlerted(ids: string[]): void {
     const now = this.now()
     const update = this.db.prepare(
@@ -92,21 +100,20 @@ export class SetAsideStore {
     })()
   }
 
-  /** Drops waiting requests: one by id, or a bot's (in one conversation). Returns the dropped ones. */
-  drop(filter: { id: string } | { botId: string; conversationId?: string }): SetAsideRequest[] {
+  /** Drops the waiting requests matching every field given (at least one). Returns the dropped ones. */
+  drop(filter: { id?: string; botId?: string; conversationId?: string }): SetAsideRequest[] {
     const where = ["status = 'waiting'"]
     const args: string[] = []
-    if ('id' in filter) {
-      where.push('id = ?')
-      args.push(filter.id)
-    } else {
-      where.push('bot_id = ?')
-      args.push(filter.botId)
-      if (filter.conversationId) {
-        where.push('conversation_id = ?')
-        args.push(filter.conversationId)
-      }
+    for (const [column, value] of [
+      ['id', filter.id],
+      ['bot_id', filter.botId],
+      ['conversation_id', filter.conversationId],
+    ] as const) {
+      if (!value) continue
+      where.push(`${column} = ?`)
+      args.push(value)
     }
+    if (args.length === 0) return []
     const rows = this.db
       .prepare(`SELECT * FROM set_aside_requests WHERE ${where.join(' AND ')}`)
       .all(...args) as SetAsideRow[]

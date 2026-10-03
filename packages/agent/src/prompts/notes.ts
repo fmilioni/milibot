@@ -72,6 +72,12 @@ export function botStateNote(state: BotStateLines): string {
     'Requests you set aside, to take up when your current work ends (you are woken with each then):',
     state.setAside,
   )
+  if (state.setAside.length)
+    lines.push(
+      'One of these that you already did, are starting now (here or in another conversation) or that no longer ' +
+        'applies: drop it with after_current_work (cancel: true and its id), or you will be woken to do it again. ' +
+        'Never set the same request aside twice.',
+    )
   lines.push(
     free
       ? 'No other work of yours is running and no work session is open: you are free. Start what is asked here ' +
@@ -87,7 +93,8 @@ export function setAsideDoneNote(task: string, waitedOn: string[]): string {
   const what = waitedOn.length ? ` (${waitedOn.join('; ')})` : ''
   return (
     `[Milibot] You are free now: what you were waiting for finished${what}. Now do what you set aside in this ` +
-    `conversation:\n\n${task}`
+    'conversation (if you already did it in another conversation, say so in one line instead of redoing it):' +
+    `\n\n${task}`
   )
 }
 
@@ -108,8 +115,8 @@ export function idleWatchNote(
       `Its work sessions still open (no turn running): ${openSessions.join('; ')}. One may be stuck or never finished.`,
     )
   lines.push(
-    `What you write here reaches ${botName}: ask it to resume, finish its open work or drop what no longer ` +
-      'applies, and tell the user if it needs their decision. One short message.',
+    `Ask ${botName} with message_bot to resume, finish its open work or drop what no longer applies (its ` +
+      'answer comes back to you here), and tell the user only if it needs their decision. Keep it short.',
   )
   return lines.join('\n')
 }

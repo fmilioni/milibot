@@ -4,7 +4,8 @@ import { endpoint, Ok } from '../http/endpoint'
 
 /**
  * A request a bot set aside (`after_current_work`) until its work in progress ends. `waiting`: not taken up
- * yet; `woken`: the bot was woken with it; `dropped`: cancelled by the bot, the user or a stop.
+ * yet (also while the turn that wakes the bot with it waits to run); `woken`: that turn ran; `dropped`:
+ * cancelled by the bot, the user, a stop or the deletion of its conversation.
  */
 export const SetAsideStatus = z.enum(['waiting', 'woken', 'dropped'])
 export type SetAsideStatus = z.infer<typeof SetAsideStatus>
@@ -19,10 +20,15 @@ export const SetAsideRequest = z.object({
   status: SetAsideStatus,
   createdAt: z.number(),
   wokenAt: z.number().nullable(),
+  /** Turns queued to wake the bot with it; it stays waiting, no longer woken, after `SET_ASIDE_MAX_WAKES`. */
+  attempts: z.number().int(),
   /** When the idle watch told someone the bot was stopped with it; null = never. */
   alertedAt: z.number().nullable(),
 })
 export type SetAsideRequest = z.infer<typeof SetAsideRequest>
+
+/** Wakes that did not run (an error, a stop, a restart) before a request is left for the bot or the user. */
+export const SET_ASIDE_MAX_WAKES = 3
 
 export const setAsideEndpoints = {
   /** The requests still waiting, oldest first (one bot's with `botId`). */

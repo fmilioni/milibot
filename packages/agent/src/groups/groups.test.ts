@@ -521,7 +521,9 @@ describe('after_current_work', () => {
     )
     const wake = provider.requests.find((r) => lastUserText(r).includes('what you were waiting for finished'))
     expect(lastUserText(wake as CompletionRequest)).toContain(
-      'You are free now: what you were waiting for finished (a request from Ana). Now do what you set aside in this conversation:\n\nRedesign the parking site (Maringá).',
+      'You are free now: what you were waiting for finished (a request from Ana). Now do what you set aside in ' +
+        'this conversation (if you already did it in another conversation, say so in one line instead of ' +
+        'redoing it):\n\nRedesign the parking site (Maringá).',
     )
     expect(texts(env, dm)).toEqual([
       ['user', 'after the current one, redesign the parking site'],

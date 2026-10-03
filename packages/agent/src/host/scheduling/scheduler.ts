@@ -44,9 +44,9 @@ export class Scheduler {
       if (request.onFinished) {
         const first = duplicate.onFinished
         const second = request.onFinished
-        duplicate.onFinished = (outcome) => {
-          first?.(outcome)
-          second(outcome)
+        duplicate.onFinished = (outcome, failed) => {
+          first?.(outcome, failed)
+          second(outcome, failed)
         }
       }
     } else if (request.trigger === 'user_message') {

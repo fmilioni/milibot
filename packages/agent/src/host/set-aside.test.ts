@@ -64,7 +64,7 @@ describe("the bot's state in every conversation", () => {
       sessions: [{ id: 'wses_1', conversationId: 'cnv_session', title: 'QA of PR #22' }],
       plans: [{ id: 'plan_1', title: 'Release 0.3', status: 'awaiting_approval' }],
     })
-    env.setAside.add({
+    const entry = env.setAside.add({
       botId: iris.id,
       conversationId: internal.id,
       task: 'QA of PR #23',
@@ -81,7 +81,10 @@ describe("the bot's state in every conversation", () => {
         'Plans not finished:',
         '- "Release 0.3" (awaiting approval)',
         'Requests you set aside, to take up when your current work ends (you are woken with each then):',
-        '- "QA of PR #23" (in your conversation with Ana, 0 min ago)',
+        `- "QA of PR #23" (id ${entry.id}, in your conversation with Ana, 0 min ago)`,
+        'One of these that you already did, are starting now (here or in another conversation) or that no longer ' +
+          'applies: drop it with after_current_work (cancel: true and its id), or you will be woken to do it again. ' +
+          'Never set the same request aside twice.',
         'When the user or another bot speaks of what you are doing now',
       ].join('\n'),
     )
@@ -138,7 +141,9 @@ describe('requests set aside', () => {
     await host.idle()
     const wake = provider.requests.find((r) => lastUserText(r).includes('You are free now'))
     expect(lastUserText(wake as CompletionRequest)).toContain(
-      'You are free now: what you were waiting for finished (your work session "QA of PR #22"). Now do what you set aside in this conversation:\n\nQA of PR #23',
+      'You are free now: what you were waiting for finished (your work session "QA of PR #22"). Now do what you ' +
+        'set aside in this conversation (if you already did it in another conversation, say so in one line ' +
+        'instead of redoing it):\n\nQA of PR #23',
     )
     const internal = env.internalConversation(ana.id, iris.id)
     expect(env.messages.filter((m) => m.conversationId === internal.id).at(-1)?.content).toBe(
@@ -166,6 +171,46 @@ describe('requests set aside', () => {
     expect(env.setAside.waiting()).toEqual([])
   })
 
+  it('shows what was set aside before when setting aside again, and drops a request by id', async () => {
+    const results: string[] = []
+    const { env, provider } = setup({
+      iris: (request, text) => {
+        const tools = request.messages.filter((m) => m.role === 'tool').length
+        if (tools > 0) results.push(text)
+        if (tools === 0)
+          return { toolCalls: [{ name: 'after_current_work', arguments: { task: 'QA of PR #23' } }] }
+        if (tools === 1)
+          return { toolCalls: [{ name: 'after_current_work', arguments: { cancel: true, id: 'sar_x' } }] }
+        const id = /id (sar_\w+), in your conversation with Ana/.exec(results[0] ?? '')?.[1]
+        if (tools === 2)
+          return { toolCalls: [{ name: 'after_current_work', arguments: { cancel: true, id } }] }
+        return { text: 'Done.' }
+      },
+    })
+    env.workStates.set(iris.id, {
+      sessions: [{ id: 'wses_1', conversationId: 'cnv_s', title: 'QA' }],
+      plans: [],
+    })
+    const internal = env.internalConversation(ana.id, iris.id)
+    const first = env.setAside.add({
+      botId: iris.id,
+      conversationId: internal.id,
+      task: 'QA #23',
+      waitingOn: [],
+    })
+    const host = await startHost(env)
+    host.onMessageCreated(env.userMessage(dmOf(env, iris), 'after the QA, run the QA of PR #23'))
+    await host.idle()
+    expect(provider.requests).toHaveLength(4)
+    expect(results[0]).toContain(
+      `Also set aside before:\n- "QA #23" (id ${first.id}, in your conversation with Ana, 0 min ago)\n` +
+        'If one of them is this same request, drop the duplicate (cancel: true and its id).',
+    )
+    expect(results[1]).toContain('Nothing dropped: no request of yours set aside with id sar_x is waiting')
+    expect(results[2]).toContain('Dropped: "QA #23".')
+    expect(env.setAside.waiting(iris.id).map((e) => e.task)).toEqual(['QA of PR #23'])
+  })
+
   it('starts a request at once when the bot is already free', async () => {
     const { env, provider } = setup({
       iris: (_r, text) =>
@@ -183,7 +228,19 @@ describe('requests set aside', () => {
 
 describe('idle watch', () => {
   it('tells the chosen bot once when a bot stays stopped with requests set aside', async () => {
-    const { env, provider } = setup({ ana: () => ({ text: 'Iris, pick up PR #23 or drop it.' }) })
+    const { env, provider } = setup({
+      ana: (_r, text) => {
+        if (text.includes('has done nothing for'))
+          return {
+            toolCalls: [
+              { name: 'message_bot', arguments: { bot: 'Iris', message: 'Pick up PR #23 or drop it.' } },
+            ],
+          }
+        if (text.includes('Iris replied')) return { text: 'Iris is back on PR #23.' }
+        return { text: 'Asked Iris.' }
+      },
+      iris: () => ({ text: 'Closing the QA of #22 and starting #23.' }),
+    })
     env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 30
     env.settings[PREFERENCE_SETTING_KEYS.idleWatchBotId] = ana.id
     env.workStates.set(iris.id, {
@@ -201,19 +258,40 @@ describe('idle watch', () => {
     await new Promise((resolve) => setTimeout(resolve, 40))
     await host.idle()
     const asked = (name: string) => provider.requests.filter((r) => systemText(r).includes(`You are ${name}`))
-    expect(asked('Ana')).toHaveLength(1)
-    const note = lastUserText(asked('Ana')[0] as CompletionRequest)
+    const alerts = asked('Ana').filter((r) => lastUserText(r).includes('has done nothing for'))
+    expect(alerts).toHaveLength(1)
+    const note = lastUserText(alerts[0] as CompletionRequest)
     expect(note).toContain('Iris has done nothing for 31 min while it has requests set aside for later')
     expect(note).toContain('- "QA of PR #23"')
     expect(note).toContain('Its work sessions still open (no turn running): "QA of PR #22".')
-    expect(env.messages.filter((m) => m.conversationId === internal.id).at(-1)?.content).toBe(
-      'Iris, pick up PR #23 or drop it.',
-    )
-    // What Ana wrote there reaches Iris.
-    expect(lastUserText(asked('Iris')[0] as CompletionRequest)).toContain(
-      'Ana sent a follow-up in your private conversation',
-    )
+    // Iris answers in their private conversation and the answer comes back to Ana, never to Iris's chat.
+    const said = (conversationId: string) =>
+      env.messages
+        .filter((m) => m.conversationId === conversationId && m.kind === 'text')
+        .map((m) => m.content)
+    expect(said(internal.id)).toEqual([
+      'Pick up PR #23 or drop it.',
+      'Closing the QA of #22 and starting #23.',
+    ])
+    expect(said(dmOf(env, iris))).toEqual([])
+    expect(said(dmOf(env, ana)).at(-1)).toBe('Iris is back on PR #23.')
     expect(env.setAside.waiting(iris.id)[0]?.alertedAt).not.toBeNull()
+  })
+
+  it('tells another bot when the stopped bot is the one the watch reports to', async () => {
+    const { env, provider } = setup({})
+    env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 30
+    env.workStates.set(ana.id, {
+      sessions: [{ id: 'wses_1', conversationId: 'cnv_s', title: 'Plan' }],
+      plans: [],
+    })
+    env.setAside.add({ botId: ana.id, conversationId: dmOf(env, ana), task: 'Release notes', waitingOn: [] })
+    const host = await startHost(env, 10)
+    env.advance(31 * 60_000)
+    await until(() => provider.requests.length > 0)
+    await host.idle()
+    const alert = provider.requests.find((r) => lastUserText(r).includes('Ana has done nothing for'))
+    expect(systemText(alert as CompletionRequest)).toContain('You are Iris')
   })
 
   it('stays quiet when it is off or the bot is working', async () => {

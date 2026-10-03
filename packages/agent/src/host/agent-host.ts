@@ -196,6 +196,7 @@ export class DefaultAgentHost implements AgentHost {
       ctx.screen.release(lane)
       ctx.lanes.removeLane(lane)
     }
+    ctx.otherWork.laneClosed(info.botId)
   }
 
   onMessageCreated(message: Message): void {

@@ -16,6 +16,8 @@ export default {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         woken_at INTEGER,
+        -- Turns queued to wake the bot with it (a wake that never ran counts too).
+        attempts INTEGER NOT NULL DEFAULT 0,
         -- When the idle watch reported the bot stopped with it; NULL = never.
         alerted_at INTEGER
       );

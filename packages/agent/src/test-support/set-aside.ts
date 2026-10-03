@@ -14,6 +14,7 @@ export class InMemorySetAside implements SetAsideStore {
       id: newId('setAside'),
       createdAt: this.now(),
       alertedAt: null,
+      attempts: 0,
       status: 'waiting' as const,
     }
     this.entries.push(row)
@@ -26,6 +27,10 @@ export class InMemorySetAside implements SetAsideStore {
       .map((e) => this.view(e))
   }
 
+  markAttempt(id: string): void {
+    for (const e of this.entries) if (e.id === id) e.attempts++
+  }
+
   markWoken(id: string): void {
     for (const e of this.entries) if (e.id === id) e.status = 'woken'
   }
@@ -34,13 +39,14 @@ export class InMemorySetAside implements SetAsideStore {
     for (const e of this.entries) if (ids.includes(e.id)) e.alertedAt = this.now()
   }
 
-  drop(botId: string, conversationId?: string): number {
-    let dropped = 0
+  drop(botId: string, filter: { conversationId?: string; id?: string } = {}): SetAsideEntry[] {
+    const dropped: SetAsideEntry[] = []
     for (const e of this.entries) {
       if (e.status !== 'waiting' || e.botId !== botId) continue
-      if (conversationId && e.conversationId !== conversationId) continue
+      if (filter.conversationId && e.conversationId !== filter.conversationId) continue
+      if (filter.id && e.id !== filter.id) continue
       e.status = 'dropped'
-      dropped++
+      dropped.push(this.view(e))
     }
     return dropped
   }

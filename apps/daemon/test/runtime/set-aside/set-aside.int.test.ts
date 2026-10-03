@@ -25,6 +25,11 @@ function lastInput(request: CompletionRequest) {
     tools: results.length,
     results: results.map(textOf).join('\n'),
     system: textOf(messages[0]),
+    /** Every user message of the request (the chat's notes come apart from the user's text). */
+    input: messages
+      .filter((m) => m.role === 'user')
+      .map(textOf)
+      .join('\n'),
   }
 }
 
@@ -89,11 +94,15 @@ function marco(options: { sessionMs?: number; finish?: boolean } = {}): BotScrip
 
 let h: RuntimeHarness
 
-async function boot(script: Record<string, BotScript>, db?: Db) {
+let clock = Date.now()
+
+async function boot(script: Record<string, BotScript>, db?: Db, idleWatchIntervalMs?: number) {
+  clock = Date.now()
   h = await bootRuntime({
     dir: dir(),
     script: byBot(script),
-    host: { compaction: false },
+    host: { compaction: false, ...(idleWatchIntervalMs ? { idleWatchIntervalMs } : {}) },
+    runtime: { now: () => clock },
     ...(db ? { db } : {}),
   })
   return h
@@ -232,12 +241,150 @@ describe('requests set aside', () => {
 
     await boot({ Marco: ({ text }) => ({ text: text.includes('You are free now') ? 'On it.' : 'ok' }) }, db)
     await until(() => messagesOf(ids['Marco:dm'] as string).some((m) => m.content === 'On it.'))
+    await h.host.idle()
     const wake = h.provider.requests.find((r) => lastInput(r).text.includes('You are free now'))
     expect(lastInput(wake as CompletionRequest).text).toContain(
-      'what you were waiting for finished (a request from Theo). Now do what you set aside in this conversation:\n\nQA of PR #24',
+      'what you were waiting for finished (a request from Theo). Now do what you set aside in this conversation (if you already did it in another conversation, say so in one line instead of redoing it):\n\nQA of PR #24',
     )
     expect(db.prepare("SELECT status FROM set_aside_requests WHERE id = 'sar_1'").get()).toEqual({
       status: 'woken',
     })
+  })
+})
+
+describe('requests set aside, when things go wrong', () => {
+  const waiting = () => h.call<SetAsideRequest[]>('listSetAsideRequests', {}, undefined, {})
+  const sessionsTitled = async (title: string) => (await sessions()).filter((s) => s.title === title)
+  const wakes = () => h.provider.requests.filter((r) => lastInput(r).text.includes('You are free now')).length
+
+  /** Marco has the QA of #22 open (it never finishes) and Theo's #23 is set aside. */
+  async function behindOpenSession(marcoScript: BotScript, idleWatchIntervalMs?: number) {
+    await boot(
+      { Nina: delegate('#22'), Theo: delegate('#23'), Marco: marcoScript },
+      undefined,
+      idleWatchIntervalMs,
+    )
+    const ids = await createBots('Marco', 'Nina', 'Theo')
+    await h.call(
+      'postMessage',
+      { conversationId: ids['Nina:dm'] as string },
+      { content: 'send PR #22 to Marco' },
+    )
+    await until(async () => (await sessionTitled('QA of PR #22'))?.status === 'idle')
+    await h.host.idle()
+    await h.call(
+      'postMessage',
+      { conversationId: ids['Theo:dm'] as string },
+      { content: 'send PR #23 to Marco' },
+    )
+    await h.host.idle()
+    expect((await waiting()).map((w) => w.task)).toEqual(['QA of PR #23'])
+    return ids
+  }
+
+  const stopSession = async (title: string) =>
+    h.call('stopWorkSession', { sessionId: (await sessionTitled(title))?.id as string })
+
+  it('keeps a request waiting when the turn that wakes the bot with it fails, and wakes it again later', async () => {
+    let failWake = true
+    const base = marco({ finish: false })
+    await behindOpenSession((input) => {
+      if (input.text.includes('You are free now') && input.tools === 0 && failWake) return { error: 'boom' }
+      return base(input)
+    }, 10)
+    await stopSession('QA of PR #22')
+    await until(() => wakes() > 0)
+    await h.host.idle()
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(await waiting()).toMatchObject([{ task: 'QA of PR #23', status: 'waiting', attempts: 1 }])
+    expect(await sessionTitled('QA of PR #23')).toBeUndefined()
+
+    failWake = false
+    clock += 5 * 60_000
+    await until(async () => Boolean(await sessionTitled('QA of PR #23')))
+    await h.host.idle()
+    expect(await waiting()).toEqual([])
+    expect(
+      h.db.prepare("SELECT status, attempts FROM set_aside_requests WHERE task = 'QA of PR #23'").get(),
+    ).toEqual({ status: 'woken', attempts: 2 })
+  })
+
+  it('stops waking the bot after a few failed wakes and leaves the request pending', async () => {
+    const base = marco({ finish: false })
+    await behindOpenSession(
+      (input) =>
+        input.text.includes('You are free now') && input.tools === 0 ? { error: 'boom' } : base(input),
+      10,
+    )
+    await stopSession('QA of PR #22')
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await until(async () => (await waiting())[0]?.attempts === attempt)
+      await h.host.idle()
+      clock += 5 * 60_000
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await h.host.idle()
+    expect(await waiting()).toMatchObject([{ task: 'QA of PR #23', status: 'waiting', attempts: 3 }])
+  })
+
+  it('wakes the bot as soon as the user stops its idle session, without waiting for the timer', async () => {
+    await behindOpenSession(marco({ finish: false }))
+    await stopSession('QA of PR #22')
+    await until(async () => Boolean(await sessionTitled('QA of PR #23')), 2000)
+  })
+
+  it('lets the bot drop a request set aside in another conversation once it does the work there', async () => {
+    const base = marco({ finish: false })
+    const ids = await behindOpenSession((input) => {
+      const setAside = /"QA of PR #23" \(id (sar_\w+), in your conversation with Theo/.exec(input.input)?.[1]
+      if (input.text.endsWith('Run the QA of PR #23 now.') && input.tools === 0 && setAside)
+        return {
+          toolCalls: [
+            { name: 'after_current_work', arguments: { cancel: true, id: setAside } },
+            { name: 'session_start', arguments: { title: 'QA of PR #23', goal: 'Check PR #23.' } },
+          ],
+        }
+      return base(input)
+    })
+    await h.call(
+      'postMessage',
+      { conversationId: ids['Marco:dm'] as string },
+      { content: 'Run the QA of PR #23 now.' },
+    )
+    await h.host.idle()
+    expect(await waiting()).toEqual([])
+
+    await stopSession('QA of PR #22')
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await h.host.idle()
+    expect(wakes()).toBe(0)
+    expect(await sessionsTitled('QA of PR #23')).toHaveLength(1)
+  })
+
+  it('drops what was set aside in a conversation the user deletes', async () => {
+    const ids = await behindOpenSession(marco({ finish: false }))
+    const group = await h.call<{ id: string }>(
+      'createConversation',
+      {},
+      { type: 'group', title: 'Release', botIds: [ids.Marco] },
+    )
+    h.db
+      .prepare(
+        `INSERT INTO set_aside_requests (id, bot_id, conversation_id, task, created_at, updated_at)
+         VALUES ('sar_group', ?, ?, 'Release notes', ?, ?)`,
+      )
+      .run(ids.Marco, group.id, clock, clock)
+    await h.call('deleteConversation', { conversationId: group.id })
+    expect((await waiting()).map((w) => w.task)).toEqual(['QA of PR #23'])
+    expect(h.db.prepare("SELECT status FROM set_aside_requests WHERE id = 'sar_group'").get()).toEqual({
+      status: 'dropped',
+    })
+  })
+
+  it('refuses an idle watch bot that does not exist', async () => {
+    await boot({})
+    await expect(
+      h.call('updateWorkspacePreferences', {}, { idleWatchBotId: 'bot_missing' }),
+    ).rejects.toThrow()
   })
 })

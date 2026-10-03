@@ -54,16 +54,21 @@ export const messagingReplies = {
 
 export const setAsideReplies = {
   noConversation: 'Not executed: there is no conversation to come back to.',
-  dropped: (count: number) =>
-    `Dropped: ${count === 1 ? 'the request' : `the ${count} requests`} set aside in this conversation.`,
+  dropped: (tasks: string[]) => `Dropped: ${tasks.join('; ')}. You will not be woken with it.`,
   nothingToDrop: 'Nothing was set aside in this conversation.',
+  noSuchRequest: (id: string) =>
+    `Nothing dropped: no request of yours set aside with id ${id} is waiting (already taken up or dropped).`,
   missingTask: 'Invalid input: "task" is required (or cancel: true).',
   nothingRunning:
     'Not set aside: nothing else of yours is running and no work session is open, so you are free. Do it now, ' +
     'in this turn.',
-  setAside: (waitingOn: string[]) =>
+  setAside: (waitingOn: string[], others: string[]) =>
     `Set aside until ${waitingOn.join(' and ')} finishes; you will be woken here with it once you are free ` +
-    '(it is kept even if the app restarts). Say so in one short line and end your turn; do not start it now.',
+    '(it is kept even if the app restarts). Say so in one short line and end your turn; do not start it now.' +
+    (others.length
+      ? `\nAlso set aside before:\n${others.map((o) => `- ${o}`).join('\n')}\nIf one of them is this same ` +
+        'request, drop the duplicate (cancel: true and its id).'
+      : ''),
 }
 
 export const helperReplies = {

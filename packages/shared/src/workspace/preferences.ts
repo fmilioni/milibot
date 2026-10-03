@@ -50,6 +50,13 @@ export const WorkspacePreferences = z.object({
   legacyOffice: z.boolean(),
   /** Off: the VM boots only when the user starts it (a VM already running is still adopted). */
   vmAutostart: z.boolean(),
+  /**
+   * A bot stopped this long with set-aside requests (nothing running, so nothing will wake it) is reported to
+   * `idleWatchBotId`; 0 = off.
+   */
+  idleWatchMinutes: z.number().int().min(0).max(1440),
+  /** The bot told about stopped bots (the project manager); null = the first bot. */
+  idleWatchBotId: z.string().nullable(),
   /** The app's language, kept in sync by the daemon (not a setting of its own). */
   userLanguage: Language,
 })
@@ -81,6 +88,8 @@ export const DEFAULT_WORKSPACE_PREFERENCES: WorkspacePreferences = {
   promptUpdates: 'auto',
   legacyOffice: false,
   vmAutostart: true,
+  idleWatchMinutes: 30,
+  idleWatchBotId: null,
   userLanguage: 'pt-BR',
 }
 

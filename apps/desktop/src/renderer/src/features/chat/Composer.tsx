@@ -22,6 +22,7 @@ import { Tooltip } from '@/ui/Tooltip'
 
 import { sendableAttachmentIds, useAttachmentStore } from './attachment-store'
 import { ComposerAttachments } from './Attachments'
+import { useComposerDraft } from './composer-drafts'
 import { FrameChip } from './FrameChip'
 
 const MAX_COMPOSER_HEIGHT = 200
@@ -57,7 +58,6 @@ export function Composer({
 }) {
   const { t } = useTranslation()
   const send = useAppStore((s) => s.sendMessage)
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(false)
   const [mention, setMention] = useState<MentionQuery | null>(null)
@@ -70,11 +70,11 @@ export function Composer({
   }
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const value = drafts[conversationId] ?? ''
+  const workspaceId = useWorkspaceId()
+  const [value, setDraft] = useComposerDraft(workspaceId, conversationId)
   const attachments = useAttachmentStore((s) => s.byConversation[conversationId]) ?? NO_ATTACHMENTS
   const maxFileMb = useAttachmentStore((s) => s.maxFileMb)
   const addFiles = useAttachmentStore((s) => s.addFiles)
-  const workspaceId = useWorkspaceId()
   const removeAttachment = useAttachmentStore((s) => s.remove)
   const clearAttachments = useAttachmentStore((s) => s.clear)
   const attachmentIds = sendableAttachmentIds(attachments)
@@ -106,8 +106,6 @@ export function Composer({
     if (contextFocus !== undefined) textareaRef.current?.focus()
   }, [contextFocus])
 
-  const setValue = (next: string) => setDrafts((d) => ({ ...d, [conversationId]: next }))
-
   const updateMention = (text: string, caret: number) => {
     const query = activeMentionQuery(text, caret)
     setMention(query)
@@ -117,7 +115,7 @@ export function Composer({
   const pick = (bot: Bot) => {
     if (!mention) return
     const next = insertMention(value, mention, bot.name)
-    setValue(next.text)
+    setDraft(next.text)
     setMention(null)
     requestAnimationFrame(() => {
       const el = textareaRef.current
@@ -135,7 +133,7 @@ export function Composer({
     try {
       await send(conversationId, content, attachmentIds)
       if (typed) context?.onClear()
-      setValue('')
+      setDraft('')
       clearAttachments(conversationId)
       setMention(null)
     } catch {
@@ -259,7 +257,7 @@ export function Composer({
             aria-controls={suggestions.length > 0 ? listId : undefined}
             aria-activedescendant={suggestions[active] ? `${listId}-${suggestions[active].id}` : undefined}
             onChange={(e) => {
-              setValue(e.target.value)
+              setDraft(e.target.value)
               updateMention(e.target.value, e.target.selectionStart)
             }}
             onSelect={(e) => updateMention(e.currentTarget.value, e.currentTarget.selectionStart)}

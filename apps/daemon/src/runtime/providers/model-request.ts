@@ -272,8 +272,13 @@ export function modelRequestNote(result: Extract<ModelRequestResult, { ok: true 
   return [`It runs on ${result.label}.`, ...result.notes].join(' ')
 }
 
-/** What `set_model` writes on a bot (the fields the bot settings panel changes). */
-export type BotModelPatch = Pick<ModelChoice, 'providerId' | 'model' | 'effort' | 'contextLimit'>
+/**
+ * What `set_model` writes on a bot (the fields the bot settings panel changes). `providerId`/`model` only
+ * come when the bot switches model or provider: an effort or context change alone leaves them as they are,
+ * so a bot that follows the default model or provider (null) keeps following it, like the panel.
+ */
+export type BotModelPatch = Pick<ModelChoice, 'effort' | 'contextLimit'> &
+  Partial<Pick<ModelChoice, 'providerId' | 'model'>>
 
 export type BotModelChange =
   { ok: true; patch: BotModelPatch; label: string; notes: string[] } | { ok: false; error: string }
@@ -331,8 +336,7 @@ export function resolveBotModelChange(
   }
 
   const patch: BotModelPatch = {
-    providerId: choice.providerId,
-    model: choice.model,
+    ...(switching ? { providerId: choice.providerId, model: choice.model } : {}),
     effort,
     contextLimit: choice.contextLimit,
   }

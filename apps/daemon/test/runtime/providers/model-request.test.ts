@@ -188,8 +188,31 @@ describe('resolveBotModelChange', () => {
     const change = resolveBotModelChange(models, bot(), { effort: 'HIGH' })
     expect(change).toMatchObject({
       ok: true,
-      patch: { providerId: 'or', model: 'openai/gpt-5', effort: 'high', contextLimit: null },
+      patch: { effort: 'high', contextLimit: null },
       label: 'GPT-5 (OpenRouter), effort high',
+    })
+  })
+
+  it('leaves model and provider unset on an effort or context change, so a default-following bot keeps following', () => {
+    const following = {
+      catalog: () => catalog,
+      currentChoice: () => ({
+        providerId: 'or',
+        model: 'openai/gpt-5',
+        effort: null,
+        contextLimit: null,
+        maxOutputTokens: null,
+      }),
+    }
+    const change = resolveBotModelChange(following, bot({ providerId: null, model: null, effort: null }), {
+      effort: 'high',
+      context: '256k',
+    })
+    expect(change).toEqual({
+      ok: true,
+      patch: { effort: 'high', contextLimit: 256_000 },
+      label: expect.any(String),
+      notes: [],
     })
   })
 

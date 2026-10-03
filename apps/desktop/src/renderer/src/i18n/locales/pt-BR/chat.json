@@ -371,12 +371,26 @@
       "mcp_remove": "Remover"
     },
     "rejectActions": {
-      "continue_bot_exchange": "Parar"
+      "continue_bot_exchange": "Parar",
+      "mcp_add": "Recusar",
+      "mcp_update": "Recusar"
     },
     "statusActions": {
       "continue_bot_exchange": {
         "approved": "Você deixou continuar",
         "rejected": "Você parou a conversa"
+      },
+      "mcp_add": {
+        "approved": "Você adicionou",
+        "rejected": "Você recusou"
+      },
+      "mcp_update": {
+        "approved": "Você alterou",
+        "rejected": "Você recusou"
+      },
+      "mcp_remove": {
+        "approved": "Você removeu",
+        "rejected": "Você manteve"
       }
     },
     "mcp": {

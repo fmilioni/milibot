@@ -371,12 +371,26 @@
       "mcp_remove": "Remove"
     },
     "rejectActions": {
-      "continue_bot_exchange": "Stop"
+      "continue_bot_exchange": "Stop",
+      "mcp_add": "Decline",
+      "mcp_update": "Decline"
     },
     "statusActions": {
       "continue_bot_exchange": {
         "approved": "You let them continue",
         "rejected": "You stopped them"
+      },
+      "mcp_add": {
+        "approved": "You added it",
+        "rejected": "You declined"
+      },
+      "mcp_update": {
+        "approved": "You changed it",
+        "rejected": "You declined"
+      },
+      "mcp_remove": {
+        "approved": "You removed it",
+        "rejected": "You kept it"
       }
     },
     "mcp": {

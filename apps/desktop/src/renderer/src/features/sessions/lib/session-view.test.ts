@@ -10,6 +10,7 @@ import {
   planShowsSession,
   sessionCardIsCompact,
   sessionMatchesFilters,
+  sessionPanelCollapsed,
   sessionTone,
   shortFilePath,
   splitPath,
@@ -97,6 +98,14 @@ describe('session view', () => {
     expect(clampPanelWidth(2000, 1600)).toBe(1180)
     expect(clampPanelWidth(500, 800)).toBe(380)
     expect(clampPanelWidth(500, 600)).toBe(360)
+  })
+
+  it('collapses the plan/changes panel only without room for it and the conversation', () => {
+    expect(sessionPanelCollapsed(779, false)).toBe(true)
+    expect(sessionPanelCollapsed(780, false)).toBe(false)
+    expect(sessionPanelCollapsed(1000, false)).toBe(false)
+    expect(sessionPanelCollapsed(340, true)).toBe(false)
+    expect(sessionPanelCollapsed(null, false)).toBe(false)
   })
 })
 

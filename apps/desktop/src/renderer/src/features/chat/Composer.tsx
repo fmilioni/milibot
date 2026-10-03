@@ -267,13 +267,13 @@ export function Composer({
             placeholder={placeholder ?? t('chat.composerPlaceholder', { name: targetName })}
             className="selectable resize-none bg-transparent text-md leading-[1.5] text-fg outline-none placeholder:text-fg-muted"
           />
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 items-center justify-between gap-2">
             <Tooltip content={t('chat.attach')}>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label={t('chat.attach')}
-                className="focus-ring rounded p-0.5 text-fg-muted hover:text-fg"
+                className="focus-ring shrink-0 rounded p-0.5 text-fg-muted hover:text-fg"
               >
                 <Paperclip size={15} />
               </button>
@@ -291,7 +291,7 @@ export function Composer({
                 textareaRef.current?.focus()
               }}
             />
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {stop.visible && (
                 <Tooltip content={stop.stopping ? null : t('chat.stopTooltip', { label: stop.label })}>
                   <button

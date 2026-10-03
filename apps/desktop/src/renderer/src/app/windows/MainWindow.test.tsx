@@ -16,7 +16,7 @@ vi.mock('@/features/designs/DesignsScreen', () => ({ DesignsScreen: marker('desi
 vi.mock('@/features/files/FilesScreen', () => ({ FilesScreen: marker('files') }))
 vi.mock('@/features/sessions/SessionScreen', () => ({ SessionScreen: marker('session') }))
 vi.mock('@/features/setup/SetupScreen', () => ({ SetupScreen: marker('setup') }))
-vi.mock('@/app/RightPanel', () => ({ RightPanel: marker('right-panel') }))
+vi.mock('@/app/RightPanel', () => ({ RightPanel: marker('right-panel'), rightPanelWidth: () => '' }))
 vi.mock('@/app/ModalHost', () => ({ ModalHost: () => null }))
 vi.mock('@/app/ReconnectingBanner', () => ({ ReconnectingBanner: () => null }))
 vi.mock('@/app/Toaster', () => ({ Toaster: () => null }))

@@ -28,7 +28,7 @@ function SummaryStats({ debug, scope }: { debug: ConversationDebug; scope: Scope
   const totals: DebugTotals = scope === 'today' ? debug.today : debug.totals
   const suffix = scope === 'today' ? 'Today' : 'All'
   return (
-    <div className="flex gap-2.5 px-4 pt-3.5">
+    <div className="flex flex-wrap gap-2.5 px-4 pt-3.5">
       <Stat
         label={t(`panels.debug.stats.tokens${suffix}`)}
         value={compactTokens(totals.tokens, locale)}
@@ -114,7 +114,7 @@ export function CallsTab({
         />
       </div>
       {/* Newest first; new rows land on top and the browser keeps the reading position when scrolled down. */}
-      <div className="scroll-slim flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-4">
+      <div className="scroll-slim @container flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-4 pb-4">
         {visible.length === 0 ? (
           <span className="py-6 text-center text-sm text-fg-muted">{t('panels.debug.noErrors')}</span>
         ) : (
@@ -189,14 +189,14 @@ function TurnRowView({
           <span className="flex-1" />
           {model && (
             <Tooltip content={row.models.join(', ')}>
-              <span className="shrink-0 rounded-[4px] bg-accent-soft px-1.5 text-xs leading-[18px] text-accent">
+              <span className="min-w-0 truncate rounded-[4px] bg-accent-soft px-1.5 text-xs leading-[18px] text-accent">
                 {model}
                 {more}
               </span>
             </Tooltip>
           )}
           <Tooltip content={tokensHint(t, locale, row.tokens)}>
-            <span className="shrink-0 text-fg-secondary">
+            <span className="shrink-0 text-fg-secondary @max-sm:hidden">
               {t('panels.debug.tokens.total', { value: compactTokens(row.tokens.total, locale) })}
             </span>
           </Tooltip>

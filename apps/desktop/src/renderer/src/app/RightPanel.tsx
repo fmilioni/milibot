@@ -12,12 +12,16 @@ import { type RightPanel as RightPanelKind, useAppStore } from '@/features/works
 export function RightPanel() {
   const panel = useAppStore((s) => s.rightPanel)
   if (!panel) return null
-  const width = panel === 'debug' ? 'w-[min(660px,52vw)]' : 'w-[min(var(--right-panel-width),40vw)]'
   return (
-    <aside className={`flex shrink-0 flex-col border-l border-border bg-surface ${width}`}>
+    <aside className={`flex shrink-0 flex-col border-l border-border bg-surface ${rightPanelWidth(panel)}`}>
       <RightPanelContent panel={panel} />
     </aside>
   )
+}
+
+/** The right panel's width class, also kept by its area's error fallback. */
+export function rightPanelWidth(panel: RightPanelKind | null): string {
+  return panel === 'debug' ? 'w-[var(--debug-panel-width)]' : 'w-[min(var(--right-panel-width),40vw)]'
 }
 
 /** A right panel's content, without its column (the session screen shows it in its own). */

@@ -131,11 +131,24 @@ export function shortFilePath(path: string): string {
   return path.startsWith('/workspace/') ? path.slice('/workspace/'.length) : path
 }
 
+/** Narrowest the session screen's side panel gets while it is shown. */
+const PANEL_MIN_WIDTH = 360
+/** Room the session's conversation keeps beside the side panel (the debug panel's width leaves it too). */
+const CONVERSATION_MIN_WIDTH = 420
+
 /** Width of the side panel within the session screen's `available` width, leaving room for the conversation. */
 export function clampPanelWidth(width: number, available: number): number {
-  const min = 360
-  const max = Math.max(min, available - 420)
-  return Math.round(Math.min(max, Math.max(min, width)))
+  const max = Math.max(PANEL_MIN_WIDTH, available - CONVERSATION_MIN_WIDTH)
+  return Math.round(Math.min(max, Math.max(PANEL_MIN_WIDTH, width)))
+}
+
+/**
+ * The session's own plan/changes panel steps aside when the screen has no room for it and the conversation
+ * together. A panel the user opened there (VM, bot…) stays: their click outweighs the room.
+ */
+export function sessionPanelCollapsed(available: number | null, openedByUser: boolean): boolean {
+  if (openedByUser || available === null) return false
+  return available < PANEL_MIN_WIDTH + CONVERSATION_MIN_WIDTH
 }
 
 /** Layout choices of the session screen kept in this window's storage (absent or blocked: defaults). */

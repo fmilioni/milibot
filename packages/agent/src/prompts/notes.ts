@@ -37,31 +37,81 @@ export function planRequestNote(
   )
 }
 
+/** What a bot's chat turns read about its own work, whichever conversation it started in. */
+export interface BotStateLines {
+  /** Other lanes running or waiting to run a turn now. */
+  running: string[]
+  /** Work sessions not ended whose lane has no turn now. */
+  openSessions: string[]
+  plans: string[]
+  setAside: string[]
+}
+
 /**
- * What else the bot is doing right now in its other lanes (`work`), and what this conversation set aside for
- * when that finishes. `canSetAside`: the lane offers `after_current_work`.
+ * The bot's state across all its conversations, read at the start of every chat turn: what an earlier
+ * message of this conversation says about its work may be out of date (it ended in another conversation).
  */
-export function otherWorkNote(work: string[], setAside: string | null, canSetAside: boolean): string {
+export function botStateNote(state: BotStateLines): string {
+  const free = state.running.length === 0 && state.openSessions.length === 0
   const lines = [
-    '[Milibot] Your other work in progress right now, running on its own beside this conversation:',
-    ...work.map((w) => `- ${w}`),
+    '[Milibot] Your state right now, across all your conversations (newer than what earlier messages here say about your work):',
   ]
-  if (setAside) lines.push(`Set aside in this conversation for when it finishes: ${setAside}`)
+  const section = (title: string, items: string[]) => {
+    if (items.length) lines.push(title, ...items.map((item) => `- ${item}`))
+  }
+  section(
+    'Your other work in progress right now, running on its own beside this conversation:',
+    state.running,
+  )
+  section(
+    'Work sessions still open, with no turn running now (waiting for a reply or an answer, or never finished with session_finish):',
+    state.openSessions,
+  )
+  section('Plans not finished:', state.plans)
+  section(
+    'Requests you set aside, to take up when your current work ends (you are woken with each then):',
+    state.setAside,
+  )
   lines.push(
-    canSetAside
-      ? 'When the user speaks of "the current one" or of what you are doing now, they may mean this work. For ' +
-          'something they want only after it finishes, call after_current_work and end your turn instead of ' +
-          'starting it now.'
-      : 'When the user or another bot speaks of what you are doing now, they may mean this work.',
+    free
+      ? 'No other work of yours is running and no work session is open: you are free. Start what is asked here ' +
+          'now, in this turn, instead of saying you will do it later.'
+      : 'When the user or another bot speaks of what you are doing now, they may mean this work. For something ' +
+          'that must wait until it ends, call after_current_work and end your turn: you are woken with it once ' +
+          'you are free. Never only promise to do it later.',
   )
   return lines.join('\n')
 }
 
-export function setAsideDoneNote(task: string, finished: string[]): string {
+export function setAsideDoneNote(task: string, waitedOn: string[]): string {
+  const what = waitedOn.length ? ` (${waitedOn.join('; ')})` : ''
   return (
-    `[Milibot] What you were waiting for finished (${finished.join('; ')}). Now do what you set aside in this ` +
+    `[Milibot] You are free now: what you were waiting for finished${what}. Now do what you set aside in this ` +
     `conversation:\n\n${task}`
   )
+}
+
+/** To the bot the idle watch reports to, in its conversation with the stopped bot. */
+export function idleWatchNote(
+  botName: string,
+  minutes: number,
+  setAside: string[],
+  openSessions: string[],
+): string {
+  const lines = [
+    `[Milibot] ${botName} has done nothing for ${minutes} min while it has requests set aside for later, ` +
+      'so nothing will wake it up:',
+    ...setAside.map((task) => `- ${task}`),
+  ]
+  if (openSessions.length)
+    lines.push(
+      `Its work sessions still open (no turn running): ${openSessions.join('; ')}. One may be stuck or never finished.`,
+    )
+  lines.push(
+    `What you write here reaches ${botName}: ask it to resume, finish its open work or drop what no longer ` +
+      'applies, and tell the user if it needs their decision. One short message.',
+  )
+  return lines.join('\n')
 }
 
 /** Before what the user wrote in the conversation while the turn was working, when the turn takes it in. */

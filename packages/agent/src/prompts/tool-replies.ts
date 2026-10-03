@@ -54,14 +54,16 @@ export const messagingReplies = {
 
 export const setAsideReplies = {
   noConversation: 'Not executed: there is no conversation to come back to.',
-  dropped: 'Dropped: nothing is set aside in this conversation anymore.',
+  dropped: (count: number) =>
+    `Dropped: ${count === 1 ? 'the request' : `the ${count} requests`} set aside in this conversation.`,
   nothingToDrop: 'Nothing was set aside in this conversation.',
   missingTask: 'Invalid input: "task" is required (or cancel: true).',
-  nothingRunning: 'Nothing else of yours is running now: do it in this turn instead of setting it aside.',
+  nothingRunning:
+    'Not set aside: nothing else of yours is running and no work session is open, so you are free. Do it now, ' +
+    'in this turn.',
   setAside: (waitingOn: string[]) =>
-    `Set aside until ${waitingOn.join(' and ')} finishes; you will be woken here with it then ` +
-    '(this replaces anything set aside before in this conversation). Tell the user in one short line and end ' +
-    'your turn; do not start it now.',
+    `Set aside until ${waitingOn.join(' and ')} finishes; you will be woken here with it once you are free ` +
+    '(it is kept even if the app restarts). Say so in one short line and end your turn; do not start it now.',
 }
 
 export const helperReplies = {

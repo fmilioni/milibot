@@ -84,7 +84,11 @@ describe('knowledge in the context', () => {
     await host.idle(bot.id)
     const request = provider.requests[0]
     expect(texts(request, 0).join('\n')).toContain(CATALOG)
-    expect(texts(request, request!.messages.length - 1)).toEqual([TURN, 'When is the rent due?'])
+    expect(texts(request, request!.messages.length - 1)).toEqual([
+      TURN,
+      expect.stringContaining('you are free'),
+      'When is the rent due?',
+    ])
     expect(queries).toEqual(['When is the rent due?'])
     const call = env.llmCalls.find((c) => c.purpose === 'turn')
     expect(call?.contextComposition?.knowledge).toBeGreaterThan(0)

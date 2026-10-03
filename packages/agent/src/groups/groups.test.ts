@@ -501,7 +501,7 @@ describe('after_current_work', () => {
   it('shows the other lane in the chat and wakes the chat with the task once it finishes', async () => {
     const { env, host, provider } = await irisBusyWithAna((request) => {
       const text = allUserText(request)
-      if (text.includes('What you were waiting for finished')) return { text: 'Redesign done.' }
+      if (text.includes('what you were waiting for finished')) return { text: 'Redesign done.' }
       if (text.includes('Set aside until')) return { text: 'I will start once the landing is done.' }
       if (text.includes('redesign the parking site'))
         return {
@@ -519,9 +519,9 @@ describe('after_current_work', () => {
     expect(lastUserText(chatFirst as CompletionRequest)).toContain(
       'Your other work in progress right now, running on its own beside this conversation:\n- a request from Ana (running for 1 min): "Draw the dental landing page."',
     )
-    const wake = provider.requests.find((r) => lastUserText(r).includes('What you were waiting for finished'))
+    const wake = provider.requests.find((r) => lastUserText(r).includes('what you were waiting for finished'))
     expect(lastUserText(wake as CompletionRequest)).toContain(
-      'What you were waiting for finished (a request from Ana). Now do what you set aside in this conversation:\n\nRedesign the parking site (Maringá).',
+      'You are free now: what you were waiting for finished (a request from Ana). Now do what you set aside in this conversation:\n\nRedesign the parking site (Maringá).',
     )
     expect(texts(env, dm)).toEqual([
       ['user', 'after the current one, redesign the parking site'],
@@ -543,13 +543,13 @@ describe('after_current_work', () => {
     host.onMessageCreated(env.userMessage(dm, 'after the current one, do this'))
     await host.idle()
     expect(lastUserText(provider.requests[1] as CompletionRequest)).toContain(
-      'Nothing else of yours is running now',
+      'Not set aside: nothing else of yours is running',
     )
 
     let set = false
     const busy = await irisBusyWithAna((request) => {
       const text = allUserText(request)
-      if (text.includes('What you were waiting for finished')) return { text: 'Woke up.' }
+      if (text.includes('what you were waiting for finished')) return { text: 'Woke up.' }
       if (text.includes('Set aside until')) return { text: 'Later, then.' }
       if (text.includes('do this later')) {
         set = true
@@ -563,7 +563,7 @@ describe('after_current_work', () => {
     busy.host.control(iris.id, 'stop')
     await busy.host.idle()
     expect(
-      busy.provider.requests.some((r) => allUserText(r).includes('What you were waiting for finished')),
+      busy.provider.requests.some((r) => allUserText(r).includes('what you were waiting for finished')),
     ).toBe(false)
   })
 })

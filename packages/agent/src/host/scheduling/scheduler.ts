@@ -203,7 +203,7 @@ export class Scheduler {
         this.ctx.screen.release(lane)
         this.ctx.lanes.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
         if (lane.info.kind === 'subagent' && lane.queue.length === 0) this.forgetEphemeralLane(lane)
-        if (lane.queue.length === 0) this.ctx.otherWork.laneFreed(lane)
+        this.ctx.otherWork.turnEnded(lane)
         this.pump()
         this.notifyIdle()
       })

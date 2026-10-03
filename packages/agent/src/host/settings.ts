@@ -1,4 +1,4 @@
-import { PREFERENCE_SETTING_KEYS } from '@milibot/shared'
+import { DEFAULT_WORKSPACE_PREFERENCES, PREFERENCE_SETTING_KEYS } from '@milibot/shared'
 
 import { cliKeys } from '../cli/keys'
 import type { HostStateStore } from '../environment'
@@ -50,6 +50,17 @@ export function agentSettings(getSetting: GetSetting) {
     maxParallelSessions: () =>
       positiveInt(getSetting<unknown>(AGENT_SETTING_KEYS.maxParallelSessions, null)) ??
       Math.max(1, maxParallel() - 1),
+    /** 0 = the idle watch is off. */
+    idleWatchMinutes: () => {
+      const value = getSetting<unknown>(PREFERENCE_SETTING_KEYS.idleWatchMinutes, null)
+      return typeof value === 'number' && Number.isInteger(value) && value >= 0
+        ? value
+        : DEFAULT_WORKSPACE_PREFERENCES.idleWatchMinutes
+    },
+    idleWatchBotId: () => {
+      const value = getSetting<unknown>(PREFERENCE_SETTING_KEYS.idleWatchBotId, null)
+      return typeof value === 'string' && value ? value : null
+    },
   }
 }
 

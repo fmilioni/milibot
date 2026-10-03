@@ -303,6 +303,38 @@ export interface ActivePlan {
   steps: Array<{ id: string; title: string; status: string }>
 }
 
+/** A bot's work that outlives a turn, as every one of its conversations sees it. */
+export interface BotWorkState {
+  /** Work sessions not ended yet. */
+  sessions: Array<{ id: string; conversationId: string; title: string }>
+  /** Plans awaiting approval, approved or being carried out. */
+  plans: Array<{ id: string; title: string; status: string }>
+}
+
+/** A request set aside with `after_current_work`, kept across runtime restarts. */
+export interface SetAsideEntry {
+  id: string
+  botId: string
+  conversationId: string
+  task: string
+  waitingOn: string[]
+  createdAt: number
+  alertedAt: number | null
+}
+
+/** Where set-aside requests are kept (the daemon's database). */
+export interface SetAsideStore {
+  add(entry: { botId: string; conversationId: string; task: string; waitingOn: string[] }): SetAsideEntry
+  /** Requests not taken up yet, oldest first; every bot's without `botId`. */
+  waiting(botId?: string): SetAsideEntry[]
+  /** The bot was woken with it. */
+  markWoken(id: string): void
+  /** The idle watch reported these. */
+  markAlerted(ids: string[]): void
+  /** Drops the bot's waiting requests (only this conversation's with `conversationId`); returns how many. */
+  drop(botId: string, conversationId?: string): number
+}
+
 /** Work sessions and plans as the lanes see them. */
 export interface WorkPort {
   /**
@@ -317,6 +349,9 @@ export interface WorkPort {
   workSessions: WorkSessionDirectory
   /** The approved plan a lane is carrying out, so the bots it asks for help can mark the steps they do. */
   activePlan(bot: Bot, laneKey: string, conversationId: string | null): ActivePlan | null
+  /** The bot's open sessions and plans in progress, whichever conversation they started in. */
+  workState(botId: string): BotWorkState
+  setAside: SetAsideStore
 }
 
 /** A CLAUDE.md or AGENTS.md of a repository in the VM. */

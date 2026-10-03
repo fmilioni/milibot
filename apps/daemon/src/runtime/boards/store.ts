@@ -541,6 +541,24 @@ export class BoardStore {
     return row?.card_id ?? null
   }
 
+  /** Pull request links not merged yet on boards that are not archived, newest first. */
+  openPullRequestLinks(): Array<{ id: string; boardId: string; url: string; state: string | null }> {
+    return (
+      this.db
+        .prepare(
+          `SELECT l.id, c.board_id, coalesce(l.url, l.ref) AS url, l.state FROM board_card_links l
+           JOIN board_cards c ON c.id = l.card_id JOIN boards b ON b.id = c.board_id
+           WHERE l.kind = 'pr' AND coalesce(l.state, '') != 'done' AND b.archived_at IS NULL
+           ORDER BY l.created_at DESC, l.id DESC`,
+        )
+        .all() as Array<{ id: string; board_id: string; url: string; state: string | null }>
+    ).map((row) => ({ id: row.id, boardId: row.board_id, url: row.url, state: row.state }))
+  }
+
+  setLinkState(id: string, state: string): void {
+    this.db.prepare('UPDATE board_card_links SET state = ? WHERE id = ?').run(state, id)
+  }
+
   removeLink(id: string): void {
     this.db.prepare('DELETE FROM board_card_links WHERE id = ?').run(id)
   }

@@ -190,6 +190,63 @@ describe('boards', () => {
       url: 'https://github.com/acme/fin/pull/7',
       state: 'open',
     })
+
+    await tool('board_card_write', { board: board!.id, title: 'Export reports' })
+    const other = (await h.call<BoardDetail>('getBoard', { boardId: board!.id })).cards.find(
+      (c) => c.title === 'Export reports',
+    ) as BoardCard
+    await tool('board_link', { card: other.id, kind: 'pr', ref: 'https://github.com/Acme/fin/pull/7/files' })
+    const prLinks = async () =>
+      (await h.call<BoardDetail>('getBoard', { boardId: board!.id })).cards.map(
+        (c) => c.links.find((l) => l.kind === 'pr')?.state,
+      )
+    expect(h.runtime.services.boards.trackedPullRequests()).toHaveLength(2)
+
+    // Merged from a conversation outside the session (the PM's DM): every card linking the PR follows.
+    h.runtime.services.boards.linkPullRequest(h.dm, {
+      type: 'task',
+      title: 'feat: import statements',
+      status: 'done',
+      url: 'https://github.com/acme/fin/pull/7',
+      repo: 'acme/fin',
+      prNumber: 7,
+      branch: 'bot/x',
+      botId: h.botId,
+    })
+    expect(await prLinks()).toEqual(['done', 'done'])
+    expect(h.runtime.services.boards.trackedPullRequests()).toEqual([])
+
+    h.runtime.services.boards.applyPullRequestStates(
+      new Map([['https://github.com/acme/fin/pull/7', 'review']]),
+    )
+    expect(await prLinks()).toEqual(['done', 'done'])
+  })
+
+  it('updates pull request links from statuses read on GitHub, leaving the others as they were', async () => {
+    await boot()
+    await tool('board_create', {
+      title: 'Release',
+      summary: 'Ship it.',
+      cards: [{ title: 'Fix login' }, { title: 'Fix logout' }],
+    })
+    const [board] = await h.call<Board[]>('listBoards', {}, undefined, {})
+    await tool('board_link', { card: 'Fix login', kind: 'pr', ref: 'https://github.com/acme/app/pull/18' })
+    await tool('board_link', { card: 'Fix logout', kind: 'pr', ref: 'https://github.com/acme/app/pull/19' })
+    const cardEvents = () => h.events.filter((e) => e.type === 'board.cards.updated').length
+    const before = cardEvents()
+
+    h.runtime.services.boards.applyPullRequestStates(
+      new Map([['https://github.com/acme/app/pull/18', 'failed']]),
+    )
+    const cards = (await h.call<BoardDetail>('getBoard', { boardId: board!.id })).cards
+    expect(byTitle(cards, 'Fix login').links[0]?.state).toBe('failed')
+    expect(byTitle(cards, 'Fix logout').links[0]?.state).toBeNull()
+    expect(cardEvents()).toBe(before + 1)
+
+    h.runtime.services.boards.applyPullRequestStates(
+      new Map([['https://github.com/acme/app/pull/18', 'failed']]),
+    )
+    expect(cardEvents()).toBe(before + 1)
   })
 
   it('keeps card images as blobs and shows them to bots as paths in the VM', async () => {

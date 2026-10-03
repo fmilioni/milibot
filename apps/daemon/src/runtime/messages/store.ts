@@ -161,6 +161,26 @@ export class MessageStore {
     return row ? { id: row.id, payload: parseJson<unknown>(row.payload, null) } : null
   }
 
+  /** Cards whose payload has `type`, newest first, leaving out those whose `payload.status` is in `exceptStatus`. */
+  cards(
+    type: string,
+    options: { exceptStatus?: string[]; limit: number },
+  ): Array<{ id: string; conversationId: string; payload: unknown }> {
+    const except = options.exceptStatus ?? []
+    const rows = this.db
+      .prepare(
+        `SELECT id, conversation_id, payload FROM messages WHERE kind = 'card' AND json_extract(payload, '$.type') = ?
+         ${except.length ? `AND coalesce(json_extract(payload, '$.status'), '') NOT IN (${except.map(() => '?').join(', ')})` : ''}
+         ORDER BY seq DESC LIMIT ?`,
+      )
+      .all(type, ...except, options.limit) as Array<{ id: string; conversation_id: string; payload: string }>
+    return rows.map((row) => ({
+      id: row.id,
+      conversationId: row.conversation_id,
+      payload: parseJson<unknown>(row.payload, null),
+    }))
+  }
+
   update(id: string, patch: { content?: string; payload?: MessagePayload | null }): void {
     const row = this.db.prepare('SELECT content, payload FROM messages WHERE id = ?').get(id) as
       { content: string; payload: string | null } | undefined

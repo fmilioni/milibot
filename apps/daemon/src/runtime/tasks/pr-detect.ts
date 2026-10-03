@@ -204,7 +204,7 @@ export function parseGhPrView(stdout: string): GhPrView | null {
   }
 }
 
-export function statusOfPr(view: GhPrView): TaskStatus {
+export function statusOfPr(view: Pick<GhPrView, 'state' | 'isDraft'>): TaskStatus {
   if (view.state === 'MERGED') return 'done'
   if (view.state === 'CLOSED') return 'failed'
   return view.isDraft ? 'open' : 'review'

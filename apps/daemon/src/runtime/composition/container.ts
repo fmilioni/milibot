@@ -92,7 +92,7 @@ import { GitPolicySync, OfficeService, SettingsService } from '../settings'
 import { SetupRoutes } from '../setup'
 import { defaultBuiltinSkillsDir, SkillService, SkillTools } from '../skills'
 import { SpendGuard, SpendRoutes } from '../spend'
-import { TaskCardService, TaskCardTools } from '../tasks'
+import { githubGraphql, PullRequestStatusWatcher, TaskCardService, TaskCardTools } from '../tasks'
 import { TodoStore } from '../todos'
 import type { ToolProvider } from '../tools-core'
 import { CliUsageRoutes, WorkspaceStatusService } from '../usage'
@@ -147,7 +147,7 @@ export interface RuntimeOverrides {
   embeddings?: EmbeddingOptions
   /** Built-in skills (default: found next to the code). */
   builtinSkillsDir?: string | null
-  /** GitHub REST API base for skill imports (default `https://api.github.com`). */
+  /** GitHub API base for skill imports and pull request statuses (default `https://api.github.com`). */
   githubApi?: string
   design?: DesignOptions
   /** Image providers (`MILIBOT_FAKE_IMAGES=1`). */
@@ -584,6 +584,29 @@ export function createContainer(options: ContainerOptions) {
       log,
     }),
   )
+  const pullRequestStatus = new PullRequestStatusWatcher({
+    tracked: () => [...taskCards.trackedPullRequests(), ...boards.trackedPullRequests()],
+    graphql: (query) =>
+      githubGraphql(
+        {
+          token: () => credentials.github.load(),
+          fetch,
+          api: overrides.githubApi ?? 'https://api.github.com',
+          ghExec: async (cmd, vars) => {
+            const bot = store.bots.first()
+            return bot && vm.status().state === 'running'
+              ? vm.runningGuest().exec({ user: botLinuxUser(bot.slug), cmd, env: vars, timeoutMs: 20_000 })
+              : null
+          },
+        },
+        query,
+      ),
+    apply: (statuses) => {
+      taskCards.applyPullRequestStatuses(statuses)
+      boards.applyPullRequestStates(statuses)
+    },
+    log,
+  })
   const boardTools = new BoardTools({
     boards,
     projects,
@@ -984,6 +1007,11 @@ export function createContainer(options: ContainerOptions) {
     { name: 'attachments', start: () => attachments.start(), stop: () => attachments.stop() },
     { name: 'knowledge', start: () => knowledge.start(), stop: () => knowledge.stop() },
     { name: 'boards', start: () => boards.start(), stop: () => boards.stop() },
+    {
+      name: 'pull request status',
+      start: () => pullRequestStatus.start(),
+      stop: () => pullRequestStatus.stop(),
+    },
     ...(options.enableCliEngines
       ? [cliSweepComponent(vm, Object.values(cliBackends)), ...Object.values(cliEngines)]
       : []),
@@ -1012,6 +1040,8 @@ export function createContainer(options: ContainerOptions) {
     plans,
     tools,
     boards,
+    taskCards,
+    pullRequestStatus,
     designs,
     externalMcp,
     knowledge,

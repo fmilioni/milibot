@@ -175,3 +175,43 @@ describe('pull requests from shell commands', () => {
     expect(cards()[0]?.payload).toMatchObject({ status: 'open', title: 'New screen', prNumber: 9 })
   })
 })
+
+describe('pull request statuses read on GitHub', () => {
+  const card = (url: string | null, status: TaskPayload['status'], title = 'Fix login') =>
+    service.report(nina, dm, null, {
+      title,
+      status,
+      url,
+      repo: null,
+      prNumber: null,
+      branch: null,
+      botId: nina.id,
+    })
+
+  it('tracks the pull request cards not merged yet and updates them in place', () => {
+    card('https://github.com/acme/app/pull/18', 'review')
+    card('https://github.com/acme/app/pull/19', 'done', 'Fix logout')
+    card('https://github.com/acme/app/pull/20', 'failed', 'Fix signup')
+    card('https://ci.example.com/deploy/1', 'open', 'Deploy')
+    card(null, 'open', 'Write docs')
+    expect(service.trackedPullRequests()).toEqual([
+      'https://github.com/acme/app/pull/20',
+      'https://github.com/acme/app/pull/18',
+    ])
+
+    service.applyPullRequestStatuses(
+      new Map([
+        ['https://github.com/acme/app/pull/18', 'done'],
+        ['https://github.com/acme/app/pull/20', 'review'],
+        ['https://github.com/acme/app/pull/19', 'failed'],
+      ]),
+    )
+    const byTitle = Object.fromEntries(cards().map((m) => [m.payload.title, m]))
+    expect(byTitle['Fix login']?.payload.status).toBe('done')
+    expect(byTitle['Fix login']?.content).toBe('Fix login — done (https://github.com/acme/app/pull/18)')
+    expect(byTitle['Fix signup']?.payload.status).toBe('review')
+    expect(byTitle['Fix logout']?.payload.status).toBe('done')
+    expect(byTitle['Deploy']?.payload.status).toBe('open')
+    expect(service.trackedPullRequests()).toEqual(['https://github.com/acme/app/pull/20'])
+  })
+})

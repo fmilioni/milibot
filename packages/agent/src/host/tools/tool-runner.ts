@@ -3,6 +3,7 @@ import { type ActivityStep, editedFiles, estimateTokens, newId } from '@milibot/
 import type { ToolResult } from '../../environment'
 import { textOfParts, type ToolCall } from '../../llm/messages'
 import { imageTokens } from '../../memory/tokens'
+import { isRepoInstructionText, loadedInstructionFiles } from '../../prompts/repo-instructions'
 import { CANCELLED } from '../../prompts/tool-replies'
 import { describeToolCall, isNoopToolCall } from '../../tools/describe'
 import { MESSAGING_TOOLS } from '../../tools/families/messaging'
@@ -12,7 +13,6 @@ import { isBotLane, isScreenTool } from '../lanes'
 import { isAbort, type LaneState, StoppedError, type TurnState } from '../state'
 import { type HostTool, hostTools } from './host-tools'
 import { gateToolCall } from './tool-gate'
-import { isRepoInstructionText, loadedInstructionFiles } from '../../prompts/repo-instructions'
 
 function textOf(result: ToolResult): string {
   return textOfParts(result.content, '\n')

@@ -1,9 +1,9 @@
 import type { ActivityStep, BotStatus } from '@milibot/shared'
 
 import type { TurnRequest } from '../environment'
+import type { LoadedInstructionFile } from '../prompts/repo-instructions'
 import type { LaneInfo, LaneKey } from './lanes'
 import type { TextStream } from './turn/text-stream'
-import type { LoadedInstructionFile } from '../prompts/repo-instructions'
 
 export const HISTORY_MESSAGES = 60
 

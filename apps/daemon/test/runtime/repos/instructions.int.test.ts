@@ -2,11 +2,10 @@ import { spawnSync } from 'node:child_process'
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-import { REPO_INSTRUCTIONS_FILE_MAX } from '@milibot/agent/prompts'
-import { describe, expect, it } from 'vitest'
-
 import type { ToolExecContext } from '@milibot/agent'
+import { REPO_INSTRUCTIONS_FILE_MAX } from '@milibot/agent/prompts'
 import type { Bot } from '@milibot/shared'
+import { describe, expect, it } from 'vitest'
 
 import { readRepoInstructions, RepoTools } from '../../../src/runtime/repos'
 import type { WorktreeStore } from '../../../src/runtime/repos/store'

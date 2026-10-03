@@ -104,6 +104,7 @@ const LANE_TOOLS: Record<LaneKind, { without: ToolName[]; keep: ToolName[] }> = 
       'add_member',
       'remove_member',
       'update_own_prompt',
+      'set_model',
       'share_file',
       'routine_create',
       'routine_update',

@@ -271,3 +271,77 @@ export function modelRequestArgs(args: Record<string, unknown>): ModelRequest | 
 export function modelRequestNote(result: Extract<ModelRequestResult, { ok: true }>): string {
   return [`It runs on ${result.label}.`, ...result.notes].join(' ')
 }
+
+/**
+ * What `set_model` writes on a bot (the fields the bot settings panel changes). `providerId`/`model` only
+ * come when the bot switches model or provider: an effort or context change alone leaves them as they are,
+ * so a bot that follows the default model or provider (null) keeps following it, like the panel.
+ */
+export type BotModelPatch = Pick<ModelChoice, 'effort' | 'contextLimit'> &
+  Partial<Pick<ModelChoice, 'providerId' | 'model'>>
+
+export type BotModelChange =
+  { ok: true; patch: BotModelPatch; label: string; notes: string[] } | { ok: false; error: string }
+
+const isDefault = (value: string | number | null | undefined) =>
+  typeof value === 'string' && /^\s*default\s*$/i.test(value)
+
+/**
+ * A change of a bot's own model (`set_model`), with the bot settings panel's rules: a model of the catalog
+ * (the current one when only the effort or context changes), an effort the model lists (any standard one
+ * when its levels are unknown; "default" = the model's own) and, without one, the bot's effort kept while
+ * the model takes it. Unlike work requests, an effort the model does not take is refused, not narrowed.
+ */
+export function resolveBotModelChange(
+  models: Pick<ModelCatalog, 'catalog' | 'currentChoice'>,
+  bot: Bot,
+  request: ModelRequest,
+): BotModelChange {
+  const catalog = models.catalog(bot)
+  const switching = !!(request.model?.trim() || request.provider?.trim())
+  const base = models.currentChoice(bot)
+  if (!switching && !base?.model)
+    return { ok: false, error: 'No model is configured: say which model (list_models).' }
+  const resolved = resolveModelRequest(catalog, {
+    model: switching ? (request.model ?? null) : (base?.model ?? null),
+    provider: switching ? (request.provider ?? null) : (base?.providerId ?? null),
+    context: isDefault(request.context) ? null : (request.context ?? bot.contextLimit),
+  })
+  if (!resolved.ok) return resolved
+  const { choice } = resolved
+  const picked = catalog
+    .find((p) => p.provider.id === choice.providerId)
+    ?.models.find((m) => m.modelId === choice.model)
+  const name = picked?.displayName ?? choice.model
+  const allowed: readonly string[] = picked?.efforts ?? REASONING_EFFORTS
+  const notes = [...resolved.notes]
+
+  let effort: string | null
+  const asked = request.effort?.trim()
+  if (asked && isDefault(asked)) effort = null
+  else if (asked) {
+    if (!allowed.length) return { ok: false, error: `${name} takes no reasoning effort.` }
+    const level = normalizeEffort(asked)
+    const match = level && allowed.find((l) => l.toLowerCase() === level.toLowerCase())
+    if (!match)
+      return {
+        ok: false,
+        error: `"${asked}" is not an effort level of ${name}: use one of ${allowed.join(', ')}, or default.`,
+      }
+    effort = match
+  } else {
+    effort = bot.effort && allowed.includes(bot.effort) ? bot.effort : null
+    if (bot.effort && !effort)
+      notes.push(`${name} does not take effort ${bot.effort}: it runs at its default effort.`)
+  }
+
+  const patch: BotModelPatch = {
+    ...(switching ? { providerId: choice.providerId, model: choice.model } : {}),
+    effort,
+    contextLimit: choice.contextLimit,
+  }
+  const label = [resolved.label, effort ? `effort ${effort}` : allowed.length ? 'default effort' : null]
+    .filter(Boolean)
+    .join(', ')
+  return { ok: true, patch, label, notes }
+}

@@ -64,6 +64,7 @@ const ACTIVITY_KEYS = {
   list_bots: 'team',
   create_bot: 'team',
   update_bot: 'team',
+  set_model: 'team',
   create_group: 'team',
   add_member: 'team',
   remove_member: 'team',

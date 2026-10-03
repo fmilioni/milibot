@@ -113,6 +113,7 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   tool: Wrench,
   memory_save: BookmarkPlus,
   update_own_prompt: NotebookPen,
+  set_model: Cpu,
   memory_search: Brain,
   history_search: History,
   knowledge_search: BookSearch,

@@ -79,7 +79,7 @@ export function SessionHeader({
   const meta: React.ReactNode[] = []
   if (doing)
     meta.push(
-      <span key="doing" className="text-accent">
+      <span key="doing" className="truncate text-accent">
         {doing}
       </span>,
     )
@@ -91,7 +91,12 @@ export function SessionHeader({
         {t('session.helpersRunning', { count: helpers })}
       </span>,
     )
-  if (project) meta.push(<span key="project">{project.name}</span>)
+  if (project)
+    meta.push(
+      <span key="project" className="truncate">
+        {project.name}
+      </span>,
+    )
   if (session.branch || session.cwd) {
     const where = session.branch ?? session.cwd ?? ''
     meta.push(
@@ -116,7 +121,7 @@ export function SessionHeader({
   return (
     <header
       className={cn(
-        'drag-region flex h-16 shrink-0 items-center gap-3 border-b border-border px-4',
+        'drag-region @container flex h-16 shrink-0 items-center gap-3 border-b border-border px-4 @max-md:gap-2',
         !debugOpen && 'win:pr-caption-4',
       )}
     >
@@ -133,14 +138,18 @@ export function SessionHeader({
           <ArrowLeft size={16} />
         </button>
       </Tooltip>
-      {bot && <BotAvatar avatar={bot.avatar} state={finished ? 'idle' : session.lane.status} size={34} />}
+      {bot && (
+        <span className="shrink-0 @max-md:hidden">
+          <BotAvatar avatar={bot.avatar} state={finished ? 'idle' : session.lane.status} size={34} />
+        </span>
+      )}
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <div className="flex min-w-0 items-center gap-2">
-          <h1 className="truncate text-lg leading-[18px] font-semibold text-fg">{session.title}</h1>
+        <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+          <h1 className="min-w-12 truncate text-lg leading-[18px] font-semibold text-fg">{session.title}</h1>
           <SessionStatusChip status={session.status} />
           {session.model && <SessionModelBadge model={session.model} />}
         </div>
-        <span className="flex min-w-0 items-center text-sm leading-4 text-fg-secondary">
+        <span className="flex min-w-0 items-center overflow-hidden text-sm leading-4 text-fg-secondary">
           {bot && <span className="shrink-0 font-medium">{bot.name}</span>}
           {meta.map((item, i) => (
             <span key={i} className="flex min-w-0 items-center">
@@ -160,10 +169,10 @@ export function SessionHeader({
             type="button"
             onClick={stopSession}
             disabled={stopping}
-            className="no-drag focus-ring flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-danger-soft px-3 text-sm font-semibold text-danger transition hover:bg-danger/5 disabled:opacity-60"
+            className="no-drag focus-ring flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-danger-soft px-3 text-sm font-semibold text-danger transition hover:bg-danger/5 disabled:opacity-60 @max-xl:w-8 @max-xl:px-0"
           >
             {stopping ? <Spinner size={13} /> : <Square size={11} fill="currentColor" strokeWidth={0} />}
-            {stopping ? t('session.stopping') : t('session.stop')}
+            <span className="@max-xl:sr-only">{stopping ? t('session.stopping') : t('session.stop')}</span>
           </button>
         </Tooltip>
       )}

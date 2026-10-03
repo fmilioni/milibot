@@ -5,7 +5,7 @@ import type { McpSignInOutcome } from './oauth'
 const MAX_TOOL_NAMES = 30
 
 /** "all bots" or the names of the bots a server is for. */
-export function botsText(server: Pick<McpServer, 'allowedBots'>, bots: Bot[]): string {
+function botsText(server: Pick<McpServer, 'allowedBots'>, bots: Bot[]): string {
   if (server.allowedBots === 'all') return 'all bots'
   const names = server.allowedBots.map((id) => bots.find((b) => b.id === id)?.name).filter(Boolean)
   return names.length ? names.join(', ') : 'no bot'

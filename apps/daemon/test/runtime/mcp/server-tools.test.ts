@@ -17,7 +17,7 @@ const ctx = {
 const text = (result: ToolResult) => result.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
 
 function setup(servers: McpServer[] = []) {
-  const propose = vi.fn(async () => 'proposed')
+  const propose = vi.fn(async (..._args: unknown[]) => 'proposed')
   const tools = new McpServerTools({
     admin: { list: () => servers, propose, test: async () => 'tested', connect: async () => 'connected' },
     store: { validate: () => undefined },

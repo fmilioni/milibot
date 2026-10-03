@@ -519,6 +519,11 @@ export class PlanService {
   }
 
   /** The approved plan a lane is carrying out (for requests it hands to other bots), with its steps. */
+  /** The bot's plans not finished yet, as its chat turns see them. */
+  unfinished(botId: string): Array<{ id: string; title: string; status: string }> {
+    return this.plans.unfinished(botId).map((row) => ({ id: row.id, title: row.title, status: row.status }))
+  }
+
   activePlan(
     bot: Bot,
     laneKey: string,

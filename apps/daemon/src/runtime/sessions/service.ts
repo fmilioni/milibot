@@ -638,6 +638,14 @@ export class WorkSessionService {
   }
 
   /** What the agent host reads and writes about sessions. */
+  /** The bot's sessions that have not ended, oldest first. */
+  openOf(botId: string): Array<{ id: string; conversationId: string; title: string }> {
+    return this.store
+      .open(botId)
+      .sort((a, b) => a.created_at - b.created_at)
+      .map((row) => ({ id: row.id, conversationId: row.conversation_id, title: row.title }))
+  }
+
   directory(): WorkSessionDirectory {
     return {
       get: (id) => {

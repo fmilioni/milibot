@@ -14,6 +14,8 @@ interface ApiQueryOptions {
   enabled?: boolean
   /** Refetches every `ms` while mounted (e.g. an install in progress). */
   refetchInterval?: number | false
+  /** How long an answer is reused by components mounting later, in ms (default 0: refetched on mount). */
+  staleTime?: number
 }
 
 /**
@@ -23,9 +25,9 @@ interface ApiQueryOptions {
 export function useApiQuery<T>(
   key: QueryKey,
   load: () => Promise<T>,
-  { enabled = true, refetchInterval = false }: ApiQueryOptions = {},
+  { enabled = true, refetchInterval = false, staleTime = 0 }: ApiQueryOptions = {},
 ): ApiQuery<T> {
-  const query = useQuery({ queryKey: key, queryFn: load, enabled, refetchInterval })
+  const query = useQuery({ queryKey: key, queryFn: load, enabled, refetchInterval, staleTime })
   const { refetch } = query
   const reload = useCallback(() => void refetch(), [refetch])
   return { data: query.data ?? null, error: query.error, loading: query.isLoading, reload }

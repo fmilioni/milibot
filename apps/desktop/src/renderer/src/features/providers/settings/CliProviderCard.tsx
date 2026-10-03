@@ -1,10 +1,17 @@
 import { CLI_ENGINE_INFO, type CliAuthMode, type CliEngine, firstBot, type Provider } from '@milibot/shared'
+import { useQueryClient } from '@tanstack/react-query'
 import { CircleCheck, CircleDashed, SquareTerminal } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { queryKeys } from '@/api/queries'
-import { checkProvider, openCliLoginTerminal, updateProvider } from '@/features/providers/api'
+import { useApiQuery } from '@/api/use-api-query'
+import {
+  checkProvider,
+  getCliLoginStatus,
+  openCliLoginTerminal,
+  updateProvider,
+} from '@/features/providers/api'
 import { COMPACT_INPUT } from '@/features/settings/SettingsLayout'
 import { useAppStore } from '@/features/workspace/store'
 import { useApiMutation } from '@/features/workspace/use-api-mutation'
@@ -17,6 +24,9 @@ import { Tag } from '@/ui/Tag'
 
 import { CliInstallLine } from './CliInstallLine'
 import { ProviderMenu } from './ProviderMenu'
+
+/** Some engines answer their login status by starting the CLI in the VM: reopening the settings reuses a fresh answer. */
+const LOGIN_STATUS_STALE_MS = 30_000
 
 export function CliProviderCard({
   provider,
@@ -40,6 +50,14 @@ export function CliProviderCard({
   const [checking, setChecking] = useState<'idle' | 'checking' | 'ok' | 'failed'>('idle')
   const [checkError, setCheckError] = useState<string | null>(null)
   const first = firstBot(Object.values(bots))
+  const queryClient = useQueryClient()
+  const loginKey = queryKeys.cliLogin(workspaceId, engine)
+  const login = useApiQuery(loginKey, () => getCliLoginStatus(workspaceId, engine), {
+    enabled: mode === 'subscription' && vmState === 'running',
+    staleTime: LOGIN_STATUS_STALE_MS,
+  })
+  // Marks the answer stale without refetching: the next mount asks again.
+  const forgetLogin = () => void queryClient.invalidateQueries({ queryKey: loginKey, refetchType: 'none' })
 
   const [savedMode, setSavedMode] = useState(provider.authMode)
   if (savedMode !== provider.authMode) {
@@ -64,6 +82,7 @@ export function CliProviderCard({
     // Conflicts of this route: the VM is off (the daemon is already starting it), or the CLI failed to install.
     errorToast: (err) => (apiErrorReason(err) === 'vm_not_running' ? 'vmStarting' : 'error'),
     onSuccess: ({ botId }) => {
+      forgetLogin()
       const store = useAppStore.getState()
       const dm = Object.values(store.conversations).find(
         (c) => c.type === 'direct' && c.memberBotIds.includes(botId),
@@ -86,6 +105,7 @@ export function CliProviderCard({
       setChecking('failed')
       setCheckError(errorMessage(err))
     }
+    forgetLogin()
   }
 
   const authModeLabel = (value: CliAuthMode) =>
@@ -95,8 +115,14 @@ export function CliProviderCard({
         ? t('settings.providers.cli.apiKey')
         : t('settings.providers.cli.gateway')
 
+  const loggedIn = login.data?.loggedIn ?? null
   const connected =
-    checking === 'ok' || (checking === 'idle' && Boolean(usage?.plan) && mode === 'subscription')
+    checking === 'ok' ||
+    (checking === 'idle' &&
+      mode === 'subscription' &&
+      (loggedIn === true || (loggedIn === null && Boolean(usage?.plan))))
+  const notConnected = checking === 'failed' || (checking === 'idle' && loggedIn === false)
+  const loadingStatus = checking === 'idle' && login.loading && !connected
   const plan = usage?.plan && usage.plan !== 'api' ? usage.plan : null
 
   return (
@@ -134,14 +160,16 @@ export function CliProviderCard({
               ? plan
                 ? t('settings.providers.cli.connectedPlan', { ...params, plan: plan.toUpperCase() })
                 : t('settings.providers.cli.connected', params)
-              : checking === 'failed'
+              : notConnected
                 ? t('settings.providers.cli.notLoggedIn', params)
-                : t('settings.providers.cli.loginHint', params)}
+                : loadingStatus
+                  ? t('settings.providers.cli.checking')
+                  : t('settings.providers.cli.loginHint', params)}
           </span>
           <Button
             size="sm"
             variant="ghost"
-            disabled={checking === 'checking' || vmState !== 'running'}
+            disabled={checking === 'checking' || loadingStatus || vmState !== 'running'}
             onClick={() => void check()}
           >
             {checking === 'checking'

@@ -182,6 +182,8 @@
       "skill_delete_empty": "Excluiu uma skill",
       "update_own_prompt": "Atualizou o próprio prompt: {{detail}}",
       "update_own_prompt_empty": "Atualizou o próprio prompt",
+      "set_model": "Ajustou modelo/esforço: {{detail}}",
+      "set_model_empty": "Ajustou modelo/esforço",
       "routine_create": "Criou a rotina “{{detail}}”",
       "routine_create_empty": "Criou uma rotina",
       "routine_list": "Consultou as rotinas",

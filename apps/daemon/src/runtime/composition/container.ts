@@ -82,6 +82,7 @@ import {
   ProviderClients,
   ProviderRoutes,
   ProviderStore,
+  resolveBotModelChange,
 } from '../providers'
 import { RepoTools, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
@@ -759,6 +760,10 @@ export function createContainer(options: ContainerOptions) {
       prompts,
       createBot: async (input, creator) => bots.createFromTool(input, creator),
       updateBot: (id, patch) => bots.update(id, patch),
+      models: {
+        change: (bot, request) => resolveBotModelChange(catalog, bot, request),
+        apply: (id, patch) => bots.update(id, patch),
+      },
     }),
     new RepoTools({ vm, store, worktrees, botEnv: laneDefaults.botEnv }),
     new UserRequestTools({ requests: userRequests, credentials }),

@@ -31,7 +31,8 @@ const definitions = {
   list_models: {
     name: 'list_models',
     description:
-      'The models you can open work on (session_start / plan_write / subagent `model`), per provider.',
+      'The models you can open work on (session_start / plan_write / subagent `model`) or switch to ' +
+      '(set_model), per provider.',
     inputSchema: {
       type: 'object',
       properties: { query: { type: 'string', description: 'Words the model id or name must have.' } },

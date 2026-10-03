@@ -1,4 +1,5 @@
 import type { ToolDefinition } from '../../llm/provider'
+import { EFFORT_ARG_HINT } from '../model-args'
 import { defineTools, scalarText } from './kit'
 
 /** `{shape, color, eyes}`, values listed in the team-management skill; random when omitted. */
@@ -89,6 +90,27 @@ const definitions = {
       required: ['reason'],
     },
   },
+  set_model: {
+    name: 'set_model',
+    description:
+      "Change the model or reasoning effort a bot works on, yours by default (the same setting as the bot's " +
+      'settings in the app): use it when the user asks you to switch model or effort ("use effort high", ' +
+      '"switch to Opus"). Send only what changes. Another bot only when you manage the team. It takes effect ' +
+      'from the next turn and lasts; open work sessions keep their own model.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        bot: { type: 'string', description: 'Name or id of another bot; omit for yourself.' },
+        model: { type: 'string', description: 'Model name or id (list_models shows them).' },
+        effort: { type: 'string', description: `${EFFORT_ARG_HINT} "default" = the model's own.` },
+        context: {
+          type: 'string',
+          description: 'Context limit, e.g. 200000, 256k, 1m; "default" = the whole window.',
+        },
+        provider: { type: 'string', description: 'Only when the user said which provider.' },
+      },
+    },
+  },
 } satisfies Record<string, ToolDefinition>
 
 export const teamTools = defineTools({
@@ -102,7 +124,12 @@ export const teamTools = defineTools({
         return { kind: name, detail: scalarText(a.name) || scalarText(a.bot) }
       case 'update_own_prompt':
         return { kind: name, detail: view.clip(scalarText(a.reason), 60) }
+      case 'set_model':
+        return {
+          kind: name,
+          detail: [scalarText(a.bot), scalarText(a.model), scalarText(a.effort)].filter(Boolean).join(' · '),
+        }
     }
   },
-  labels: { update_own_prompt: 'updated own prompt' },
+  labels: { update_own_prompt: 'updated own prompt', set_model: 'changed model' },
 })

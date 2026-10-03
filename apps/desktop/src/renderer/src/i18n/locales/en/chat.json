@@ -182,6 +182,8 @@
       "skill_delete_empty": "Deleted a skill",
       "update_own_prompt": "Updated its own prompt: {{detail}}",
       "update_own_prompt_empty": "Updated its own prompt",
+      "set_model": "Changed model/effort: {{detail}}",
+      "set_model_empty": "Changed model/effort",
       "routine_create": "Created the routine “{{detail}}”",
       "routine_create_empty": "Created a routine",
       "routine_list": "Checked the routines",

@@ -1,4 +1,4 @@
-import type { ToolExecContext, ToolResult } from '@milibot/agent'
+import type { ModelRequest, ToolExecContext, ToolResult } from '@milibot/agent'
 import {
   flagArg,
   optionalString,
@@ -12,6 +12,7 @@ import { Avatar, type Bot } from '@milibot/shared'
 
 import { DaemonError } from '../../errors'
 import type { GroupService } from '../groups'
+import { type BotModelChange, type BotModelPatch, modelRequestArgs } from '../providers'
 import { ToolSwitch } from '../tools-core'
 import type { WorkspaceStore } from '../workspace-store'
 import { applyPersonaEdit, parsePersonaEdit, personaSizeError } from './persona-edit'
@@ -63,6 +64,11 @@ export interface TeamToolsDeps {
   prompts: Pick<PromptVersionService, 'requestChange'>
   createBot(input: NewBotInput, creator: Bot): Promise<Bot>
   updateBot(id: string, patch: Partial<NewBotInput>): Bot
+  /** `set_model`: the change checked against the model catalog (`resolveBotModelChange`), then applied. */
+  models: {
+    change(bot: Bot, request: ModelRequest): BotModelChange
+    apply(id: string, patch: BotModelPatch): Bot
+  }
 }
 
 /** The team tools: bots, their personas and groups. */
@@ -73,6 +79,7 @@ export class TeamTools extends ToolSwitch {
     create_bot: (ctx: ToolExecContext, a: ToolArgs) => this.createBot(ctx, a),
     update_bot: (ctx: ToolExecContext, a: ToolArgs) => this.updateBot(ctx, a),
     update_own_prompt: (ctx: ToolExecContext, a: ToolArgs) => this.updateOwnPrompt(ctx, a),
+    set_model: (ctx: ToolExecContext, a: ToolArgs) => this.setModel(ctx, a),
     create_group: (ctx: ToolExecContext, a: ToolArgs) => this.createGroup(ctx, a),
     add_member: (ctx: ToolExecContext, a: ToolArgs) => this.addMember(ctx, a),
     remove_member: (ctx: ToolExecContext, a: ToolArgs) => this.removeMember(ctx, a),
@@ -179,6 +186,31 @@ export class TeamTools extends ToolSwitch {
     const applied = applyPersonaEdit(current.systemPrompt.trim(), edit)
     if ('error' in applied) return toolText(applied.error, true)
     return this.changePrompt(ctx, current, applied.text, reason, flagArg(a, 'user_requested') === true)
+  }
+
+  private setModel(ctx: ToolExecContext, a: ToolArgs): ToolResult {
+    const ref = optionalString(a, 'bot')?.trim()
+    const target = ref ? this.botByRef(ref) : (this.deps.store.bots.find(ctx.bot.id) ?? ctx.bot)
+    const self = target.id === ctx.bot.id
+    if (!self && !this.deps.groups.managesTeam(ctx.bot))
+      return toolText(
+        `Only a bot that manages the team can change another bot's model: ask the user to change it in ` +
+          `${target.name}'s settings, or ask ${target.name} to do it.`,
+        true,
+      )
+    const request = modelRequestArgs(a)
+    if (!request) throw new ToolInputError('Say what to change: "model", "effort" or "context".')
+    const change = this.deps.models.change(target, request)
+    if (!change.ok) return toolText(`Not changed: ${change.error}`, true)
+    const updated = this.deps.models.apply(target.id, change.patch)
+    const who = self ? 'You now work' : `${updated.name} now works`
+    return toolText(
+      [
+        `${who} on ${change.label}, from ${self ? 'your' : 'its'} next turn on.`,
+        ...change.notes,
+        'Open work sessions keep their own model.',
+      ].join(' '),
+    )
   }
 
   private createGroup(ctx: ToolExecContext, a: ToolArgs): ToolResult {

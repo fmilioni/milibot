@@ -34,6 +34,7 @@ export const ACTIVITY_STEP_KINDS = [
   'update_bot',
   'delete_bot',
   'update_own_prompt',
+  'set_model',
   'repo_checkout',
   'repo_list',
   'repo_release',

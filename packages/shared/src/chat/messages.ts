@@ -373,6 +373,23 @@ export const GeneratedImagesPayload = z.object({
 })
 export type GeneratedImagesPayload = z.infer<typeof GeneratedImagesPayload>
 
+/**
+ * A bot started the OAuth sign-in of an MCP server: the user opens `authorizationUrl` in the system browser
+ * and the redirect comes back to the runtime's loopback listener. `cancelled`: another sign-in replaced it.
+ */
+export const McpSignInPayload = z.object({
+  type: z.literal('mcp_sign_in'),
+  serverId: z.string(),
+  serverName: z.string(),
+  botId: z.string(),
+  authorizationUrl: z.string(),
+  status: z.enum(['pending', 'connected', 'failed', 'expired', 'cancelled']),
+  /** Who signed in, when the server says. */
+  account: z.string().nullable().optional(),
+  error: z.string().optional(),
+})
+export type McpSignInPayload = z.infer<typeof McpSignInPayload>
+
 export const MessagePayload = z.discriminatedUnion('type', [
   TextPayload,
   ActivityPayload,
@@ -397,6 +414,7 @@ export const MessagePayload = z.discriminatedUnion('type', [
   DesignPayload,
   BoardPayload,
   GeneratedImagesPayload,
+  McpSignInPayload,
 ])
 export type MessagePayload = z.infer<typeof MessagePayload>
 

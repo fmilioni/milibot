@@ -7,6 +7,7 @@ import { BotMessageCard } from '@/features/chat/cards/BotMessageCard'
 import { ConfirmationCard } from '@/features/chat/cards/ConfirmationCard'
 import { ErrorCard } from '@/features/chat/cards/ErrorCard'
 import { GeneratedImagesCard } from '@/features/chat/cards/GeneratedImagesCard'
+import { McpSignInCard } from '@/features/chat/cards/McpCards'
 import { PlanCard } from '@/features/chat/cards/PlanCard'
 import { ProcedureSavedCard } from '@/features/chat/cards/ProcedureSavedCard'
 import { PromptUpdatedCard } from '@/features/chat/cards/PromptCards'
@@ -230,6 +231,8 @@ export function messageBody(
     }
     case 'task':
       return body(<TaskCard payload={view.payload} />)
+    case 'mcp_sign_in':
+      return body(<McpSignInCard payload={view.payload} />)
     case 'skill_created':
       return body(<SkillCreatedEntry payload={view.payload} bots={bots} />)
     case 'routine_created':

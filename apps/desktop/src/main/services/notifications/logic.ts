@@ -183,6 +183,9 @@ export function classifyEvent(event: WorkspaceEvent, ctx: ClassifyContext): Noti
     case 'plan':
       if (payload.status !== 'awaiting_approval' || payload.removed) return null
       return attention('plan_approval', text('notifyPlanApproval', { title: firstLine(payload.title) }))
+    case 'mcp_sign_in':
+      if (payload.status !== 'pending') return null
+      return attention('mcp_sign_in', text('notifyMcpSignIn', { serverName: payload.serverName }))
     case 'spend_warning':
       return payload.paused ? attention('spend_paused', text('notifySpendPaused'), null) : null
     default:

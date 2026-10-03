@@ -156,6 +156,25 @@ describe('classifyEvent', () => {
     expect(classifyEvent(card({ type: 'error', code: 'provider_error', detail: '' }), ctx)).toBeNull()
   })
 
+  it('flags a pending MCP sign-in', () => {
+    const signIn = (status: 'pending' | 'connected') =>
+      card({
+        type: 'mcp_sign_in',
+        serverId: 'mcp_1',
+        serverName: 'Notion',
+        botId: 'bot_iris',
+        authorizationUrl: 'https://auth.example.com/authorize',
+        status,
+      })
+    expect(classifyEvent(signIn('pending'), ctx)).toMatchObject({
+      kind: 'attention',
+      reason: 'mcp_sign_in',
+      title: 'Iris',
+      body: 'Precisa que você entre no servidor MCP Notion',
+    })
+    expect(classifyEvent(signIn('connected'), ctx)).toBeNull()
+  })
+
   it('flags pending passwords and questions, never the answered ones', () => {
     const secret = (status: 'pending' | 'answered', asEnv = false) =>
       card({

@@ -244,7 +244,7 @@ export class McpStore {
     return slug
   }
 
-  private validate(input: {
+  validate(input: {
     transport: McpTransport
     command: string | null
     url: string | null

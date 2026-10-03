@@ -5,11 +5,13 @@ import {
   type CliEngine,
   editedFiles,
   estimateTokens,
+  type InstructionFileInfo,
   LLM_CALL_RUNNING,
   type StepFileDiff,
 } from '@milibot/shared'
 
 import type { CliSessions, CliTurnProgress } from '../../cli/engine'
+import { splitEngineInstructions } from '../../cli/instructions'
 import { cliPrompt } from '../../cli/prompt'
 import { CLI_ENGINE_DRIVERS } from '../../cli/registry'
 import {
@@ -25,6 +27,7 @@ import type { AgentEnvironment, CliResolvedModel, LlmCallRecord, WorkSessionView
 import { memoryDigest } from '../../memory/bootstrap'
 import { sessionRules, subagentRules } from '../../prompts/lanes'
 import { projectNote, USER_WROTE_MEANWHILE_NOTE } from '../../prompts/notes'
+import { loadedInstructionFiles, repoInstructionTexts } from '../../prompts/repo-instructions'
 import { introInstruction, personaSection, USER_TOOK_CONTROL_NOTE } from '../../prompts/rules'
 import type { HostContext } from '../context'
 import type { TurnEngine, TurnRun } from '../engines'
@@ -199,11 +202,34 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
       nativeTools,
       externalFingerprint: external?.fingerprint ?? '',
     })
+    // A session's folder is the CLI's working folder: Milibot adds the instruction files the CLI would miss.
+    const repo = session ? await this.repoInstructions(engine, bot, session.cwd, turn.abort.signal) : null
+    const repoText = repo ? repoInstructionTexts(repo.missing).join('\n\n') : ''
     const { meta, rotation } = await this.rotate(bot, turn, sessions, where, { profile, resolved, settings })
     const { input, lastProject, projectSent } = await this.input(turnRun, where, meta)
     const cb = this.callbacks(bot, turn, lane, session !== null)
     const started = env.now()
     const purpose = request.trigger === 'intro' ? 'intro' : 'turn'
+    // What the CLI read by itself, what the process started with (a session's stored bootstrap) and what
+    // Milibot's tools brought this turn.
+    const instructionFiles = (): InstructionFileInfo[] => {
+      const appendix = helper
+        ? repoText
+        : session
+          ? (env.hostState.cliBootstrap(engine, laneKey)?.appendix ?? '')
+          : ''
+      const injected = new Map(loadedInstructionFiles(appendix).map((f) => [f.path, f]))
+      for (const file of turn.instructionFiles?.values() ?? []) injected.set(file.path, file)
+      return [
+        ...(repo?.engine ?? []).map((f) => ({
+          path: f.path,
+          bytes: f.bytes,
+          truncated: false,
+          source: 'engine' as const,
+        })),
+        ...[...injected.values()].map((f) => ({ ...f, source: 'injected' as const })),
+      ]
+    }
     const live = new LiveCall(
       env,
       (progress) => ({
@@ -218,6 +244,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         response: { requests: progress.requests, lastContextTokens: progress.lastContextTokens },
         ...progress.billing,
         contextComposition: null,
+        instructionFiles: instructionFiles(),
         stopReason: LLM_CALL_RUNNING,
         generationId: null,
         latencyMs: env.now() - started,
@@ -244,7 +271,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         nativeTools,
         readOnly,
         ...(session ? { cwd: session.cwd } : {}),
-        startup: this.startup(engine, bot, turn, where),
+        startup: this.startup(engine, bot, turn, where, repoText),
         externalMcp: external,
         mcpTools: prompt.mcpTools,
       },
@@ -321,6 +348,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         events: result.events,
       },
       ...result.billing,
+      instructionFiles: instructionFiles(),
       contextComposition: {
         ...cliComposition(
           { ...parts, base: baseTokens },
@@ -338,16 +366,34 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
     if (result.error) ctx.turns.errorCard(turn, result.error.code, result.error.message, { engine })
   }
 
-  /** What the process loads when it starts: nothing for a helper, else the session's or the chat's memory. */
+  /**
+   * What the process loads when it starts: a helper only the repository instructions its CLI misses, else the
+   * session's (with them) or the chat's memory.
+   */
   private startup(
     engine: CliEngine,
     bot: Bot,
     turn: TurnState,
     where: CliLane,
+    repoText: string,
   ): (fresh: boolean) => CliStartup {
-    if (where.helper) return emptyStartup
-    if (where.session) return this.ctx.sessions.cliStartup(engine, bot, where.session, where.laneKey)
+    if (where.helper)
+      return repoText
+        ? () => ({ systemAppendix: repoText, inputPrefix: null, sections: EMPTY_BOOTSTRAP_SECTIONS })
+        : emptyStartup
+    if (where.session)
+      return this.ctx.sessions.cliStartup(engine, bot, where.session, where.laneKey, repoText)
     return this.ctx.memory.cliStartup(engine, bot, turn.conversationId, where.laneKey)
+  }
+
+  /** The instruction files of the chain from the repository root to `cwd`: read by the CLI, or missing. */
+  private async repoInstructions(engine: CliEngine, bot: Bot, cwd: string, signal: AbortSignal) {
+    const env = this.ctx.env()
+    const files = await env.repoInstructions(bot, [cwd], signal).catch((err: unknown) => {
+      env.log('warn', 'repository instructions unavailable', { botId: bot.id, err: (err as Error).message })
+      return []
+    })
+    return splitEngineInstructions(CLI_ENGINE_INFO[engine].instructionFiles, files)
   }
 
   /**

@@ -37,6 +37,18 @@ export type ContextComposition = z.infer<typeof ContextComposition>
  */
 export const LLM_CALL_RUNNING = 'running'
 
+/**
+ * A repository instruction file (CLAUDE.md, AGENTS.md) in a call's context: `injected` by Milibot, or read by a
+ * CLI engine by itself (`engine`). Stored in the call's `request_json` (`instructionFiles`).
+ */
+export const InstructionFileInfo = z.object({
+  path: z.string(),
+  bytes: z.number().int(),
+  truncated: z.boolean(),
+  source: z.enum(['injected', 'engine']),
+})
+export type InstructionFileInfo = z.infer<typeof InstructionFileInfo>
+
 export const LlmCallRow = z.object({
   id: z.string(),
   botId: z.string().nullable(),
@@ -140,6 +152,7 @@ export const ConversationDebug = z.object({
       model: z.string(),
       createdAt: z.number().int(),
       composition: ContextComposition,
+      instructionFiles: z.array(InstructionFileInfo).default([]),
     }),
   ),
 })

@@ -2,6 +2,7 @@ import type { LlmCallRecord } from '@milibot/agent'
 import { LLM_CALL_RUNNING } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
+import { DebugStore } from '../../../src/runtime/observability/debug'
 import { LlmCallStore } from '../../../src/runtime/observability/llm-calls'
 import { WorkspaceStore } from '../../../src/runtime/workspace-store'
 import { openWorkspaceDb } from '../../../src/workspace-db/open'
@@ -38,7 +39,7 @@ function setup() {
     error: null,
     ...over,
   })
-  return { db, llmCalls: new LlmCallStore(db, now), record, at: (ms: number) => (clock = ms) }
+  return { db, store, bot, llmCalls: new LlmCallStore(db, now), record, at: (ms: number) => (clock = ms) }
 }
 
 describe('LlmCallStore', () => {
@@ -102,5 +103,40 @@ describe('LlmCallStore', () => {
     expect(llmCalls.closeRunning()).toBe(1)
     expect(llmCalls.get(running).stopReason).toBe('interrupted')
     expect(llmCalls.get(done).stopReason).toBe('success')
+  })
+
+  it('keeps the instruction files with the request, on insert and update, and the debug view reads them', () => {
+    const { db, store, bot, llmCalls, record, at } = setup()
+    const conversation = store.conversations.create({ type: 'direct', botIds: [bot.id] })
+    const files = [
+      { path: '/workspace/app/CLAUDE.md', bytes: 120, truncated: false, source: 'engine' as const },
+      { path: '/workspace/app/sub/AGENTS.md', bytes: 99_000, truncated: true, source: 'injected' as const },
+    ]
+    const id = llmCalls.insert(
+      record({ conversationId: conversation.id, instructionFiles: files.slice(0, 1) }),
+    )
+    expect(llmCalls.get(id).request).toEqual({ input: 'hi', instructionFiles: files.slice(0, 1) })
+    at(2_000)
+    const composition = {
+      systemPrompt: 10,
+      longTermMemory: 0,
+      summaries: 0,
+      retrieved: 0,
+      recentTail: 0,
+      tools: 0,
+    }
+    llmCalls.update(
+      id,
+      record({
+        conversationId: conversation.id,
+        stopReason: 'success',
+        contextComposition: composition,
+        instructionFiles: files,
+      }),
+    )
+    const native = llmCalls.insert(record({ conversationId: null, request: null, instructionFiles: files }))
+    expect(llmCalls.get(native).request).toEqual({ request: null, instructionFiles: files })
+    const [latest] = new DebugStore(db).conversation(conversation.id).latestComposition
+    expect(latest?.instructionFiles).toEqual(files)
   })
 })

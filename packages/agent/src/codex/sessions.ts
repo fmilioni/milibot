@@ -58,12 +58,16 @@ const STREAMED = new Set([
   'turn/diff/updated',
 ])
 
-/** Codex features Milibot replaces with its own tools (sub-agents, goals, pictures, skills). */
+/**
+ * Codex features Milibot replaces with its own tools (sub-agents, goals, pictures, skills), and CLAUDE.md read
+ * like AGENTS.md (the first of the two in each folder, see `CLI_ENGINE_INFO.instructionFiles`).
+ */
 const BASE_CONFIG: Record<string, unknown> = {
   'features.multi_agent': false,
   'features.goals': false,
   'features.image_generation': false,
   'skills.include_instructions': false,
+  project_doc_fallback_filenames: ['CLAUDE.md'],
 }
 
 const text = (value: string): UserInput => ({ type: 'text', text: value, text_elements: [] })

@@ -19,6 +19,7 @@ import type {
   LlmCallRecord,
   ModelRequestResult,
   ProjectDirectory,
+  RepoInstructionFile,
   ResolvedModel,
   ToolCallFinish,
   ToolCallStart,
@@ -112,6 +113,9 @@ export class TestEnv implements AgentEnvironment {
     tokensByServer: {},
   })
   mcpServerName: (slug: string) => string | null = () => null
+  /** No repositories (see `fakeRepoInstructions`). */
+  repoInstructions: (bot: Bot, paths: string[], signal?: AbortSignal) => Promise<RepoInstructionFile[]> =
+    async () => []
   providerExhausted: (providerId: string) => boolean = () => false
   resolveFallbackModel: (bot: Bot) => Promise<ResolvedModel | null> = async () => null
   resolveSummaryModel: (bot: Bot) => Promise<ResolvedModel> = (bot) => this.resolveModel(bot)

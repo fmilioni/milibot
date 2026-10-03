@@ -13,6 +13,7 @@ import {
 } from '../../memory/context-builder'
 import { composition } from '../../memory/tokens'
 import { sessionRules, subagentRules } from '../../prompts/lanes'
+import { repoInstructionTexts } from '../../prompts/repo-instructions'
 import { composeSystemPrompt, introInstruction, personaSection } from '../../prompts/rules'
 import type { SkillContext } from '../../skills/context'
 import { toolsForLane } from '../../tools/policy'
@@ -20,6 +21,7 @@ import type { HostContext } from '../context'
 import type { LaneState, TurnState } from '../state'
 import { subagentInput, type SubagentRun } from '../subagents'
 import type { SessionTranscript } from '../work-sessions/session-context'
+import type { TurnInstructions } from './repo-instructions'
 
 /** What the step loop of a native turn starts from. */
 export interface NativeContext {
@@ -101,6 +103,7 @@ export async function nativeContext(
   lane: LaneState,
   session: WorkSessionView | null,
   resolved: NativeResolvedModel,
+  instructions: TurnInstructions,
 ): Promise<NativeContext> {
   const env = ctx.env()
   const helper = ctx.helpers.get(lane.info.key) ?? null
@@ -129,18 +132,28 @@ export async function nativeContext(
     const conversation: ChatMessage[] = [
       { role: 'user', content: [{ type: 'text', text: subagentInput(helper, session) }] },
     ]
+    // A session's helper works in its folder, so it follows the same repository instructions.
+    const repo = session ? repoInstructionTexts(await instructions.files([session.cwd])).join('\n\n') : ''
+    const system: ChatMessage = repo
+      ? {
+          role: 'system',
+          content: [...plainSystem.content, { type: 'text', text: repo, cacheBreakpoint: true }],
+        }
+      : plainSystem
     return {
       helper,
       session,
       tools,
-      system: plainSystem,
+      system,
       conversation,
       transcript: null,
-      compose: () => withExtras(composition(systemPrompt, tools, conversation)),
+      compose: () =>
+        withExtras(composition(repo ? `${systemPrompt}\n\n${repo}` : systemPrompt, tools, conversation)),
     }
   }
   if (session) {
-    const setup = await ctx.sessions.nativeContext(bot, session, lane, request, turn, systemPrompt)
+    const repo = repoInstructionTexts(await instructions.files([session.cwd])).join('\n\n')
+    const setup = await ctx.sessions.nativeContext(bot, session, lane, request, turn, systemPrompt, repo)
     return {
       helper,
       session,

@@ -1,4 +1,4 @@
-import type { Bot, ConversationMemorySummary } from '@milibot/shared'
+import type { Bot, ConversationMemorySummary, InstructionFileInfo } from '@milibot/shared'
 import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,9 +7,10 @@ import { useBotMemories } from '@/features/bots/api'
 import { compositionSegments } from '@/features/debug/lib/context-bar'
 import { useAppStore } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
-import { compactTokens, formatClock } from '@/lib/format'
+import { compactTokens, formatBytes, formatClock } from '@/lib/format'
 import { SectionTitle } from '@/ui/SectionTitle'
 import { Spinner } from '@/ui/Spinner'
+import { Tag } from '@/ui/Tag'
 
 import { useConversationSummaries } from './api'
 import { CompositionBar, CompositionLegend, type DebugData } from './DebugParts'
@@ -76,8 +77,43 @@ export function ContextTab({
           <span className="text-sm text-fg-muted">{t('panels.debug.noComposition')}</span>
         )}
       </section>
+      {selected && <InstructionFiles files={selected.instructionFiles} />}
       {bot && <MemoryInUse bot={bot} conversationId={conversationId} />}
     </div>
+  )
+}
+
+/** The repository's CLAUDE.md/AGENTS.md in the latest call: added by Milibot or read by the CLI itself. */
+function InstructionFiles({ files }: { files: InstructionFileInfo[] }) {
+  const { t, i18n } = useTranslation()
+  return (
+    <section className="flex flex-col gap-2">
+      <SectionTitle as="h3">{t('panels.debug.context.instructions', { count: files.length })}</SectionTitle>
+      {files.length === 0 ? (
+        <span className="text-sm text-fg-muted">{t('panels.debug.context.noInstructions')}</span>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {files.map((file) => (
+            <li
+              key={file.path}
+              className="flex items-center gap-2 rounded-md border border-border bg-surface-2 px-2.5 py-2 text-sm"
+            >
+              <span
+                className="selectable min-w-0 flex-1 truncate font-mono text-xs text-fg"
+                title={file.path}
+              >
+                {file.path}
+              </span>
+              {file.truncated && <Tag tone="warning">{t('panels.debug.context.truncated')}</Tag>}
+              {file.source === 'engine' && <Tag>{t('panels.debug.context.readByCli')}</Tag>}
+              <span className="shrink-0 font-mono text-2xs text-fg-muted">
+                {formatBytes(file.bytes, i18n.language)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

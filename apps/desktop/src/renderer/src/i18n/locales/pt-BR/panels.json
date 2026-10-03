@@ -151,7 +151,11 @@
       "noMemory": "Nenhuma nota fixada.",
       "summaries": "Resumos em uso ({{count}})",
       "noSummaries": "Nenhum resumo ainda: a conversa inteira cabe no contexto.",
-      "summaryRange": "#{{from}}–{{to}} · nível {{level}} · {{tokens}}"
+      "summaryRange": "#{{from}}–{{to}} · nível {{level}} · {{tokens}}",
+      "instructions": "Arquivos de instrução do repositório ({{count}})",
+      "noInstructions": "Nenhum CLAUDE.md ou AGENTS.md entrou no contexto.",
+      "truncated": "truncado",
+      "readByCli": "lido pela CLI"
     },
     "costs": {
       "model": "modelo",

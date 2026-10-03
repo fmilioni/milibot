@@ -3,6 +3,7 @@ import { type ActivityStep, editedFiles, estimateTokens, newId } from '@milibot/
 import type { ToolResult } from '../../environment'
 import { textOfParts, type ToolCall } from '../../llm/messages'
 import { imageTokens } from '../../memory/tokens'
+import { isRepoInstructionText, loadedInstructionFiles } from '../../prompts/repo-instructions'
 import { CANCELLED } from '../../prompts/tool-replies'
 import { describeToolCall, isNoopToolCall } from '../../tools/describe'
 import { MESSAGING_TOOLS } from '../../tools/families/messaging'
@@ -139,6 +140,11 @@ export class ToolRunner {
       }
     }
     if (turn) turn.consecutiveErrors = status === 'error' ? turn.consecutiveErrors + 1 : 0
+    if (turn)
+      for (const part of result.content)
+        if (part.type === 'text' && isRepoInstructionText(part.text))
+          for (const file of loadedInstructionFiles(part.text))
+            (turn.instructionFiles ??= new Map()).set(file.path, file)
     step.screenshotSha = result.screenshotSha ?? null
     if (result.activity) {
       step.detail = result.activity.detail

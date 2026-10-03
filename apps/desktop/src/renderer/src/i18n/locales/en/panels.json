@@ -151,7 +151,11 @@
       "noMemory": "No pinned notes.",
       "summaries": "Summaries in use ({{count}})",
       "noSummaries": "No summaries yet: the whole conversation fits in the context.",
-      "summaryRange": "#{{from}}–{{to}} · level {{level}} · {{tokens}}"
+      "summaryRange": "#{{from}}–{{to}} · level {{level}} · {{tokens}}",
+      "instructions": "Repository instruction files ({{count}})",
+      "noInstructions": "No CLAUDE.md or AGENTS.md entered the context.",
+      "truncated": "truncated",
+      "readByCli": "read by the CLI"
     },
     "costs": {
       "model": "model",

@@ -56,6 +56,11 @@ export interface CliEngineInfo {
   subscriptionImages: boolean
   /** Can replace its own system prompt with Milibot's compact one (`CliSettings.compactSystemPrompt`). */
   compactSystemPrompt: boolean
+  /**
+   * Repository instruction files the CLI loads by itself, in each folder from its working folder up to the
+   * repository root (Codex: the first one found per folder). Milibot adds the folders it would miss.
+   */
+  instructionFiles: readonly string[]
 }
 
 export const CLI_ENGINE_INFO: Record<CliEngine, CliEngineInfo> = {
@@ -73,6 +78,8 @@ export const CLI_ENGINE_INFO: Record<CliEngine, CliEngineInfo> = {
     detectsWrongAccount: true,
     subscriptionImages: false,
     compactSystemPrompt: true,
+    // Its `agents-md` plugin is off by a remote flag: AGENTS.md is never read.
+    instructionFiles: ['CLAUDE.md'],
   },
   codex: {
     displayName: 'Codex',
@@ -88,6 +95,8 @@ export const CLI_ENGINE_INFO: Record<CliEngine, CliEngineInfo> = {
     detectsWrongAccount: false,
     subscriptionImages: true,
     compactSystemPrompt: false,
+    // CLAUDE.md through `project_doc_fallback_filenames` (the thread's config).
+    instructionFiles: ['AGENTS.md', 'CLAUDE.md'],
   },
   antigravity: {
     displayName: 'Antigravity',
@@ -103,6 +112,8 @@ export const CLI_ENGINE_INFO: Record<CliEngine, CliEngineInfo> = {
     detectsWrongAccount: false,
     subscriptionImages: true,
     compactSystemPrompt: false,
+    // Also under `--agent` with `inheritCustomizations` (checked against agy 1.2.14); never CLAUDE.md.
+    instructionFiles: ['AGENTS.md', 'GEMINI.md'],
   },
 }
 

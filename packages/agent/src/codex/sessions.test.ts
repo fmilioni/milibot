@@ -47,6 +47,8 @@ describe('CodexSessions', () => {
     })
     expect(start.config).toMatchObject({
       'features.multi_agent': false,
+      // A repository with only CLAUDE.md still gets its instructions.
+      project_doc_fallback_filenames: ['CLAUDE.md'],
       model_reasoning_effort: 'medium',
       'mcp_servers.milibot': {
         url: 'http://10.0.2.2:5555/mcp',

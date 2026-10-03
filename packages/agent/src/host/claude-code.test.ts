@@ -11,6 +11,7 @@ import { FakeProvider } from '../llm/fake'
 import { USER_WROTE_MEANWHILE_NOTE } from '../prompts/notes'
 import { claudeProfile, FakeBackend } from '../test-support/claude-code'
 import { makeBot, TestEnv } from '../test-support/env'
+import { fakeRepoInstructions } from '../test-support/repo-instructions'
 import { DefaultAgentHost } from './agent-host'
 import { sessionLaneKey } from './lanes'
 
@@ -891,6 +892,33 @@ describe('Claude Code in a work session lane', () => {
     expect(started).toEqual([0])
     const input = backend.stdin.filter(Boolean).at(-1) ?? ''
     expect(input).toContain('Swap the middleware')
+  })
+
+  it('adds the AGENTS.md of folders without a CLAUDE.md, which Claude Code reads by itself', async () => {
+    const { backend, env, bot, conversation, append } = sessionEnv()
+    const wt = '/workspace/worktrees/app/ana-ession'
+    env.repoInstructions = fakeRepoInstructions(['/workspace/worktrees/app/ana-ession'], {
+      [`${wt}/CLAUDE.md`]: '# Root rules for Claude',
+      [`${wt}/AGENTS.md`]: '# Root rules for agents',
+    })
+    await sessionTurn(env, conversation.id, bot.id, 'comece')
+    expect(append(0)).not.toContain('<repository_instructions')
+    expect(env.llmCalls.at(-1)?.instructionFiles).toEqual([
+      { path: `${wt}/CLAUDE.md`, bytes: 23, truncated: false, source: 'engine' },
+    ])
+
+    env.repoInstructions = fakeRepoInstructions([wt], { [`${wt}/AGENTS.md`]: '# Only agents rules' })
+    env.setSetting(cliKeys('claude_code').meta(sessionLaneKey(bot.id, 'wses_01CCSESSION')), null)
+    await sessionTurn(env, conversation.id, bot.id, 'again')
+    expect(backend.specs).toHaveLength(2)
+    expect(append(1)).toContain(`<repository_instructions path="${wt}/AGENTS.md"`)
+    expect(append(1)).toContain('# Only agents rules')
+    expect(env.llmCalls.at(-1)?.instructionFiles).toEqual([
+      { path: `${wt}/AGENTS.md`, bytes: 19, truncated: false, source: 'injected' },
+    ])
+    expect(append(1).indexOf('<repository_instructions')).toBeGreaterThan(
+      append(1).indexOf('# Session brief'),
+    )
   })
 
   it('is not rotated for idleness or size, and a fresh CLI session gets where the work stands', async () => {

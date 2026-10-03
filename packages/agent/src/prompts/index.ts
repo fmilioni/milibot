@@ -3,6 +3,7 @@ export { DRAW_PROMPT_MARKER, DRAW_SYSTEM_PROMPT, drawPrompt } from './design-dra
 export { mcpInstructions } from './lanes'
 export { pullRequestNote } from './policy'
 export { buildProcedurePrompt, formatProcedure, PROCEDURE_SYSTEM_PROMPT } from './procedures'
+export { REPO_INSTRUCTIONS_FILE_MAX, repoInstructionTexts } from './repo-instructions'
 export { formatSkillCatalog } from './skill-catalog'
 export { TRIAGE_SYSTEM_PROMPT } from './triage'
 export { WEB_EXTRACT_SYSTEM_PROMPT, webExtractInput } from './web'

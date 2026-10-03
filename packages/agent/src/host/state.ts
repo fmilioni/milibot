@@ -1,6 +1,7 @@
 import type { ActivityStep, BotStatus } from '@milibot/shared'
 
 import type { TurnRequest } from '../environment'
+import type { LoadedInstructionFile } from '../prompts/repo-instructions'
 import type { LaneInfo, LaneKey } from './lanes'
 import type { TextStream } from './turn/text-stream'
 
@@ -50,6 +51,8 @@ export interface TurnState {
   deliver: (() => void) | null
   /** Tools sent to the model this turn (native providers only); a call to any other one is refused. */
   offeredTools?: ReadonlySet<string>
+  /** Repository instruction files Milibot's tool results brought in this turn, by path (CLI turns' record). */
+  instructionFiles?: Map<string, LoadedInstructionFile>
 }
 
 /** One lane of a bot (see `lanes.ts`): its queue and running turn. */

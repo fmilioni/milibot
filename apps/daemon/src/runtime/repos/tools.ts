@@ -1,11 +1,13 @@
 import type { ToolExecContext, ToolResult } from '@milibot/agent'
+import { repoInstructionTexts } from '@milibot/agent/prompts'
 import { optionalString, requireString, type ToolArgs, toolText } from '@milibot/agent/tools'
-import type { Bot } from '@milibot/shared'
+import type { Bot, LogFn } from '@milibot/shared'
 
 import { clipMiddle, type ToolHandlers, ToolSwitch } from '../tools-core'
 import { botLinuxUser, type VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
 import { checkoutWarnings, isRepoUrl, runCheckout, sanitizeRepoName, slugPart } from './checkout'
+import { readRepoInstructions } from './instructions'
 import type { WorktreeStore } from './store'
 
 /** Worktrees of the repositories in /workspace/repos, one per bot and repository. */
@@ -14,6 +16,7 @@ export interface RepoToolsDeps {
   store: WorkspaceStore
   worktrees: WorktreeStore
   botEnv?: (bot: Bot) => Promise<Record<string, string>>
+  log?: LogFn
 }
 
 function repoHandlers(deps: RepoToolsDeps): ToolHandlers {
@@ -53,12 +56,21 @@ function repoHandlers(deps: RepoToolsDeps): ToolHandlers {
         baseBranch: info.BASE || null,
       })
     const base = info.BASE ?? row.baseBranch ?? '?'
-    return toolText(
+    const reply = toolText(
       [
         `Worktree ready (${info.STATUS ?? 'ok'}): ${row.worktreePath}\nbranch: ${info.BRANCH || row.branch}\nbase: ${base}\nWork only inside this path.`,
         ...checkoutWarnings(info, base),
       ].join('\n'),
     )
+    // The repository's own instructions, whatever engine the bot runs on (each file its own part).
+    const files = await readRepoInstructions(guest, ctx.bot, [row.worktreePath], ctx.signal).catch(
+      (err: unknown) => {
+        deps.log?.('warn', 'repository instructions unavailable', { err: (err as Error).message })
+        return []
+      },
+    )
+    reply.content.push(...repoInstructionTexts(files).map((text) => ({ type: 'text' as const, text })))
+    return reply
   }
 
   async function repoList(ctx: ToolExecContext): Promise<ToolResult> {

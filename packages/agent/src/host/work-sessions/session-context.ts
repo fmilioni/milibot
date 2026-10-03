@@ -48,9 +48,11 @@ export class SessionContext {
 
   /**
    * What stays fixed for a session lane (the second cached part of its prompt): the brief, the project,
-   * the general knowledge catalog, the workspace memory and the bot's pinned notes.
+   * the general knowledge catalog, the workspace memory and the bot's pinned notes. `repoInstructions`: the
+   * instruction files of the session folder's repository, right after the brief (native lanes only; CLI
+   * engines read their own).
    */
-  fixed(bot: Bot, session: WorkSessionView): { text: string; memoryTokens: number } {
+  fixed(bot: Bot, session: WorkSessionView, repoInstructions = ''): { text: string; memoryTokens: number } {
     const env = this.ctx.env()
     const config = this.ctx.memory.config()
     const project = session.projectId
@@ -63,6 +65,7 @@ export class SessionContext {
     const pinned = formatMemoryBlock(env.memory.pinnedNotes(bot.id), config.memoryBudgetTokens)
     const text = [
       session.brief,
+      repoInstructions,
       project?.block ?? '',
       this.ctx.knowledge.catalog(bot, 'session'),
       workspace.text,
@@ -115,6 +118,7 @@ export class SessionContext {
     request: TurnRequest,
     turn: TurnState,
     systemPrompt: string,
+    repoInstructions: string,
   ): Promise<{
     system: ChatMessage
     systemText: string
@@ -122,7 +126,7 @@ export class SessionContext {
     transcript: SessionTranscript
   }> {
     const directory = this.ctx.env().workSessions
-    const fixed = this.fixed(bot, session)
+    const fixed = this.fixed(bot, session, repoInstructions)
     const system: ChatMessage = {
       role: 'system',
       content: [

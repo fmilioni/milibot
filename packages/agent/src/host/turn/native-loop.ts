@@ -1,7 +1,7 @@
 import type { NativeResolvedModel } from '../../environment'
 import { type ChatMessage, textOfParts } from '../../llm/messages'
 import type { CompletionResult } from '../../llm/provider'
-import { pruneScreenshots, truncateToolContent } from '../../memory/chat-messages'
+import { pruneScreenshots } from '../../memory/chat-messages'
 import { EMPTY_SESSION_REPLY_NOTE, STEP_LIMIT_NOTE, USER_WROTE_MEANWHILE_NOTE } from '../../prompts/notes'
 import { USER_TOOK_CONTROL_NOTE } from '../../prompts/rules'
 import { CANCELLED } from '../../prompts/tool-replies'
@@ -13,6 +13,7 @@ import { isAbort } from '../state'
 import { compactSession } from '../work-sessions/session-compaction'
 import { nativeContext } from './native-context'
 import { recordNativeCall } from './one-shot'
+import { TurnInstructions } from './repo-instructions'
 
 const SUBAGENT_MAX_STEPS = 60
 
@@ -27,8 +28,10 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
     const lane = ctx.lanes.lane(turn.laneKey)
     const found = ctx.sessions.forTurn(bot, lane)
     if (found === 'missing') return
-    const context = await nativeContext(ctx, bot, request, turn, lane, found.session, initial)
+    const instructions = new TurnInstructions(env, bot, turn.abort.signal)
+    const context = await nativeContext(ctx, bot, request, turn, lane, found.session, initial, instructions)
     const { helper, session, tools, system, conversation, transcript } = context
+    const cwd = session?.cwd ?? '/workspace'
     const kind = lane.info.kind
     const maxSteps = helper
       ? SUBAGENT_MAX_STEPS
@@ -212,11 +215,16 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
         const toolResult = signal.aborted
           ? toolError(CANCELLED)
           : await (helpers.get(call.id) ?? execute(call))
+        const content = await instructions.toolContent(call, toolResult.content, {
+          cwd,
+          context: [system, ...conversation],
+          succeeded: !toolResult.isError && !signal.aborted,
+        })
         push({
           role: 'tool',
           toolCallId: call.id,
           toolName: call.name,
-          content: truncateToolContent(toolResult.content),
+          content,
           ...(toolResult.isError ? { isError: true } : {}),
         })
       }

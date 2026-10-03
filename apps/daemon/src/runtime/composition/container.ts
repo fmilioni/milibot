@@ -780,7 +780,7 @@ export function createContainer(options: ContainerOptions) {
         apply: (id, patch) => bots.update(id, patch),
       },
     }),
-    new RepoTools({ vm, store, worktrees, botEnv: laneDefaults.botEnv }),
+    new RepoTools({ vm, store, worktrees, botEnv: laneDefaults.botEnv, log }),
     new UserRequestTools({ requests: userRequests, credentials }),
     new SessionTools({
       sessions: workSessions,

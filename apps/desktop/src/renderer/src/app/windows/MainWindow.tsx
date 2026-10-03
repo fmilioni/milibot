@@ -3,7 +3,7 @@ import { type ReactNode, useEffect } from 'react'
 import { BootScreen } from '@/app/BootScreen'
 import { ModalHost } from '@/app/ModalHost'
 import { ReconnectingBanner } from '@/app/ReconnectingBanner'
-import { RightPanel } from '@/app/RightPanel'
+import { RightPanel, rightPanelWidth } from '@/app/RightPanel'
 import { Toaster } from '@/app/Toaster'
 import { BoardsScreen } from '@/features/boards/BoardsScreen'
 import { CanvasScreen } from '@/features/canvas/CanvasScreen'
@@ -103,7 +103,7 @@ function WindowScreen() {
     <Area
       name="right-panel"
       resetKey={rightPanel}
-      className="w-[min(var(--right-panel-width),40vw)] shrink-0 border-l border-border bg-surface"
+      className={`${rightPanelWidth(rightPanel)} shrink-0 border-l border-border bg-surface`}
     >
       <RightPanel />
     </Area>

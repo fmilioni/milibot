@@ -46,6 +46,8 @@
 
   --sidebar-width: 280px;
   --right-panel-width: 560px;
+  /* The debug panel gives way so the screen between it and the sidebar keeps 420px (`CONVERSATION_MIN_WIDTH`). */
+  --debug-panel-width: clamp(360px, calc(100vw - var(--sidebar-width) - 420px), min(660px, 52vw));
   --titlebar-height: 40px;
   /* Width Windows' caption buttons take at the top right (0 elsewhere, see `pr-caption-*`). */
   --caption-inset: 0px;

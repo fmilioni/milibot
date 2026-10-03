@@ -224,6 +224,7 @@ describe('repoInstructionTexts', () => {
       bytes: 120 * 1024,
       truncated: true,
       content: 'first\n',
+      sameAs: [],
     }
     const [text] = repoInstructionTexts([file])
     expect(text).toContain('truncated="true"')

@@ -60,7 +60,7 @@ describe('readRepoInstructions', () => {
     mkdirSync(join(other, '.git'), { recursive: true })
     write(join(other, 'AGENTS.md'), '# Agents rules\n')
     expect(await read([join(repo, 'src')])).toEqual([
-      { path: '/app/CLAUDE.md', bytes: 15, truncated: false, content: '# Claude rules\n' },
+      { path: '/app/CLAUDE.md', bytes: 15, truncated: false, content: '# Claude rules\n', sameAs: [] },
     ])
     expect((await read([other])).map((f) => f.path)).toEqual(['/lib/AGENTS.md'])
   })
@@ -79,11 +79,12 @@ describe('readRepoInstructions', () => {
     mkdirSync(join(both, '.git'), { recursive: true })
     write(join(both, 'CLAUDE.md'), 'For Claude\n')
     write(join(both, 'AGENTS.md'), 'For agents\n')
-    expect((await read([same, linked, both])).map((f) => f.path)).toEqual([
-      '/same/CLAUDE.md',
-      '/linked/CLAUDE.md',
-      '/both/CLAUDE.md',
-      '/both/AGENTS.md',
+    const files = await read([same, linked, both])
+    expect(files.map((f) => [f.path, f.sameAs.map((p) => p.slice(ws.length))])).toEqual([
+      ['/same/CLAUDE.md', ['/same/AGENTS.md']],
+      ['/linked/CLAUDE.md', ['/linked/AGENTS.md']],
+      ['/both/CLAUDE.md', []],
+      ['/both/AGENTS.md', []],
     ])
   })
 

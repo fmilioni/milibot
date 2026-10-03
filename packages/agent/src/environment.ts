@@ -324,6 +324,8 @@ export interface RepoInstructionFile {
   /** `content` is the start of the file, cut at a line end (`REPO_INSTRUCTIONS_FILE_MAX`). */
   truncated: boolean
   content: string
+  /** The other name in the same folder with the same text (or the same file), left out for this one. */
+  sameAs: string[]
 }
 
 /** The instruction files of the repositories the bots work in (read in the VM by the daemon). */

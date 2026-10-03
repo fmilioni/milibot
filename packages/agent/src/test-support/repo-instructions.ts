@@ -41,6 +41,7 @@ export function fakeRepoInstructions(
         const same =
           first && second && (real(first) === real(second) || text(first)?.trim() === text(second)?.trim())
         for (const file of same ? [first] : found) {
+          const sameAs = same && second ? [second] : []
           if (!file || seen.has(file)) continue
           seen.add(file)
           const content = text(file) ?? ''
@@ -52,7 +53,7 @@ export function fakeRepoInstructions(
             const end = head.lastIndexOf(10)
             kept = (end > 0 ? head.subarray(0, end + 1) : head).toString('utf8')
           }
-          out.push({ path: file, bytes, truncated, content: kept })
+          out.push({ path: file, bytes, truncated, content: kept, sameAs })
         }
       }
     }

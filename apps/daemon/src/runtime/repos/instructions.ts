@@ -27,7 +27,15 @@ function parseFiles(stdout: string): RepoInstructionFile[] {
   if (!Array.isArray(parsed.files)) return []
   return parsed.files.flatMap((f: Record<string, unknown>) =>
     typeof f.path === 'string' && typeof f.content === 'string' && typeof f.bytes === 'number'
-      ? [{ path: f.path, bytes: f.bytes, truncated: f.truncated === true, content: f.content }]
+      ? [
+          {
+            path: f.path,
+            bytes: f.bytes,
+            truncated: f.truncated === true,
+            content: f.content,
+            sameAs: Array.isArray(f.sameAs) ? f.sameAs.filter((p): p is string => typeof p === 'string') : [],
+          },
+        ]
       : [],
   )
 }

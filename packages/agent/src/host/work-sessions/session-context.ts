@@ -173,8 +173,9 @@ export class SessionContext {
   }
 
   /**
-   * Bootstrap of a session lane's CLI process: session brief, project, general catalog, workspace
-   * memory and pinned notes, kept identical across resumes. A fresh CLI session after an earlier one (lost
+   * Bootstrap of a session lane's CLI process: session brief, the repository instructions the CLI misses
+   * (`repoInstructions`), project, general catalog, workspace memory and pinned notes, kept identical across
+   * resumes. A fresh CLI session after an earlier one (lost
    * or rotated) also gets how far the work went.
    */
   cliStartup(
@@ -182,6 +183,7 @@ export class SessionContext {
     bot: Bot,
     session: WorkSessionView,
     laneKey: LaneKey,
+    repoInstructions = '',
   ): (fresh: boolean) => CliStartup {
     return (fresh) => {
       const env = this.ctx.env()
@@ -190,7 +192,7 @@ export class SessionContext {
         if (stored) return { systemAppendix: stored.appendix, inputPrefix: null, sections: stored.sections }
       }
       const earlier = env.workSessions.cliStarted(session.id)
-      const fixed = this.fixed(bot, session)
+      const fixed = this.fixed(bot, session, repoInstructions)
       const recovery = earlier > 0 ? env.workSessions.recovery(session.id) : ''
       const appendix = [fixed.text, recovery].filter(Boolean).join('\n\n')
       const sections = { longTermMemory: fixed.memoryTokens, summaries: 0, recap: estimateTokens(recovery) }

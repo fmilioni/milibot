@@ -9,10 +9,13 @@ export { ProviderClients } from './clients'
 export { openRouterAccount, ProviderRoutes } from './handlers'
 export { type AutomaticResolution, createModelPolicy, forDrawing, type ModelPolicy } from './model-policy'
 export {
+  type BotModelChange,
+  type BotModelPatch,
   modelRequestArgs,
   modelRequestNote,
   type ModelRequests,
   modelRequests,
+  resolveBotModelChange,
   resolveBotModelRequest,
 } from './model-request'
 export { ProviderStore } from './store'

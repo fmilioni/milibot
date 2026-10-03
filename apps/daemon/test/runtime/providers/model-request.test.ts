@@ -1,9 +1,11 @@
+import type { Bot } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import type { CatalogProvider } from '../../../src/runtime/providers/catalog'
 import {
   describeCatalog,
   parseContextLimit,
+  resolveBotModelChange,
   resolveModelRequest,
 } from '../../../src/runtime/providers/model-request'
 
@@ -155,5 +157,101 @@ describe('describeCatalog', () => {
     expect(text).toContain('Claude Code (claude_code):')
     expect(text).toContain('- haiku — Haiku; 200k context; no effort')
     expect(text).not.toContain('OpenRouter')
+  })
+})
+
+describe('resolveBotModelChange', () => {
+  const bot = (patch: Partial<Bot> = {}) =>
+    ({
+      providerId: 'or',
+      model: 'openai/gpt-5',
+      effort: 'medium',
+      contextLimit: null,
+      maxOutputTokens: null,
+      ...patch,
+    }) as Bot
+  const models = {
+    catalog: () => catalog,
+    currentChoice: (b: Bot) =>
+      b.model && b.providerId
+        ? {
+            providerId: b.providerId,
+            model: b.model,
+            effort: b.effort,
+            contextLimit: b.contextLimit,
+            maxOutputTokens: null,
+          }
+        : null,
+  }
+
+  it('changes only the effort on the current model', () => {
+    const change = resolveBotModelChange(models, bot(), { effort: 'HIGH' })
+    expect(change).toMatchObject({
+      ok: true,
+      patch: { providerId: 'or', model: 'openai/gpt-5', effort: 'high', contextLimit: null },
+      label: 'GPT-5 (OpenRouter), effort high',
+    })
+  })
+
+  it('refuses an effort the model does not list, and any level on a model without effort', () => {
+    expect(resolveBotModelChange(models, bot(), { effort: 'max' })).toEqual({
+      ok: false,
+      error: '"max" is not an effort level of GPT-5: use one of low, medium, high, or default.',
+    })
+    expect(resolveBotModelChange(models, bot(), { effort: 'banana' })).toMatchObject({ ok: false })
+    expect(
+      resolveBotModelChange(models, bot({ providerId: 'cc', model: 'haiku', effort: null }), {
+        effort: 'high',
+      }),
+    ).toEqual({ ok: false, error: 'Haiku takes no reasoning effort.' })
+  })
+
+  it('takes any standard level when the model lists none, and "default" clears it', () => {
+    const mini = bot({ model: 'openai/gpt-5-mini' })
+    expect(resolveBotModelChange(models, mini, { effort: 'xhigh' })).toMatchObject({
+      ok: true,
+      patch: { effort: 'xhigh' },
+    })
+    expect(resolveBotModelChange(models, mini, { effort: 'default' })).toMatchObject({
+      ok: true,
+      patch: { effort: null },
+    })
+  })
+
+  it('switches model keeping the effort the new model takes, else its default', () => {
+    expect(resolveBotModelChange(models, bot(), { model: 'opus 5.5' })).toMatchObject({
+      ok: true,
+      patch: { providerId: 'or', model: 'anthropic/claude-opus-5-5', effort: 'medium' },
+    })
+    const toHaiku = resolveBotModelChange(models, bot(), { model: 'haiku' })
+    expect(toHaiku).toMatchObject({ ok: true, patch: { providerId: 'cc', model: 'haiku', effort: null } })
+    expect(toHaiku.ok && toHaiku.notes).toEqual([
+      'Haiku does not take effort medium: it runs at its default effort.',
+    ])
+  })
+
+  it('reports unknown models and a bot without one', () => {
+    expect(resolveBotModelChange(models, bot(), { model: 'llama' })).toMatchObject({
+      ok: false,
+      error: expect.stringContaining('No model matches "llama"'),
+    })
+    expect(resolveBotModelChange(models, bot({ model: null }), { effort: 'high' })).toMatchObject({
+      ok: false,
+      error: expect.stringContaining('No model is configured'),
+    })
+  })
+
+  it('sets, keeps or clears the context limit', () => {
+    expect(resolveBotModelChange(models, bot(), { context: '256k' })).toMatchObject({
+      ok: true,
+      patch: { contextLimit: 256_000, effort: 'medium' },
+    })
+    expect(resolveBotModelChange(models, bot({ contextLimit: 256_000 }), { effort: 'low' })).toMatchObject({
+      ok: true,
+      patch: { contextLimit: 256_000 },
+    })
+    expect(
+      resolveBotModelChange(models, bot({ contextLimit: 256_000 }), { context: 'default' }),
+    ).toMatchObject({ ok: true, patch: { contextLimit: null } })
   })
 })

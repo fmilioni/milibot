@@ -316,9 +316,38 @@ export interface WorkPort {
   activePlan(bot: Bot, laneKey: string, conversationId: string | null): ActivePlan | null
 }
 
+/** A CLAUDE.md or AGENTS.md of a repository in the VM. */
+export interface RepoInstructionFile {
+  path: string
+  /** Size of the whole file. */
+  bytes: number
+  /** `content` is the start of the file, cut at a line end (`REPO_INSTRUCTIONS_FILE_MAX`). */
+  truncated: boolean
+  content: string
+}
+
+/** The instruction files of the repositories the bots work in (read in the VM by the daemon). */
+export interface RepoInstructionsPort {
+  /**
+   * The CLAUDE.md/AGENTS.md of each path's repository, in every folder from the repository root down to the
+   * path's folder (a file's folder, or the closest existing one), root first, each file once. In one folder,
+   * two names that are the same file or have the same text count once (CLAUDE.md). [] outside a repository
+   * or while the VM is not running.
+   */
+  repoInstructions(bot: Bot, paths: string[], signal?: AbortSignal): Promise<RepoInstructionFile[]>
+}
+
 /** Callbacks the agent runtime uses to act on the workspace (implemented by the daemon runtime). */
 export interface AgentEnvironment
-  extends WorkspaceReader, ChatSink, Telemetry, ModelResolver, ToolGateway, CliPort, WorkPort {
+  extends
+    WorkspaceReader,
+    ChatSink,
+    Telemetry,
+    ModelResolver,
+    ToolGateway,
+    CliPort,
+    WorkPort,
+    RepoInstructionsPort {
   hostState: HostStateStore
   blobs: BlobStore
   memory: MemoryBackend

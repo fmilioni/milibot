@@ -18,6 +18,8 @@ export {
   type NativeResolvedModel,
   type NewAgentMessage,
   type ProjectDirectory,
+  type RepoInstructionFile,
+  type RepoInstructionsPort,
   type ResolvedModel,
   type RunnableModel,
   type ScreenState,

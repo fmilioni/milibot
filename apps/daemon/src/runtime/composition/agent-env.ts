@@ -4,6 +4,7 @@ import {
   type CliPort,
   type LlmCallRecord,
   type ModelResolver,
+  type RepoInstructionsPort,
   settingsHostState,
   type SkillContext,
   type Telemetry,
@@ -91,6 +92,7 @@ export interface AgentEnvDeps {
   mcp: McpToolServer
   tools: ToolRegistry
   cli: Partial<Record<CliEngine, GuestCliBackend>>
+  repoInstructions: RepoInstructionsPort['repoInstructions']
   userLanguage: () => Language
   /** Replaces secret values (workspace secrets, MCP credentials) in anything stored or sent to the app. */
   redact: <T>(value: T) => T
@@ -237,6 +239,7 @@ export function createAgentEnvironment(deps: AgentEnvDeps): AgentEnvironment {
     ...tools,
     ...cli,
     ...work,
+    repoInstructions: deps.repoInstructions,
     hostState: settingsHostState({
       getSetting: (key, fallback) => store.settings.get(key, fallback),
       setSetting: (key, value) => store.settings.set(key, value),

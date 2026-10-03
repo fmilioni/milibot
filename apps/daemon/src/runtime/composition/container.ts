@@ -85,7 +85,7 @@ import {
   ProviderStore,
   resolveBotModelChange,
 } from '../providers'
-import { RepoTools, WorktreeStore } from '../repos'
+import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
 import { GitPolicySync, OfficeService, SettingsService } from '../settings'
@@ -853,6 +853,15 @@ export function createContainer(options: ContainerOptions) {
     mcp,
     tools,
     cli: cliBackends,
+    repoInstructions: async (bot, paths, signal) => {
+      let guest
+      try {
+        guest = vm.runningGuest()
+      } catch {
+        return []
+      }
+      return readRepoInstructions(guest, bot, paths, signal)
+    },
     userLanguage: () => settings.userLanguage(),
     redact,
     log,

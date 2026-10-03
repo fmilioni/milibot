@@ -27,6 +27,7 @@ import {
 import type { Db } from '../../db/sqlite'
 import { DaemonError, errorMessage, notFound } from '../../errors'
 import type { EmbeddingService } from '../embeddings'
+import { pullRequestKey } from '../tasks'
 import { resolveByRef } from '../tools-core'
 import type { VmController } from '../vm'
 import { BoardImages } from './images'
@@ -474,12 +475,14 @@ export class BoardService implements BoardCardLinks {
     ].join('\n\n')
   }
 
-  /** A pull request opened or changed in a work session goes to the cards that session works on. */
+  /**
+   * A pull request opened or changed in a work session goes to the cards that session works on; its new status
+   * reaches every card already linking it.
+   */
   linkPullRequest(conversationId: string, task: TaskPayload): void {
     if (!task.url) return
     const sessionId = this.deps.sessionOfConversation?.(conversationId)
-    if (!sessionId) return
-    for (const cardId of this.store.cardsLinkedTo('session', sessionId)) {
+    for (const cardId of sessionId ? this.store.cardsLinkedTo('session', sessionId) : []) {
       const card = this.store.card(cardId)
       if (!card) continue
       this.store.putLink(cardId, {
@@ -491,6 +494,26 @@ export class BoardService implements BoardCardLinks {
       })
       this.changed(card.board_id, { cards: true })
     }
+    // A merge or close made from another conversation (the PM's, a gh command) reaches every card linking it.
+    const key = pullRequestKey(task.url)
+    if (key) this.applyPullRequestStates(new Map([[key, task.status]]))
+  }
+
+  /** URLs of the pull request links not merged yet, newest first. */
+  trackedPullRequests(): string[] {
+    return this.store.openPullRequestLinks().map((link) => link.url)
+  }
+
+  /** Pull request states (by `pullRequestKey`) applied to every link of those pull requests on any card. */
+  applyPullRequestStates(states: Map<string, string>): void {
+    const boards = new Set<string>()
+    for (const link of this.store.openPullRequestLinks()) {
+      const state = states.get(pullRequestKey(link.url) ?? '')
+      if (!state || state === link.state) continue
+      this.store.setLinkState(link.id, state)
+      boards.add(link.boardId)
+    }
+    for (const boardId of boards) this.changed(boardId, { cards: true })
   }
 
   authorName(type: 'user' | 'bot', botId: string | null): string {

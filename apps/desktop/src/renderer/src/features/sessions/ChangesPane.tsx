@@ -4,7 +4,7 @@ import {
   type SessionChanges,
   type SessionFileStatus,
 } from '@milibot/shared'
-import { ChevronDown, ChevronRight, Columns2, FileDiff, RefreshCw, Rows3 } from 'lucide-react'
+import { AlertCircle, ChevronDown, ChevronRight, Columns2, FileDiff, RefreshCw, Rows3 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -19,6 +19,7 @@ import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
 import { type Tone, TONE_SOFT } from '@/lib/tone'
 import { AsyncView } from '@/ui/AsyncView'
+import { LinkButton } from '@/ui/Button'
 import { DiffPanel } from '@/ui/diff/DiffPanel'
 import { DiffStat } from '@/ui/diff/DiffStat'
 import { type DiffMode, DiffViewer } from '@/ui/diff/DiffViewer'
@@ -59,7 +60,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 /**
  * "Changes": what the session changed in its folder, file by file, each unfolding its diff in the list. The
  * list scrolls itself, or with `scrollParent` (a page that already scrolls) grows to its full height and
- * scrolls with that element, open diffs included.
+ * scrolls with that element, open diffs included. When the session changes files the list and the open diffs
+ * reload in place: what is on screen (scroll, open files, filter, mode) stays while they do.
  */
 export function ChangesPane({
   sessionId,
@@ -71,12 +73,14 @@ export function ChangesPane({
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const changes = useSessionStore((s) => s.changes[sessionId])
+  const version = useSessionStore((s) => s.changesVersion[sessionId] ?? 0)
   const loadChanges = useSessionStore((s) => s.loadChanges)
   const reload = () => void loadChanges(workspaceId, sessionId)
 
+  // Fresh on every opening, and again each time the session's files change.
   useEffect(() => {
     void loadChanges(workspaceId, sessionId)
-  }, [loadChanges, workspaceId, sessionId])
+  }, [loadChanges, workspaceId, sessionId, version])
 
   const refresh = (
     <Tooltip content={t('session.changes.refresh')}>
@@ -102,7 +106,13 @@ export function ChangesPane({
     >
       {(data) =>
         data.available ? (
-          <ChangedFiles sessionId={sessionId} data={data} refresh={refresh} scrollParent={scrollParent} />
+          <ChangedFiles
+            sessionId={sessionId}
+            data={data}
+            refresh={refresh}
+            failed={changes?.error === true ? reload : null}
+            scrollParent={scrollParent}
+          />
         ) : (
           <Centered>
             <FileDiff size={22} className="text-fg-muted" aria-hidden />
@@ -121,16 +131,19 @@ function ChangedFiles({
   sessionId,
   data,
   refresh,
+  failed,
   scrollParent,
 }: {
   sessionId: string
   data: SessionChanges
   refresh: React.ReactNode
+  /** The last reload failed (the data shown is the one before it): retries it. */
+  failed: (() => void) | null
   scrollParent: HTMLElement | null | undefined
 }) {
   const { t } = useTranslation()
   const embedded = scrollParent !== undefined
-  const [list, setList] = useState<HTMLUListElement | null>(null)
+  const [list, setList] = useState<HTMLDivElement | null>(null)
   const scroller = embedded ? scrollParent : list
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set())
@@ -183,6 +196,16 @@ function ChangedFiles({
         )}
         {refresh}
       </div>
+      {failed && (
+        <div
+          role="alert"
+          className="flex shrink-0 items-center gap-2 border-b border-border bg-danger-tint px-4 py-1.5 text-sm text-fg-secondary"
+        >
+          <AlertCircle size={13} className="shrink-0 text-danger" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{t('session.changes.loadFailed')}</span>
+          <LinkButton onClick={failed}>{t('common.retry')}</LinkButton>
+        </div>
+      )}
       {data.files.length === 0 ? (
         <Centered>
           <FileDiff size={22} aria-hidden />
@@ -190,7 +213,8 @@ function ChangedFiles({
         </Centered>
       ) : (
         <>
-          {data.files.length > 6 && (
+          {/* Kept while a filter is typed, even if the list shrinks under the threshold meanwhile. */}
+          {(data.files.length > 6 || query) && (
             <SearchInput
               value={query}
               onChange={setQuery}
@@ -198,25 +222,28 @@ function ChangedFiles({
               className="shrink-0 px-4 pt-2.5"
             />
           )}
-          <ul
-            ref={setList}
-            className={embedded ? 'py-1.5' : 'scroll-slim min-h-0 flex-1 overflow-y-auto py-1.5'}
-          >
-            {files.map((file) => (
-              <FileRow
-                key={file.path}
-                sessionId={sessionId}
-                file={file}
-                open={open.has(file.path)}
-                mode={mode}
-                scroller={scroller}
-                onToggle={() => toggle(file.path)}
-              />
-            ))}
-            {files.length === 0 && (
-              <li className="px-4 py-6 text-center text-sm text-fg-muted">{t('session.changes.noMatch')}</li>
-            )}
-          </ul>
+          {/* The scroller has no padding of its own: an open file's sticky header sits flush at its top, with no
+              strip where the code scrolling under it shows through. */}
+          <div ref={setList} className={embedded ? undefined : 'scroll-slim min-h-0 flex-1 overflow-y-auto'}>
+            <ul className="py-1.5">
+              {files.map((file) => (
+                <FileRow
+                  key={file.path}
+                  sessionId={sessionId}
+                  file={file}
+                  open={open.has(file.path)}
+                  mode={mode}
+                  scroller={scroller}
+                  onToggle={() => toggle(file.path)}
+                />
+              ))}
+              {files.length === 0 && (
+                <li className="px-4 py-6 text-center text-sm text-fg-muted">
+                  {t('session.changes.noMatch')}
+                </li>
+              )}
+            </ul>
+          </div>
         </>
       )}
     </div>
@@ -289,7 +316,8 @@ function FileDiffBody({
   const workspaceId = useWorkspaceId()
   const entry = useSessionStore((s) => s.fileDiffs[diffKey(sessionId, file.path)])
   const loadFileDiff = useSessionStore((s) => s.loadFileDiff)
-  const needsLoad = !entry || (!entry.data && !entry.loading && !entry.error)
+  // A stale diff stays on screen while it reloads (no spinner, the viewer and its scroll are kept).
+  const needsLoad = !entry || (!entry.loading && (entry.stale === true || (!entry.data && !entry.error)))
 
   useEffect(() => {
     if (needsLoad) void loadFileDiff(workspaceId, sessionId, file.path)

@@ -106,7 +106,7 @@ export function ImageDiff({ sessionId, file }: { sessionId: string; file: Sessio
   const workspaceId = useWorkspaceId()
   const entry = useSessionStore((s) => s.fileImages[diffKey(sessionId, file.path)])
   const loadFileImages = useSessionStore((s) => s.loadFileImages)
-  const needsLoad = !entry || (!entry.data && !entry.loading && !entry.error)
+  const needsLoad = !entry || (!entry.loading && (entry.stale === true || (!entry.data && !entry.error)))
 
   useEffect(() => {
     if (needsLoad) void loadFileImages(workspaceId, sessionId, file.path)

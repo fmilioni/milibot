@@ -18,7 +18,7 @@ import {
   type SessionFilters,
   sessionMatchesFilters,
 } from '@/features/sessions/lib/session-view'
-import { type Loadable, loadEntry } from '@/lib/loadable'
+import { type Loadable, loadEntry, markStale } from '@/lib/loadable'
 
 interface SessionState {
   /** Workspace the cached sessions belong to. */
@@ -28,10 +28,13 @@ interface SessionState {
   details: Record<string, WorkSessionDetail>
   /** What each session's lane is doing, kept between tool calls like the bots' status. */
   laneDetail: Record<string, StatusDetail | undefined>
+  /** Kept when the files change: the lists on screen reload over it (`changesVersion`), the others when shown. */
   changes: Record<string, Loadable<SessionChanges>>
-  /** Per `sessionId\npath`; dropped when the session's files change. */
+  /** Moves on every `files_changed` of the session: each list on screen reloads when it does. */
+  changesVersion: Record<string, number>
+  /** Per `sessionId\npath`; marked `stale` (kept on screen while they reload) when the session's files change. */
   fileDiffs: Record<string, Loadable<SessionFileDiff>>
-  /** Changed images before and after, keyed and dropped like `fileDiffs`. */
+  /** Changed images before and after, keyed and marked like `fileDiffs`. */
   fileImages: Record<string, Loadable<SessionFileImages>>
   /** Ids of the filtered list (settings › Sessions). */
   list: string[]
@@ -65,10 +68,23 @@ const newestFirst = (sessions: WorkSession[]) => [...sessions].sort((a, b) => b.
 /** `workspaceId\nsessionId` of the sessions `ensure` already asked for. */
 const ensured = new Set<string>()
 
+/** Number of the latest load of each cached entry (`area\nkey`): an older answer arriving later is dropped. */
+const loads = new Map<string, number>()
+
 export const useSessionStore = create<SessionState>()((set, get) => {
   const { forWorkspace, isCurrent, commit } = createWorkspaceScope(get, set, () => {
     ensured.clear()
-    return { sessions: {}, details: {}, laneDetail: {}, changes: {}, fileDiffs: {}, fileImages: {}, list: [] }
+    loads.clear()
+    return {
+      sessions: {},
+      details: {},
+      laneDetail: {},
+      changes: {},
+      changesVersion: {},
+      fileDiffs: {},
+      fileImages: {},
+      list: [],
+    }
   })
 
   const upsert = (session: WorkSession) => {
@@ -101,7 +117,14 @@ export const useSessionStore = create<SessionState>()((set, get) => {
     }
   }
 
-  const isShowing = (workspaceId: string) => () => isCurrent(workspaceId)
+  /** Starts a load of `key` in `area`: its answer is written only if the workspace is still shown and no newer
+   *  load of the same entry started meanwhile (events can ask again before the previous answer is back). */
+  const latest = (workspaceId: string, area: string, key: string) => {
+    const id = `${area}\n${key}`
+    const number = (loads.get(id) ?? 0) + 1
+    loads.set(id, number)
+    return () => isCurrent(workspaceId) && loads.get(id) === number
+  }
 
   return {
     workspaceId: null,
@@ -109,6 +132,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
     details: {},
     laneDetail: {},
     changes: {},
+    changesVersion: {},
     fileDiffs: {},
     fileImages: {},
     list: [],
@@ -192,7 +216,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
         (changes) => set({ changes }),
         sessionId,
         () => api().call('getWorkSessionChanges', { params: { workspaceId, sessionId } }),
-        isShowing(workspaceId),
+        latest(workspaceId, 'changes', sessionId),
       )
     },
 
@@ -203,7 +227,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
         (fileDiffs) => set({ fileDiffs }),
         diffKey(sessionId, path),
         () => api().call('getWorkSessionFileDiff', { params: { workspaceId, sessionId }, query: { path } }),
-        isShowing(workspaceId),
+        latest(workspaceId, 'diff', diffKey(sessionId, path)),
       )
     },
 
@@ -214,7 +238,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
         (fileImages) => set({ fileImages }),
         diffKey(sessionId, path),
         () => api().call('getWorkSessionFileImages', { params: { workspaceId, sessionId }, query: { path } }),
-        isShowing(workspaceId),
+        latest(workspaceId, 'images', diffKey(sessionId, path)),
       )
     },
 
@@ -264,16 +288,16 @@ export const useSessionStore = create<SessionState>()((set, get) => {
           const { sessionId, totals } = event.payload
           const session = get().sessions[sessionId]
           if (session) upsert({ ...session, changes: totals })
-          const prefix = `${sessionId}\n`
-          const others = <T>(entries: Record<string, T>) =>
-            Object.fromEntries(Object.entries(entries).filter(([key]) => !key.startsWith(prefix)))
-          set({ fileDiffs: others(get().fileDiffs), fileImages: others(get().fileImages) })
-          if (get().watching === sessionId) void get().loadChanges(workspaceId, sessionId)
-          else {
-            const changes = { ...get().changes }
-            delete changes[sessionId]
-            set({ changes })
-          }
+          // Nothing is dropped: what is on screen stays there while it reloads (no spinner, no lost scroll).
+          const ofSession = (key: string) => key.startsWith(`${sessionId}\n`)
+          set({
+            changesVersion: {
+              ...get().changesVersion,
+              [sessionId]: (get().changesVersion[sessionId] ?? 0) + 1,
+            },
+            fileDiffs: markStale(get().fileDiffs, ofSession),
+            fileImages: markStale(get().fileImages, ofSession),
+          })
           break
         }
         case 'plan.updated': {

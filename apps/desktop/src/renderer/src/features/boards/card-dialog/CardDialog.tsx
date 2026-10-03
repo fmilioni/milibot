@@ -158,30 +158,30 @@ export function CardDialog({
         />
       </header>
       <div className="flex min-h-0 flex-1">
-        <div
-          ref={setScroller}
-          className="scroll-slim flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5"
-        >
-          {detail ? (
-            <>
-              <Description board={board} detail={detail} onSave={(body) => save({ body })} />
-              {detail.links
-                .filter((l) => l.kind === 'session')
-                .map((link) => (
-                  <section key={link.id} className="flex flex-col gap-2">
-                    <SectionTitle as="h3" icon={<GitCompare size={13} />}>
-                      {t('boards.card.changes')}
-                    </SectionTitle>
-                    <div className="overflow-clip rounded-[10px] border border-border">
-                      <ChangesPane sessionId={link.ref} scrollParent={scroller} />
-                    </div>
-                  </section>
-                ))}
-              <Comments board={board} detail={detail} onChanged={reload} />
-            </>
-          ) : (
-            <Spinner size={16} className="text-fg-muted" />
-          )}
+        {/* The padding is inside the scroller: the sticky header of an open file in the changes sits flush at its top. */}
+        <div ref={setScroller} className="scroll-slim flex min-w-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-col gap-5 px-6 py-5">
+            {detail ? (
+              <>
+                <Description board={board} detail={detail} onSave={(body) => save({ body })} />
+                {detail.links
+                  .filter((l) => l.kind === 'session')
+                  .map((link) => (
+                    <section key={link.id} className="flex flex-col gap-2">
+                      <SectionTitle as="h3" icon={<GitCompare size={13} />}>
+                        {t('boards.card.changes')}
+                      </SectionTitle>
+                      <div className="overflow-clip rounded-[10px] border border-border">
+                        <ChangesPane sessionId={link.ref} scrollParent={scroller} />
+                      </div>
+                    </section>
+                  ))}
+                <Comments board={board} detail={detail} onChanged={reload} />
+              </>
+            ) : (
+              <Spinner size={16} className="text-fg-muted" />
+            )}
+          </div>
         </div>
         <aside className="scroll-slim flex w-[270px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-border bg-surface px-4.5 py-5">
           <SectionTitle as="h3" icon={<Link2 size={13} />}>

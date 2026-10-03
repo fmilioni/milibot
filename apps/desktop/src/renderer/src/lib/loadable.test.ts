@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { type Loadable, loadEntry, patchLoadable } from './loadable'
+import { type Loadable, loadEntry, markStale, patchLoadable } from './loadable'
 
 describe('patchLoadable', () => {
   it('starts a missing entry empty and keeps the others', () => {
@@ -49,5 +49,33 @@ describe('loadEntry', () => {
       () => false,
     )
     expect(read().a).toEqual({ data: 'old', loading: true, error: false })
+  })
+
+  it('clears `stale` when the reload starts, so a change during it asks for another', async () => {
+    let entries: Record<string, Loadable<string>> = {
+      a: { data: 'old', loading: false, error: false, stale: true },
+    }
+    let resolve: (value: string) => void = () => undefined
+    const done = loadEntry(
+      () => entries,
+      (next) => (entries = next),
+      'a',
+      () => new Promise<string>((r) => (resolve = r)),
+    )
+    expect(entries.a).toEqual({ data: 'old', loading: true, error: false, stale: false })
+    entries = markStale(entries, () => true)
+    resolve('new')
+    await done
+    expect(entries.a).toEqual({ data: 'new', loading: false, error: false, stale: true })
+  })
+})
+
+describe('markStale', () => {
+  it('flags the matching entries and keeps their data', () => {
+    const entry: Loadable<number> = { data: 1, loading: false, error: false }
+    expect(markStale({ 's1\na': entry, 's2\na': entry }, (key) => key.startsWith('s1\n'))).toEqual({
+      's1\na': { ...entry, stale: true },
+      's2\na': entry,
+    })
   })
 })

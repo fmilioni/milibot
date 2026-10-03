@@ -1,4 +1,4 @@
-import { BOARD_USER,type Bot } from '@milibot/shared'
+import { BOARD_USER, type Bot } from '@milibot/shared'
 import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 

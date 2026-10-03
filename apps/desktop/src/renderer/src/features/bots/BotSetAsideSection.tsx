@@ -1,4 +1,4 @@
-import type { Bot, SetAsideRequest } from '@milibot/shared'
+import { type Bot, SET_ASIDE_MAX_WAKES, type SetAsideRequest } from '@milibot/shared'
 import { Clock, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -65,6 +65,12 @@ function SetAsideItem({ request, bot, onDrop }: { request: SetAsideRequest; bot:
           )}
           {' · '}
           {t('panels.bot.setAside.since', { when: since })}
+          {request.attempts >= SET_ASIDE_MAX_WAKES && (
+            <span className="text-warning">
+              {' · '}
+              {t('panels.bot.setAside.stuck')}
+            </span>
+          )}
         </span>
       </span>
       <Tooltip content={t('panels.bot.setAside.drop')}>

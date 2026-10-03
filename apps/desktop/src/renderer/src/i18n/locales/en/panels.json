@@ -227,7 +227,8 @@
       "withBot": "Chat with {{name}}",
       "group": "Group",
       "since": "set aside {{when}}",
-      "drop": "Drop this request"
+      "drop": "Drop this request",
+      "stuck": "not resumed on its own: ask the bot or drop it"
     },
     "delete": "Delete bot",
     "deleteLastBot": "The workspace needs at least one bot. Create another one before deleting this one.",

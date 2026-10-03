@@ -901,6 +901,7 @@ export function createContainer(options: ContainerOptions) {
     attachments,
     userRequests,
     workSessions,
+    setAside,
   })
   const handlers = collectHandlers(
     workspaceStatus.handlers(),

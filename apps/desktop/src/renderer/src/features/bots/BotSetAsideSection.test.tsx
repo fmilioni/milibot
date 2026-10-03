@@ -36,6 +36,7 @@ const request: SetAsideRequest = {
   createdAt: Date.now() - 5 * 60_000,
   wokenAt: null,
   alertedAt: null,
+  attempts: 0,
 }
 
 function show() {
@@ -70,6 +71,12 @@ describe('BotSetAsideSection', () => {
     await waitFor(() =>
       expect(drop).toHaveBeenCalledWith('dropSetAsideRequest', { workspaceId: 'ws_1', requestId: 'sar_1' }),
     )
+  })
+
+  it('flags a request the bot could not be woken with', async () => {
+    list.mockResolvedValue([{ ...request, attempts: 3 }])
+    show()
+    expect(await screen.findByText('not resumed on its own', { exact: false })).toBeTruthy()
   })
 
   it('shows nothing while nothing is set aside', async () => {

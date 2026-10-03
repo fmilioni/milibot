@@ -227,7 +227,8 @@
       "withBot": "Conversa com {{name}}",
       "group": "Grupo",
       "since": "adiada {{when}}",
-      "drop": "Descartar pendência"
+      "drop": "Descartar pendência",
+      "stuck": "não foi retomada sozinha: peça ao bot ou descarte"
     },
     "delete": "Excluir bot",
     "deleteLastBot": "O workspace precisa de pelo menos um bot. Crie outro antes de excluir este.",

@@ -71,6 +71,7 @@ export interface AgentEnvDeps {
   emit: (event: WorkspaceEvent) => void
   messages: MessageWriter
   recordLlmCall: (record: LlmCallRecord) => string
+  updateLlmCall: (id: string, record: LlmCallRecord) => void
   toolCalls: ToolCallStore
   blobs: FileBlobStore
   memory: MemoryStore
@@ -163,6 +164,7 @@ export function createAgentEnvironment(deps: AgentEnvDeps): AgentEnvironment {
 
   const telemetry: Telemetry = {
     recordLlmCall: (record) => deps.recordLlmCall(record),
+    updateLlmCall: (id, record) => deps.updateLlmCall(id, record),
     startToolCall: (record) => {
       toolCalls.start({ ...record, arguments: redact(record.arguments) })
       deps.taskCards.onToolStarted(record)

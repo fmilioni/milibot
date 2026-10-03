@@ -16,6 +16,7 @@ import {
   CLI_ENGINES,
   type CliEngine,
   type CloseBehavior,
+  LLM_CALL_RUNNING,
   type LogFn,
   type WorkspaceEvent,
 } from '@milibot/shared'
@@ -196,6 +197,7 @@ export function createContainer(options: ContainerOptions) {
 
   const store = new WorkspaceStore(db, now)
   const llmCalls = new LlmCallStore(db, now)
+  llmCalls.closeRunning()
   const toolCalls = new ToolCallStore(db)
   const worktrees = new WorktreeStore(db, now)
   const memory = new MemoryStore(db, now, (message, extra) => log('warn', message, extra))
@@ -327,16 +329,29 @@ export function createContainer(options: ContainerOptions) {
     qemuImg: () => findQemuImg(),
     log,
   })
-  const recordLlmCall = (record: LlmCallRecord): string => {
-    const id = llmCalls.insert({
-      ...record,
-      request: redact(record.request),
-      response: redact(record.response),
-      error: redact(record.error),
+  const redactCall = (record: LlmCallRecord): LlmCallRecord => ({
+    ...record,
+    request: redact(record.request),
+    response: redact(record.response),
+    error: redact(record.error),
+  })
+  /** After every write of a call: the footer's spend, the debug panels and (once it ended) the spend limits. */
+  const llmCallWritten = (id: string, record: LlmCallRecord) => {
+    emit({
+      type: 'llm_call.recorded',
+      payload: { callId: id, conversationId: record.conversationId, turnId: record.turnId },
     })
     workspaceStatus.changed()
-    spend.afterLlmCall()
+    if (record.stopReason !== LLM_CALL_RUNNING) spend.afterLlmCall()
+  }
+  const recordLlmCall = (record: LlmCallRecord): string => {
+    const id = llmCalls.insert(redactCall(record))
+    llmCallWritten(id, record)
     return id
+  }
+  const updateLlmCall = (id: string, record: LlmCallRecord): void => {
+    llmCalls.update(id, redactCall(record))
+    llmCallWritten(id, record)
   }
   const substituteSecrets = (bot: Bot, typed: string): string => {
     const secrets = credentials.secretsFor(bot)
@@ -818,6 +833,7 @@ export function createContainer(options: ContainerOptions) {
     emit,
     messages,
     recordLlmCall,
+    updateLlmCall,
     toolCalls,
     blobs,
     memory,

@@ -6,7 +6,7 @@ import { FakeBackend, turnFixture } from '../test-support/claude-code'
 import { FakeCodexBackend, readCodexFixture } from '../test-support/codex'
 import { makeBot } from '../test-support/env'
 import type { GuestCliBackend, GuestProcSpec } from './backend'
-import type { CliLaunch, CliSessions, CliTurnIO } from './engine'
+import type { CliLaunch, CliSessions, CliTurnIO, CliTurnProgress } from './engine'
 import type { CliTiming } from './process'
 import { CLI_ENGINE_DRIVERS } from './registry'
 import type { CliStartup } from './startup'
@@ -286,6 +286,7 @@ const other = makeBot({ slug: 'noa', displayNum: 4 })
 function recorder(signal = new AbortController().signal) {
   const text: string[] = []
   const tools: string[] = []
+  const progress: CliTurnProgress[] = []
   let taken = 0
   const io: CliTurnIO = {
     signal,
@@ -294,8 +295,9 @@ function recorder(signal = new AbortController().signal) {
     onNativeToolStart: (id) => tools.push(`start:${id}`),
     onNativeToolFinish: (id, isError) => tools.push(`finish:${id}:${isError}`),
     onInputTaken: () => taken++,
+    onProgress: (p) => progress.push(p),
   }
-  return { io, text, tools, taken: () => taken }
+  return { io, text, tools, progress, taken: () => taken }
 }
 
 function launch(extra: Partial<CliLaunch> = {}): CliLaunch {
@@ -343,6 +345,20 @@ describe.each([claudeCode, codex, antigravity] as unknown as Array<Harness<Fake>
       expect(second.launched).toBeNull()
       expect(backend.specs).toHaveLength(1)
       expect(sessions.activeLanes()).toEqual([bot.id])
+      await sessions.closeAll()
+    })
+
+    it('reports each model request of the turn as it completes', async () => {
+      const { sessions } = setup()
+      const { io, progress } = recorder()
+      const result = await sessions.runTurn(launch(), 'hi', io)
+      expect(progress.length).toBeGreaterThan(0)
+      expect(progress.map((p) => p.requests)).toEqual(progress.map((_, i) => i + 1))
+      expect(progress.at(-1)?.requests).toBe(result.requests)
+      const tokens = (p: CliTurnProgress) => p.billing.usage.inputTokens + p.billing.usage.cachedReadTokens
+      expect(
+        progress.every((p, i) => i === 0 || tokens(p) >= tokens(progress[i - 1] as CliTurnProgress)),
+      ).toBe(true)
       await sessions.closeAll()
     })
 

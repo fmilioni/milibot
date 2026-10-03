@@ -1,4 +1,4 @@
-import type { DebugTurn, LlmCallRow } from '@milibot/shared'
+import { type DebugTurn, LLM_CALL_RUNNING, type LlmCallRow } from '@milibot/shared'
 
 import { formatDuration, formatUsd } from '@/lib/format'
 
@@ -27,10 +27,11 @@ export function shortModel(model: string): string {
 
 const LIMIT_STOPS = new Set(['max_tokens', 'length', 'max_turns', 'error_max_turns'])
 
-export type CallTone = 'ok' | 'retried' | 'limit' | 'error'
+export type CallTone = 'ok' | 'retried' | 'limit' | 'error' | 'running'
 
 export function callTone(call: Pick<LlmCallRow, 'error' | 'stopReason' | 'retries'>): CallTone {
   if (call.error) return 'error'
+  if (call.stopReason === LLM_CALL_RUNNING) return 'running'
   if ((call.retries ?? 0) > 0) return 'retried'
   if (call.stopReason && LIMIT_STOPS.has(call.stopReason)) return 'limit'
   return 'ok'
@@ -114,8 +115,8 @@ function rowOf(key: string, calls: LlmCallRow[], turn: DebugTurn | null): TurnRo
   const tones = chronological.map(callTone)
   const lastTone = tones.at(-1) as CallTone
   const tone: CallTone =
-    lastTone === 'error'
-      ? 'error'
+    lastTone === 'error' || lastTone === 'running'
+      ? lastTone
       : tones.some((t) => t === 'error' || t === 'retried')
         ? 'retried'
         : lastTone

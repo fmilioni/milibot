@@ -219,6 +219,8 @@ export type LogLevel = 'info' | 'warn' | 'error'
 /** Records of what the host did: LLM and tool calls, finished turns, logs. */
 export interface Telemetry {
   recordLlmCall(record: LlmCallRecord): string
+  /** Replaces what `recordLlmCall` stored for `id`: a running CLI turn's progress, then its result. */
+  updateLlmCall(id: string, record: LlmCallRecord): void
   startToolCall(record: ToolCallStart): void
   finishToolCall(id: string, finish: ToolCallFinish): void
   /** A turn that ran ended (not called for requests dropped before running). */

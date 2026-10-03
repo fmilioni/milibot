@@ -186,7 +186,8 @@
       "ok": "Concluído sem erros",
       "retried": "Teve erro ou nova tentativa, mas terminou",
       "limit": "Parou no limite de tokens",
-      "error": "Terminou com erro"
+      "error": "Terminou com erro",
+      "running": "Em andamento: atualiza a cada chamada ao modelo"
     },
     "purposeHint": {
       "triage": "Decidiu quem responde no grupo",

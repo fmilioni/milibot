@@ -46,6 +46,22 @@ export interface CliTurnIO {
   onAcceptingInput?(send: (text: string) => boolean): void
   /** The engine took in a message given to `send`: what comes next answers it too. */
   onInputTaken?(): void
+  /**
+   * One more model request of the turn completed: what the turn did so far (the debug panel shows the turn
+   * while it runs). `CliTurnResult` replaces it at the end.
+   */
+  onProgress?(progress: CliTurnProgress): void
+}
+
+/** A running turn so far: its completed model requests and what they cost. */
+export interface CliTurnProgress {
+  requests: number
+  /** Model the engine reported, else null (the host falls back to the one asked for). */
+  model: string | null
+  /** Tokens of the requests so far, priced like the engine prices its result (`computed` when estimated). */
+  billing: CliBilling
+  /** Prompt size of the latest request. */
+  lastContextTokens: number | null
 }
 
 /** A model choice's tuning; null/absent = the model's default. */

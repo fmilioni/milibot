@@ -18,12 +18,15 @@ import type { DebugData } from './DebugParts'
 
 type Tab = 'calls' | 'context' | 'costs'
 
-/** Debug data of a conversation (another conversation's data is never shown while this one loads). */
+/**
+ * Debug data of a conversation (another conversation's data is never shown while this one loads). A reload that
+ * fails keeps the data on screen: only a first load that fails shows the error.
+ */
 function useDebugData(conversationId: string | null) {
   const workspaceId = useAppStore((s) => s.workspaceId)
   const query = useConversationDebug(workspaceId, conversationId)
   const data: DebugData | null = query.data?.conversationId === conversationId ? query.data : null
-  return { data, error: query.error !== null && !query.loading, refresh: query.reload }
+  return { data, error: !data && query.error !== null && !query.loading, refresh: query.reload }
 }
 
 export function DebugPanel() {

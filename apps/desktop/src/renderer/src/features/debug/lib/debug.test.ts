@@ -63,6 +63,7 @@ describe('debug data shaping', () => {
     expect(callTone({ error: '429 Too Many Requests', stopReason: 'error' })).toBe('error')
     expect(callTone({ error: null, stopReason: 'end_turn', retries: 1 })).toBe('retried')
     expect(callTone({ error: null, stopReason: 'max_tokens' })).toBe('limit')
+    expect(callTone({ error: null, stopReason: 'running' })).toBe('running')
     expect(purposeBadge('turn')).toBeNull()
     expect(purposeBadge('summary_merge')).toBe('summary')
   })

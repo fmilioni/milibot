@@ -1,13 +1,15 @@
 import {
   type ActivityStep,
   type Bot,
+  CLI_ENGINE_INFO,
   type CliEngine,
   editedFiles,
   estimateTokens,
+  LLM_CALL_RUNNING,
   type StepFileDiff,
 } from '@milibot/shared'
 
-import type { CliSessions } from '../../cli/engine'
+import type { CliSessions, CliTurnProgress } from '../../cli/engine'
 import { cliPrompt } from '../../cli/prompt'
 import { CLI_ENGINE_DRIVERS } from '../../cli/registry'
 import {
@@ -19,7 +21,7 @@ import {
 } from '../../cli/rotation'
 import type { CliRotationSettings } from '../../cli/settings'
 import { type CliStartup, EMPTY_BOOTSTRAP_SECTIONS, emptyStartup } from '../../cli/startup'
-import type { CliResolvedModel, WorkSessionView } from '../../environment'
+import type { AgentEnvironment, CliResolvedModel, LlmCallRecord, WorkSessionView } from '../../environment'
 import { memoryDigest } from '../../memory/bootstrap'
 import { sessionRules, subagentRules } from '../../prompts/lanes'
 import { projectNote, USER_WROTE_MEANWHILE_NOTE } from '../../prompts/notes'
@@ -38,6 +40,83 @@ interface CliLane {
   laneKey: LaneKey
   session: WorkSessionView | null
   helper: SubagentRun | null
+}
+
+/** Shortest time between two writes of a running turn's call (each one reloads the debug panels showing it). */
+const PROGRESS_INTERVAL_MS = 1_500
+
+/**
+ * The `llm_calls` row of a CLI turn, which is one engine run of many model requests (a session's can last
+ * hours): written as `LLM_CALL_RUNNING` when its first request completes, kept current (throttled) after each
+ * one, then replaced by the result. Without it the debug panel showed nothing until the turn ended.
+ */
+class LiveCall {
+  private id: string | null = null
+  private pending: CliTurnProgress | null = null
+  private last: CliTurnProgress | null = null
+  private timer: ReturnType<typeof setTimeout> | null = null
+  private lastWrite = Number.NEGATIVE_INFINITY
+
+  constructor(
+    private readonly env: AgentEnvironment,
+    private readonly recordOf: (progress: CliTurnProgress) => LlmCallRecord,
+    private readonly onRecorded: (id: string) => void,
+  ) {}
+
+  progress(progress: CliTurnProgress): void {
+    this.pending = progress
+    if (this.timer) return
+    const wait = this.lastWrite + PROGRESS_INTERVAL_MS - this.env.now()
+    if (wait <= 0) this.flush()
+    else this.timer = setTimeout(() => this.flush(), wait)
+  }
+
+  /** Writes the result over the running row (or records it when the turn reported no progress). */
+  finish(record: LlmCallRecord): string {
+    this.stop()
+    if (!this.id) return this.env.recordLlmCall(record)
+    this.env.updateLlmCall(this.id, record)
+    return this.id
+  }
+
+  /** `run`'s result; if it throws, the row (if any) ends with the error instead of staying `running`. */
+  async settle<T>(run: Promise<T>): Promise<T> {
+    try {
+      return await run
+    } catch (err) {
+      this.fail(err instanceof Error ? err.message : String(err))
+      throw err
+    }
+  }
+
+  private fail(error: string): void {
+    this.stop()
+    const progress = this.last
+    if (this.id && progress)
+      this.env.updateLlmCall(this.id, { ...this.recordOf(progress), stopReason: 'error', error })
+  }
+
+  private stop(): void {
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = null
+    this.pending = null
+  }
+
+  private flush(): void {
+    this.timer = null
+    const progress = this.pending
+    this.pending = null
+    if (!progress) return
+    this.last = progress
+    this.lastWrite = this.env.now()
+    const record = this.recordOf(progress)
+    if (this.id) {
+      this.env.updateLlmCall(this.id, record)
+      return
+    }
+    this.id = this.env.recordLlmCall(record)
+    this.onRecorded(this.id)
+  }
 }
 
 /** Session lanes keep their CLI session through idle time and growth: only another model or profile rotates it. */
@@ -124,7 +203,30 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
     const { input, lastProject, projectSent } = await this.input(turnRun, where, meta)
     const cb = this.callbacks(bot, turn, lane, session !== null)
     const started = env.now()
-    const result = await sessions.runTurn(
+    const purpose = request.trigger === 'intro' ? 'intro' : 'turn'
+    const live = new LiveCall(
+      env,
+      (progress) => ({
+        botId: bot.id,
+        conversationId: turn.conversationId,
+        turnId: turn.id,
+        purpose,
+        providerId: resolved.providerId,
+        providerType: engine,
+        model: progress.model ?? resolved.model ?? CLI_ENGINE_INFO[engine].defaultModel,
+        request: { input },
+        response: { requests: progress.requests, lastContextTokens: progress.lastContextTokens },
+        ...progress.billing,
+        contextComposition: null,
+        stopReason: LLM_CALL_RUNNING,
+        generationId: null,
+        latencyMs: env.now() - started,
+        error: null,
+      }),
+      // Milibot tools the turn calls from now on point at it.
+      (id) => (turn.llmCallId = id),
+    )
+    const running = sessions.runTurn(
       {
         bot,
         key: laneKey,
@@ -162,8 +264,10 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         onToolUse: cb.onToolUse,
         onNativeToolStart: cb.startStep,
         onNativeToolFinish: cb.finishStep,
+        onProgress: (progress) => live.progress(progress),
       },
     )
+    const result = await live.settle(running)
     turn.deliver = null
     ctx.activity.textEnded(turn, cb.text.end())
     const launched = result.launched
@@ -191,11 +295,11 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         lastProject: sameSession || projectSent !== lastProject ? projectSent : null,
       })
     }
-    turn.llmCallId = env.recordLlmCall({
+    turn.llmCallId = live.finish({
       botId: bot.id,
       conversationId: turn.conversationId,
       turnId: turn.id,
-      purpose: request.trigger === 'intro' ? 'intro' : 'turn',
+      purpose,
       providerId: resolved.providerId,
       providerType: engine,
       model: result.model,

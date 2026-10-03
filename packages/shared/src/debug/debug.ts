@@ -31,6 +31,12 @@ export const ContextComposition = z.object({
 })
 export type ContextComposition = z.infer<typeof ContextComposition>
 
+/**
+ * `stopReason` of a call still going on: a CLI engine's turn, recorded at its first model request and updated
+ * after each one until its result replaces it (a daemon that stops meanwhile marks it `interrupted`).
+ */
+export const LLM_CALL_RUNNING = 'running'
+
 export const LlmCallRow = z.object({
   id: z.string(),
   botId: z.string().nullable(),

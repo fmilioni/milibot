@@ -186,7 +186,8 @@
       "ok": "Finished without errors",
       "retried": "Had an error or a retry, but finished",
       "limit": "Stopped at the token limit",
-      "error": "Ended with an error"
+      "error": "Ended with an error",
+      "running": "In progress: updates after each model request"
     },
     "purposeHint": {
       "triage": "Decided who answers in the group",

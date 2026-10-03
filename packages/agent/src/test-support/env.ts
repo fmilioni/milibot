@@ -353,7 +353,18 @@ export class TestEnv implements AgentEnvironment {
   recordLlmCall(record: LlmCallRecord): string {
     const id = newId('llmCall')
     this.llmCalls.push({ ...record, id })
+    this.llmCallWrites.push({ ...record, id })
     return id
+  }
+
+  /** Every write of a call, inserts and updates, in order (`llmCalls` keeps each call's latest). */
+  llmCallWrites: Array<LlmCallRecord & { id: string }> = []
+
+  updateLlmCall(id: string, record: LlmCallRecord): void {
+    const index = this.llmCalls.findIndex((c) => c.id === id)
+    if (index < 0) throw new Error(`no LLM call ${id}`)
+    this.llmCalls[index] = { ...record, id }
+    this.llmCallWrites.push({ ...record, id })
   }
 
   startToolCall(record: ToolCallStart): void {

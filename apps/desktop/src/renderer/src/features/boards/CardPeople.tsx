@@ -54,13 +54,14 @@ export function AssigneeStack({ assignees, size = 18 }: { assignees: readonly st
       <span className="flex shrink-0 items-center -space-x-1.5" aria-label={names}>
         {assignees.slice(0, 4).map((a) => {
           const bot = bots[a]
-          return (
-            <span key={a} className="rounded-full ring-2 ring-surface-2">
-              {a === BOARD_USER || !bot ? (
-                <UserAvatar size={size} />
-              ) : (
-                <BotAvatar avatar={bot.avatar} state={bot.status} size={size} animated={false} />
-              )}
+          // A round ring only fits the user's round avatar: on a bot's shape it cuts a dark arc into its neighbor.
+          return a === BOARD_USER || !bot ? (
+            <span key={a} className="flex rounded-full ring-2 ring-surface-2">
+              <UserAvatar size={size} />
+            </span>
+          ) : (
+            <span key={a} className="flex">
+              <BotAvatar avatar={bot.avatar} state={bot.status} size={size} animated={false} />
             </span>
           )
         })}

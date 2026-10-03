@@ -20,11 +20,15 @@ import {
   statusAfter,
   statusOfPr,
 } from './pr-detect'
+import { pullRequestKey } from './pr-status'
 
 export type TaskCard = Omit<TaskPayload, 'type'>
 
 /** Shell tools whose commands are checked for `gh pr …` (the bash tool and the CLI engines' shells). */
 const SHELL_TOOLS = new Set<string>(['bash', 'Bash', CODEX_TOOLS.exec, ANTIGRAVITY_TOOLS.command])
+
+/** Task cards read when looking for pull requests that can still change, newest first. */
+const CARDS_WATCHED = 500
 
 export const STATUS_WORDS: Record<TaskStatus, string> = {
   open: 'open',
@@ -34,7 +38,7 @@ export const STATUS_WORDS: Record<TaskStatus, string> = {
 }
 
 export interface TaskCardServiceDeps {
-  messages: Pick<MessageStore, 'latestCard'>
+  messages: Pick<MessageStore, 'latestCard' | 'cards'>
   getBot(id: string): Bot | null
   directConversationId(botId: string): string | null
   appendMessage(message: NewAgentMessage): Message
@@ -236,7 +240,7 @@ export class TaskCardService {
           ? this.findCard({ repo: card.repo, prNumber: card.prNumber })
           : null)
     const payload: TaskPayload = { type: 'task', ...card }
-    const content = `${card.title} — ${STATUS_WORDS[card.status]}${card.url ? ` (${card.url})` : ''}`
+    const content = cardContent(card)
     if (existing) {
       const merged: TaskPayload = {
         ...payload,
@@ -262,6 +266,30 @@ export class TaskCardService {
     return { message, updated: false }
   }
 
+  /** URLs of the pull request cards not merged yet, newest first (their status can still change). */
+  trackedPullRequests(): string[] {
+    return this.pullRequestCards().map((card) => card.payload.url as string)
+  }
+
+  /** Statuses read from GitHub (by `pullRequestKey`) applied to every card of those pull requests. */
+  applyPullRequestStatuses(statuses: Map<string, TaskStatus>): void {
+    for (const card of this.pullRequestCards()) {
+      const status = statuses.get(pullRequestKey(card.payload.url) as string)
+      if (!status || status === card.payload.status) continue
+      const payload: TaskPayload = { ...card.payload, status }
+      this.deps.updateMessage(card.id, { content: cardContent(payload), payload })
+    }
+  }
+
+  private pullRequestCards(): Array<{ id: string; payload: TaskPayload }> {
+    return this.deps.messages
+      .cards('task', { exceptStatus: ['done'], limit: CARDS_WATCHED })
+      .flatMap((row) => {
+        const parsed = TaskPayload.safeParse(row.payload)
+        return parsed.success && pullRequestKey(parsed.data.url) ? [{ id: row.id, payload: parsed.data }] : []
+      })
+  }
+
   private pullRequestChanged(conversationId: string, payload: TaskPayload): void {
     if (payload.prNumber === null && !payload.url?.includes('/pull/')) return
     try {
@@ -276,6 +304,10 @@ function resultText(result: unknown): string {
   if (typeof result === 'string') return result
   const text = (result as { text?: unknown } | null)?.text
   return typeof text === 'string' ? text : ''
+}
+
+function cardContent(card: TaskCard): string {
+  return `${card.title} — ${STATUS_WORDS[card.status]}${card.url ? ` (${card.url})` : ''}`
 }
 
 function repoOf(url: string | null): string | null {

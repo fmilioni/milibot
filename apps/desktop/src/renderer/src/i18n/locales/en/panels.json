@@ -220,6 +220,15 @@
     "routines": "Routines",
     "noRoutines": "Ask in the chat to create a routine.",
     "routinesHint": "Ask in the chat to create or change a routine.",
+    "setAside": {
+      "title": "Set aside",
+      "hint": "{{name}} takes each one up as soon as it is free. A dropped one no longer wakes it.",
+      "withUser": "Chat with you",
+      "withBot": "Chat with {{name}}",
+      "group": "Group",
+      "since": "set aside {{when}}",
+      "drop": "Drop this request"
+    },
     "delete": "Delete bot",
     "deleteLastBot": "The workspace needs at least one bot. Create another one before deleting this one.",
     "mcp": {

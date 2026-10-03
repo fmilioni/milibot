@@ -34,7 +34,7 @@ export function Stat({
 }) {
   return (
     <Tooltip content={hint ?? null}>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border border-border bg-surface-2 px-2.5 py-2">
+      <div className="flex min-w-22 flex-1 flex-col gap-0.5 rounded-lg border border-border bg-surface-2 px-2.5 py-2">
         <span className="truncate text-xs text-fg-muted">{label}</span>
         <span
           className={cn('text-2xl leading-[21px] font-bold', tone === 'danger' ? 'text-danger' : 'text-fg')}

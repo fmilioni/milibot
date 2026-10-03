@@ -76,47 +76,56 @@ export function SessionHeader({
     })
   }
 
-  const meta: React.ReactNode[] = []
+  const meta: { key: string; node: React.ReactNode }[] = []
   if (doing)
-    meta.push(
-      <span key="doing" className="truncate text-accent">
-        {doing}
-      </span>,
-    )
+    meta.push({
+      key: 'doing',
+      node: <span className="truncate text-accent">{doing}</span>,
+    })
   const helpers = finished ? 0 : (session.subagents?.running ?? 0)
   if (helpers > 0)
-    meta.push(
-      <span key="helpers" className="flex items-center gap-1 text-accent">
-        <Layers size={11} aria-hidden />
-        {t('session.helpersRunning', { count: helpers })}
-      </span>,
-    )
+    meta.push({
+      key: 'helpers',
+      node: (
+        <span className="flex items-center gap-1 text-accent">
+          <Layers size={11} aria-hidden />
+          {t('session.helpersRunning', { count: helpers })}
+        </span>
+      ),
+    })
   if (project)
-    meta.push(
-      <span key="project" className="truncate">
-        {project.name}
-      </span>,
-    )
+    meta.push({
+      key: 'project',
+      node: <span className="truncate">{project.name}</span>,
+    })
   if (session.branch || session.cwd) {
     const where = session.branch ?? session.cwd ?? ''
-    meta.push(
-      <Tooltip key="where" content={t('session.copyWhere', { value: where })}>
-        <button
-          type="button"
-          onClick={() => copyWithToast(where)}
-          className="no-drag focus-ring flex min-w-0 items-center gap-1 rounded font-mono hover:text-fg"
-        >
-          {session.branch ? <GitBranch size={11} aria-hidden /> : <FolderGit2 size={11} aria-hidden />}
-          <span className="max-w-[260px] truncate">{where}</span>
-        </button>
-      </Tooltip>,
-    )
+    meta.push({
+      key: 'where',
+      node: (
+        <Tooltip content={t('session.copyWhere', { value: where })}>
+          <button
+            type="button"
+            onClick={() => copyWithToast(where)}
+            className="no-drag focus-ring flex min-w-0 items-center gap-1 rounded font-mono hover:text-fg"
+          >
+            {session.branch ? <GitBranch size={11} aria-hidden /> : <FolderGit2 size={11} aria-hidden />}
+            <span className="max-w-[260px] truncate">{where}</span>
+          </button>
+        </Tooltip>
+      ),
+    })
   }
-  if (session.costUsd > 0) meta.push(<span key="cost">{formatUsd(session.costUsd, i18n.language)}</span>)
+  if (session.costUsd > 0)
+    meta.push({ key: 'cost', node: <span>{formatUsd(session.costUsd, i18n.language)}</span> })
   if (session.changes && session.changes.files > 0)
-    meta.push(
-      <DiffStat key="changes" added={session.changes.additions} removed={session.changes.deletions} />,
-    )
+    meta.push({
+      key: 'changes',
+      node: <DiffStat added={session.changes.additions} removed={session.changes.deletions} />,
+    })
+
+  // A narrow header keeps only where the session works (or what it is doing), so it stays readable.
+  const narrowMeta = meta.find((m) => m.key === 'where') ?? meta.find((m) => m.key === 'doing')
 
   return (
     <header
@@ -146,19 +155,32 @@ export function SessionHeader({
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
           <h1 className="min-w-12 truncate text-lg leading-[18px] font-semibold text-fg">{session.title}</h1>
-          <SessionStatusChip status={session.status} />
-          {session.model && <SessionModelBadge model={session.model} />}
+          {/* Below 384px the title keeps the room the status chip would take. */}
+          <span className="flex shrink-0 @max-sm:hidden">
+            <SessionStatusChip status={session.status} />
+          </span>
+          {session.model && (
+            <span className="flex shrink-0 @max-lg:hidden">
+              <SessionModelBadge model={session.model} />
+            </span>
+          )}
         </div>
         <span className="flex min-w-0 items-center overflow-hidden text-sm leading-4 text-fg-secondary">
-          {bot && <span className="shrink-0 font-medium">{bot.name}</span>}
+          {bot && <span className="shrink-0 font-medium @max-lg:hidden">{bot.name}</span>}
           {meta.map((item, i) => (
-            <span key={i} className="flex min-w-0 items-center">
+            <span
+              key={item.key}
+              className={cn('flex min-w-0 items-center', item !== narrowMeta && '@max-lg:hidden')}
+            >
               {(bot || i > 0) && (
-                <span className="shrink-0 px-1.5 text-fg-muted" aria-hidden>
+                <span
+                  className={cn('shrink-0 px-1.5 text-fg-muted', item === narrowMeta && '@max-lg:hidden')}
+                  aria-hidden
+                >
                   ·
                 </span>
               )}
-              {item}
+              {item.node}
             </span>
           ))}
         </span>

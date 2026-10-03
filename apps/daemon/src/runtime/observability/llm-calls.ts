@@ -42,6 +42,16 @@ function json(value: unknown): string | null {
   return value === undefined || value === null ? null : JSON.stringify(value)
 }
 
+/** The request as stored: Milibot's `instructionFiles` beside what was sent (read back by the debug view). */
+function withInstructionFiles(record: LlmCallRecord): unknown {
+  const files = record.instructionFiles
+  if (!files?.length) return record.request
+  const request = record.request
+  return request && typeof request === 'object' && !Array.isArray(request)
+    ? { ...request, instructionFiles: files }
+    : { request, instructionFiles: files }
+}
+
 /** The `llm_calls` log (with each call's per-model usage) and the spend sums read from it. */
 export class LlmCallStore {
   constructor(
@@ -94,7 +104,7 @@ export class LlmCallStore {
       record.providerId,
       record.providerType,
       record.model,
-      json(record.request),
+      json(withInstructionFiles(record)),
       json(record.response),
       record.usage.inputTokens,
       record.usage.cachedReadTokens,

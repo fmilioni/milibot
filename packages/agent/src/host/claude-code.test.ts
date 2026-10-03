@@ -903,6 +903,9 @@ describe('Claude Code in a work session lane', () => {
     })
     await sessionTurn(env, conversation.id, bot.id, 'comece')
     expect(append(0)).not.toContain('<repository_instructions')
+    expect(env.llmCalls.at(-1)?.instructionFiles).toEqual([
+      { path: `${wt}/CLAUDE.md`, bytes: 23, truncated: false, source: 'engine' },
+    ])
 
     env.repoInstructions = fakeRepoInstructions([wt], { [`${wt}/AGENTS.md`]: '# Only agents rules' })
     env.setSetting(cliKeys('claude_code').meta(sessionLaneKey(bot.id, 'wses_01CCSESSION')), null)
@@ -910,6 +913,9 @@ describe('Claude Code in a work session lane', () => {
     expect(backend.specs).toHaveLength(2)
     expect(append(1)).toContain(`<repository_instructions path="${wt}/AGENTS.md"`)
     expect(append(1)).toContain('# Only agents rules')
+    expect(env.llmCalls.at(-1)?.instructionFiles).toEqual([
+      { path: `${wt}/AGENTS.md`, bytes: 19, truncated: false, source: 'injected' },
+    ])
     expect(append(1).indexOf('<repository_instructions')).toBeGreaterThan(
       append(1).indexOf('# Session brief'),
     )

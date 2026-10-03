@@ -102,6 +102,12 @@ describe('repository instructions (native lanes)', () => {
     expect(textOf(daemon)).toContain('# Daemon rules')
     // One resolution per folder in the turn.
     expect(t.resolver.calls.slice(1)).toEqual([[`${WT}/apps/daemon`], [WT]])
+    // The call's record lists what its context carried.
+    expect(t.env.llmCalls.at(-1)?.instructionFiles).toEqual([
+      { path: `${WT}/CLAUDE.md`, bytes: 12, truncated: false, source: 'injected' },
+      { path: `${WT}/apps/daemon/CLAUDE.md`, bytes: 14, truncated: false, source: 'injected' },
+    ])
+    expect(t.env.llmCalls[0]?.instructionFiles).toEqual([])
   })
 
   it('chat: the next turn starts without them and loads them again when it works there', async () => {

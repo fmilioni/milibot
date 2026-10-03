@@ -5,6 +5,7 @@ import {
   type CliEngine,
   editedFiles,
   estimateTokens,
+  type InstructionFileInfo,
   LLM_CALL_RUNNING,
   type StepFileDiff,
 } from '@milibot/shared'
@@ -26,7 +27,7 @@ import type { AgentEnvironment, CliResolvedModel, LlmCallRecord, WorkSessionView
 import { memoryDigest } from '../../memory/bootstrap'
 import { sessionRules, subagentRules } from '../../prompts/lanes'
 import { projectNote, USER_WROTE_MEANWHILE_NOTE } from '../../prompts/notes'
-import { repoInstructionTexts } from '../../prompts/repo-instructions'
+import { loadedInstructionFiles, repoInstructionTexts } from '../../prompts/repo-instructions'
 import { introInstruction, personaSection, USER_TOOK_CONTROL_NOTE } from '../../prompts/rules'
 import type { HostContext } from '../context'
 import type { TurnEngine, TurnRun } from '../engines'
@@ -209,6 +210,26 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
     const cb = this.callbacks(bot, turn, lane, session !== null)
     const started = env.now()
     const purpose = request.trigger === 'intro' ? 'intro' : 'turn'
+    // What the CLI read by itself, what the process started with (a session's stored bootstrap) and what
+    // Milibot's tools brought this turn.
+    const instructionFiles = (): InstructionFileInfo[] => {
+      const appendix = helper
+        ? repoText
+        : session
+          ? (env.hostState.cliBootstrap(engine, laneKey)?.appendix ?? '')
+          : ''
+      const injected = new Map(loadedInstructionFiles(appendix).map((f) => [f.path, f]))
+      for (const file of turn.instructionFiles?.values() ?? []) injected.set(file.path, file)
+      return [
+        ...(repo?.engine ?? []).map((f) => ({
+          path: f.path,
+          bytes: f.bytes,
+          truncated: false,
+          source: 'engine' as const,
+        })),
+        ...[...injected.values()].map((f) => ({ ...f, source: 'injected' as const })),
+      ]
+    }
     const live = new LiveCall(
       env,
       (progress) => ({
@@ -223,6 +244,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         response: { requests: progress.requests, lastContextTokens: progress.lastContextTokens },
         ...progress.billing,
         contextComposition: null,
+        instructionFiles: instructionFiles(),
         stopReason: LLM_CALL_RUNNING,
         generationId: null,
         latencyMs: env.now() - started,
@@ -326,6 +348,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
         events: result.events,
       },
       ...result.billing,
+      instructionFiles: instructionFiles(),
       contextComposition: {
         ...cliComposition(
           { ...parts, base: baseTokens },

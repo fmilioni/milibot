@@ -6,6 +6,7 @@ import type {
   BotStatus,
   CliEngine,
   ConversationSummary,
+  InstructionFileInfo,
   Language,
   LlmCallModelUsage,
   LlmCallUsage,
@@ -60,6 +61,8 @@ export interface LlmCallRecord {
   error: string | null
   /** Per-model breakdown (Claude Code `modelUsage`); the call's totals are its sum. */
   models?: LlmCallModelUsage[]
+  /** Repository instruction files in the call's context (stored with the request). */
+  instructionFiles?: InstructionFileInfo[]
 }
 
 export interface ToolCallStart {

@@ -77,7 +77,7 @@ export function oneShotEstimate(
 /** Logs a native LLM call: its result, or the error it failed with (zero usage, the estimate as is). */
 export function recordNativeCall(
   env: Pick<Telemetry, 'recordLlmCall'>,
-  base: Pick<LlmCallRecord, 'botId' | 'conversationId' | 'turnId' | 'purpose'>,
+  base: Pick<LlmCallRecord, 'botId' | 'conversationId' | 'turnId' | 'purpose' | 'instructionFiles'>,
   resolved: Extract<ResolvedModel, { kind: 'native' }>,
   estimate: ContextComposition,
   outcome: { result: CompletionResult } | { error: unknown; latencyMs: number },

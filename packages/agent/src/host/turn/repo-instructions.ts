@@ -1,6 +1,6 @@
 import { posix } from 'node:path'
 
-import type { Bot } from '@milibot/shared'
+import type { Bot, InstructionFileInfo } from '@milibot/shared'
 
 import type { AgentEnvironment, RepoInstructionFile } from '../../environment'
 import type { ChatMessage, ContentPart, ToolCall } from '../../llm/messages'
@@ -78,6 +78,11 @@ export function instructionFilesIn(messages: readonly ChatMessage[]): Map<string
     for (const text of textsOf(message))
       for (const file of loadedInstructionFiles(text)) out.set(file.path, file)
   return out
+}
+
+/** The instruction files of a native call's context, for its record. */
+export function injectedInstructionFiles(messages: readonly ChatMessage[]): InstructionFileInfo[] {
+  return [...instructionFilesIn(messages).values()].map((f) => ({ ...f, source: 'injected' as const }))
 }
 
 /**

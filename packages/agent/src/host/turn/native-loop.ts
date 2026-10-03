@@ -13,7 +13,7 @@ import { isAbort } from '../state'
 import { compactSession } from '../work-sessions/session-compaction'
 import { nativeContext } from './native-context'
 import { recordNativeCall } from './one-shot'
-import { TurnInstructions } from './repo-instructions'
+import { injectedInstructionFiles, TurnInstructions } from './repo-instructions'
 
 const SUBAGENT_MAX_STEPS = 60
 
@@ -140,7 +140,13 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
         if (isAbort(err, signal)) return
         turn.llmCallId = recordNativeCall(
           env,
-          { botId: bot.id, conversationId: turn.conversationId, turnId: turn.id, purpose: 'turn' },
+          {
+            botId: bot.id,
+            conversationId: turn.conversationId,
+            turnId: turn.id,
+            purpose: 'turn',
+            instructionFiles: injectedInstructionFiles(messages),
+          },
           resolved,
           contextComposition,
           { error: err, latencyMs: env.now() - started },
@@ -173,6 +179,7 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
           conversationId: turn.conversationId,
           turnId: turn.id,
           purpose: request.trigger === 'intro' ? 'intro' : 'turn',
+          instructionFiles: injectedInstructionFiles(messages),
         },
         resolved,
         contextComposition,

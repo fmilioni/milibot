@@ -1,4 +1,9 @@
-import type { ConversationDebug, DebugTotals, DebugTurn } from '@milibot/shared'
+import {
+  type ConversationDebug,
+  type DebugTotals,
+  type DebugTurn,
+  InstructionFileInfo,
+} from '@milibot/shared'
 
 import { type Db, parseJson } from '../../db/sqlite'
 import { startOfLocalDay } from '../../util/time'
@@ -135,7 +140,8 @@ export class DebugStore {
   private latestComposition(conversationId: string): ConversationDebug['latestComposition'] {
     const rows = this.db
       .prepare(
-        `SELECT c.id, c.bot_id, c.model, c.created_at, c.context_composition FROM llm_calls c
+        `SELECT c.id, c.bot_id, c.model, c.created_at, c.context_composition,
+           json_extract(c.request_json, '$.instructionFiles') AS instruction_files FROM llm_calls c
          WHERE c.conversation_id = ? AND c.context_composition IS NOT NULL AND c.purpose IN ('turn', 'intro')
            AND c.created_at = (SELECT MAX(o.created_at) FROM llm_calls o WHERE o.conversation_id = c.conversation_id
              AND o.context_composition IS NOT NULL AND o.purpose IN ('turn', 'intro')
@@ -148,6 +154,7 @@ export class DebugStore {
       model: string
       created_at: number
       context_composition: string
+      instruction_files: string | null
     }>
     const seen = new Set<string | null>()
     return rows.flatMap((r) => {
@@ -157,9 +164,18 @@ export class DebugStore {
         r.context_composition,
         null,
       )
-      return composition
-        ? [{ llmCallId: r.id, botId: r.bot_id, model: r.model, createdAt: r.created_at, composition }]
-        : []
+      if (!composition) return []
+      const files = InstructionFileInfo.array().safeParse(parseJson<unknown>(r.instruction_files, []))
+      return [
+        {
+          llmCallId: r.id,
+          botId: r.bot_id,
+          model: r.model,
+          createdAt: r.created_at,
+          composition,
+          instructionFiles: files.success ? files.data : [],
+        },
+      ]
     })
   }
 }

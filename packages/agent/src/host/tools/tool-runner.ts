@@ -12,6 +12,7 @@ import { isBotLane, isScreenTool } from '../lanes'
 import { isAbort, type LaneState, StoppedError, type TurnState } from '../state'
 import { type HostTool, hostTools } from './host-tools'
 import { gateToolCall } from './tool-gate'
+import { isRepoInstructionText, loadedInstructionFiles } from '../../prompts/repo-instructions'
 
 function textOf(result: ToolResult): string {
   return textOfParts(result.content, '\n')
@@ -139,6 +140,11 @@ export class ToolRunner {
       }
     }
     if (turn) turn.consecutiveErrors = status === 'error' ? turn.consecutiveErrors + 1 : 0
+    if (turn)
+      for (const part of result.content)
+        if (part.type === 'text' && isRepoInstructionText(part.text))
+          for (const file of loadedInstructionFiles(part.text))
+            (turn.instructionFiles ??= new Map()).set(file.path, file)
     step.screenshotSha = result.screenshotSha ?? null
     if (result.activity) {
       step.detail = result.activity.detail

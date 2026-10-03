@@ -72,7 +72,7 @@ const textsOf = (message: ChatMessage): string[] =>
   message.content.flatMap((p: ContentPart) => (p.type === 'text' ? [p.text] : []))
 
 /** The instruction files already in a context (system, transcript, earlier tool results), by path. */
-export function instructionFilesIn(messages: readonly ChatMessage[]): Map<string, LoadedInstructionFile> {
+function instructionFilesIn(messages: readonly ChatMessage[]): Map<string, LoadedInstructionFile> {
   const out = new Map<string, LoadedInstructionFile>()
   for (const message of messages)
     for (const text of textsOf(message))

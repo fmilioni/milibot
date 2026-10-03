@@ -71,10 +71,21 @@ const ensured = new Set<string>()
 /** Number of the latest load of each cached entry (`area\nkey`): an older answer arriving later is dropped. */
 const loads = new Map<string, number>()
 
+/**
+ * `work_session.updated` events applied (`eventCount`) and the count when each session last got one. The event
+ * stream is ordered and carries every change, but an HTTP answer is not ordered with it: one read while an event
+ * was on its way can be older than that event (a stop answers with the lane still busy; the stopped turn's idle
+ * lane is announced right after), so it is dropped for that session.
+ */
+let eventCount = 0
+const lastEvent = new Map<string, number>()
+const freshSince = (sessionId: string, since: number) => (lastEvent.get(sessionId) ?? 0) <= since
+
 export const useSessionStore = create<SessionState>()((set, get) => {
   const { forWorkspace, isCurrent, commit } = createWorkspaceScope(get, set, () => {
     ensured.clear()
     loads.clear()
+    lastEvent.clear()
     return {
       sessions: {},
       details: {},
@@ -117,6 +128,11 @@ export const useSessionStore = create<SessionState>()((set, get) => {
     }
   }
 
+  /** A session the daemon answered with, read after `since` events: dropped when a newer event came meanwhile. */
+  const upsertAnswer = (session: WorkSession, since: number) => {
+    if (freshSince(session.id, since)) upsert(session)
+  }
+
   /** Starts a load of `key` in `area`: its answer is written only if the workspace is still shown and no newer
    *  load of the same entry started meanwhile (events can ask again before the previous answer is back). */
   const latest = (workspaceId: string, area: string, key: string) => {
@@ -149,9 +165,10 @@ export const useSessionStore = create<SessionState>()((set, get) => {
       set({ listLoading: true, filters })
       try {
         const query = Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) as SessionFilters
+        const since = eventCount
         const sessions = await api().call('listWorkSessions', { params: { workspaceId }, query })
         if (!isCurrent(workspaceId) || get().filters !== filters) return
-        for (const session of sessions) upsert(session)
+        for (const session of sessions) upsertAnswer(session, since)
         set({ list: newestFirst(sessions).map((s) => s.id) })
       } finally {
         set({ listLoading: false })
@@ -160,6 +177,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
 
     async loadOpen(workspaceId) {
       forWorkspace(workspaceId)
+      const since = eventCount
       const lists = await Promise.all(
         OPEN_SESSION_STATUSES.map((status) =>
           api().call('listWorkSessions', { params: { workspaceId }, query: { status } }),
@@ -167,17 +185,18 @@ export const useSessionStore = create<SessionState>()((set, get) => {
       )
       if (!isCurrent(workspaceId)) return
       const open = lists.flat()
-      for (const session of open) upsert(session)
+      for (const session of open) upsertAnswer(session, since)
       // Open ones missing from the lists ended while the event stream was down.
       const openIds = new Set(open.map((s) => s.id))
       const stale = Object.values(get().sessions).filter(
         (s) => !isSessionFinished(s.status) && !openIds.has(s.id),
       )
+      const staleSince = eventCount
       for (const session of stale)
         void api()
           .call('getWorkSession', { params: { workspaceId, sessionId: session.id } })
           .then((fresh) => {
-            if (isCurrent(workspaceId)) upsert(fresh)
+            if (isCurrent(workspaceId)) upsertAnswer(fresh, staleSince)
           })
           .catch((err: unknown) => {
             if (err instanceof ApiError && err.code === 'not_found' && isCurrent(workspaceId))
@@ -194,19 +213,25 @@ export const useSessionStore = create<SessionState>()((set, get) => {
       if (ensured.has(key)) return
       ensured.add(key)
       forWorkspace(workspaceId)
+      const since = eventCount
       void api()
         .call('getWorkSession', { params: { workspaceId, sessionId } })
         .then((session) => {
-          if (isCurrent(workspaceId)) upsert(session)
+          if (isCurrent(workspaceId)) upsertAnswer(session, since)
         })
         .catch(() => undefined)
     },
 
     async loadDetail(workspaceId, sessionId) {
       forWorkspace(workspaceId)
+      const since = eventCount
       const detail = await api().call('getWorkSession', { params: { workspaceId, sessionId } })
-      if (commit(workspaceId, () => ({ details: { ...get().details, [sessionId]: detail } }))) upsert(detail)
-      return detail
+      const fresh = freshSince(sessionId, since)
+      // A newer event already put the session itself in the store: only the steps come from this answer.
+      const shown = fresh ? detail : { ...detail, ...get().sessions[sessionId] }
+      if (commit(workspaceId, () => ({ details: { ...get().details, [sessionId]: shown } })) && fresh)
+        upsert(detail)
+      return shown
     },
 
     async loadChanges(workspaceId, sessionId) {
@@ -243,7 +268,8 @@ export const useSessionStore = create<SessionState>()((set, get) => {
     },
 
     async stop(workspaceId, sessionId) {
-      upsert(await api().call('stopWorkSession', { params: { workspaceId, sessionId } }))
+      const since = eventCount
+      upsertAnswer(await api().call('stopWorkSession', { params: { workspaceId, sessionId } }), since)
     },
 
     async remove(workspaceId, sessionId) {
@@ -254,8 +280,9 @@ export const useSessionStore = create<SessionState>()((set, get) => {
       forWorkspace(workspaceId)
       const known = Object.values(get().sessions).find((s) => s.conversationId === conversationId)
       if (known) return known
+      const since = eventCount
       const sessions = await api().call('listWorkSessions', { params: { workspaceId }, query: { botId } })
-      for (const session of sessions) upsert(session)
+      for (const session of sessions) upsertAnswer(session, since)
       return sessions.find((s) => s.conversationId === conversationId) ?? null
     },
 
@@ -266,6 +293,7 @@ export const useSessionStore = create<SessionState>()((set, get) => {
         case 'work_session.updated': {
           const { session } = event.payload
           const previous = get().sessions[session.id]
+          lastEvent.set(session.id, ++eventCount)
           upsert(session)
           const stepsChanged =
             previous?.steps.done !== session.steps.done || previous.steps.total !== session.steps.total

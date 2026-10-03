@@ -95,10 +95,10 @@ export const mcpServerTools = defineTools({
   },
   labels: {
     mcp_server_list: 'MCP servers',
-    mcp_server_add: 'MCP server added',
-    mcp_server_update: 'MCP server changed',
-    mcp_server_remove: 'MCP server removed',
-    mcp_server_test: 'MCP server tested',
+    mcp_server_add: 'MCP server add',
+    mcp_server_update: 'MCP server change',
+    mcp_server_remove: 'MCP server removal',
+    mcp_server_test: 'MCP server test',
     mcp_server_connect: 'MCP sign-in',
   },
 })

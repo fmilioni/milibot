@@ -247,6 +247,31 @@ describe('bots managing MCP servers', () => {
     expect((await card('mcp_sign_in')).payload).toMatchObject({ status: 'failed', error: 'denied' })
   })
 
+  it('keeps a secret a failing server echoes back out of its connection state', async () => {
+    http = createServer((req, res) => {
+      res.writeHead(500, { 'content-type': 'text/plain' }).end(`bad auth: ${req.headers.authorization}`)
+    })
+    await new Promise<void>((resolve) => http?.listen(0, '127.0.0.1', resolve))
+    const address = http.address() as { port: number }
+    await boot([])
+    const created = await call<McpServer>(
+      'createMcpServer',
+      {},
+      {
+        name: 'Echo',
+        transport: 'http',
+        url: `http://127.0.0.1:${address.port}/mcp`,
+        headers: [{ name: 'Authorization', value: `Bearer ${TOKEN}`, secret: true }],
+        allowedBots: [chiefId],
+      },
+    )
+    await call('testMcpServer', { serverId: created.id })
+    const [server] = await servers()
+    expect(server?.state.error).toContain('bad auth: ')
+    expect(JSON.stringify(server)).not.toContain(TOKEN)
+    expect(JSON.stringify(h.events)).not.toContain(TOKEN)
+  })
+
   it('reports a rejection, and an approval that comes after the tool stopped waiting as a new turn', async () => {
     const url = await startHttp(TOKEN)
     await boot([

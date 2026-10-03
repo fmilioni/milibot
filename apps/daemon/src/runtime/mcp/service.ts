@@ -18,6 +18,7 @@ import {
   type LogFn,
   type mcpEndpoints,
   type McpServer,
+  type McpServerState,
   type McpTestResult,
   redactSecrets,
   type UpdateMcpServerBody,
@@ -172,8 +173,14 @@ export class McpService {
     }
   }
 
+  /** Servers often echo the request in their errors, credentials included. */
+  private state(id: string): McpServerState {
+    const state = this.manager.state(id)
+    return state.error ? { ...state, error: this.redact(state.error) } : state
+  }
+
   private server(id: string): McpServer {
-    return this.withOAuth(this.store.get(id, this.manager.state(id)))
+    return this.withOAuth(this.store.get(id, this.state(id)))
   }
 
   private announce(id: string): void {
@@ -313,7 +320,7 @@ export class McpService {
   }
 
   listServers(): McpServer[] {
-    return this.store.list((id) => this.manager.state(id)).map((s) => this.withOAuth(s))
+    return this.store.list((id) => this.state(id)).map((s) => this.withOAuth(s))
   }
 
   getServer(id: string): McpServer {

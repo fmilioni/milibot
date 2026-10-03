@@ -132,9 +132,9 @@ export function shortFilePath(path: string): string {
 }
 
 /** Narrowest the session screen's side panel gets while it is shown. */
-export const PANEL_MIN_WIDTH = 360
+const PANEL_MIN_WIDTH = 360
 /** Room the session's conversation keeps beside the side panel (the debug panel's width leaves it too). */
-export const CONVERSATION_MIN_WIDTH = 420
+const CONVERSATION_MIN_WIDTH = 420
 
 /** Width of the side panel within the session screen's `available` width, leaving room for the conversation. */
 export function clampPanelWidth(width: number, available: number): number {

@@ -307,7 +307,19 @@
       "board_search": "Searched the boards: {{detail}}",
       "board_search_empty": "Searched the boards",
       "list_models": "Listed models “{{detail}}”",
-      "list_models_empty": "Listed the available models"
+      "list_models_empty": "Listed the available models",
+      "mcp_server_list": "Checked the MCP servers",
+      "mcp_server_list_empty": "Checked the MCP servers",
+      "mcp_server_add": "Asked to add the MCP server {{detail}}",
+      "mcp_server_add_empty": "Asked to add an MCP server",
+      "mcp_server_update": "Asked to change the MCP server “{{detail}}”",
+      "mcp_server_update_empty": "Asked to change an MCP server",
+      "mcp_server_remove": "Asked to remove the MCP server “{{detail}}”",
+      "mcp_server_remove_empty": "Asked to remove an MCP server",
+      "mcp_server_test": "Tested the MCP server “{{detail}}”",
+      "mcp_server_test_empty": "Tested an MCP server",
+      "mcp_server_connect": "Asked to sign in to the MCP server “{{detail}}”",
+      "mcp_server_connect_empty": "Asked to sign in to an MCP server"
     },
     "showDesign": "See design",
     "openDesign": "Open the design"
@@ -338,7 +350,10 @@
       "remove_member": "{{name}} wants to remove {{botName}} from {{groupName}}",
       "update_prompt": "{{name}} wants to update the prompt of {{botName}}",
       "update_prompt_own": "{{name}} wants to update its own prompt",
-      "continue_bot_exchange": "{{name}} and {{botName}} have been going back and forth without you"
+      "continue_bot_exchange": "{{name}} and {{botName}} have been going back and forth without you",
+      "mcp_add": "{{name}} wants to add the MCP server {{serverName}}",
+      "mcp_update": "{{name}} wants to change the MCP server {{serverName}}",
+      "mcp_remove": "{{name}} wants to remove the MCP server {{serverName}}"
     },
     "status": {
       "pending": "Waiting",
@@ -350,7 +365,10 @@
       "remove_member": "Remove",
       "delete_bot": "Delete",
       "update_prompt": "Approve",
-      "continue_bot_exchange": "Continue"
+      "continue_bot_exchange": "Continue",
+      "mcp_add": "Add",
+      "mcp_update": "Change",
+      "mcp_remove": "Remove"
     },
     "rejectActions": {
       "continue_bot_exchange": "Stop"
@@ -360,6 +378,20 @@
         "approved": "You let them continue",
         "rejected": "You stopped them"
       }
+    },
+    "mcp": {
+      "remote": "Address",
+      "command": "Command",
+      "name": "New name",
+      "headers": "Headers",
+      "env": "Variables",
+      "bots": "Bots",
+      "allBots": "All bots",
+      "enabled": "On",
+      "on": "Yes",
+      "off": "No",
+      "keep": "keeps the saved value",
+      "secret": "secret {{name}}"
     }
   },
   "error": {
@@ -576,5 +608,19 @@
   "designPresence": "{{name}} is editing {{design}}",
   "designPresenceOpen": "Open",
   "showMore": "Show more",
-  "showLess": "Show less"
+  "showLess": "Show less",
+  "mcpSignIn": {
+    "title": "Sign in to the MCP server {{serverName}}",
+    "hint": "Opens in your computer’s browser. Come back here when you are done.",
+    "open": "Sign in",
+    "status": {
+      "pending": "Waiting for sign-in",
+      "connected": "Connected",
+      "failed": "Failed",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "account": "Connected as {{account}}",
+    "preview": "Sign-in to the MCP server {{serverName}}"
+  }
 }

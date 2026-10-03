@@ -6,6 +6,7 @@ import { browserTools } from './families/browser'
 import { designTools } from './families/design'
 import { imageTools } from './families/images'
 import { knowledgeTools } from './families/knowledge'
+import { mcpServerTools } from './families/mcp-servers'
 import { planTools } from './families/plans'
 import { projectTools } from './families/projects'
 import { routineTools } from './families/routines'
@@ -55,6 +56,7 @@ export const TOOL_FAMILIES = {
   boards: [...boardTools.names],
   web_search: ['web_search'],
   image_generation: [...imageTools.names],
+  mcp_servers: [...mcpServerTools.names],
 } satisfies Record<string, ToolName[]>
 
 export type ToolFamily = keyof typeof TOOL_FAMILIES
@@ -77,7 +79,7 @@ export function toolFamily(name: string): ToolFamily | null {
 /**
  * Tools that only make sense in one kind of lane: opening sessions from the chat and closing them from
  * inside one. A helper does one task: no user, no plan, no helpers of its own, and no changes to the team,
- * its persona, routines or projects.
+ * its persona, routines, projects or MCP servers.
  * `without`: removed from the full set; `keep`: what the lane's own rules rely on, offered even when its
  * skill is off.
  */
@@ -114,6 +116,7 @@ const LANE_TOOLS: Record<LaneKind, { without: ToolName[]; keep: ToolName[] }> = 
       'board_create',
       'board_update',
       'board_delete',
+      ...mcpServerTools.names.filter((name) => name !== 'mcp_server_list'),
     ],
     keep: [],
   },

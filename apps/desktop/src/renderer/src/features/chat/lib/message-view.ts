@@ -7,6 +7,7 @@ import {
   DesignPayload,
   ErrorPayload,
   GeneratedImagesPayload,
+  McpSignInPayload,
   type Message,
   type MessageAttachment,
   PlanPayload,
@@ -57,6 +58,7 @@ export type MessageView =
   | { type: 'design'; payload: DesignPayload }
   | { type: 'board'; payload: BoardPayload }
   | { type: 'generated_images'; payload: GeneratedImagesPayload }
+  | { type: 'mcp_sign_in'; payload: McpSignInPayload }
 
 const CARD_PARSERS = [
   ['activity', ActivityPayload],
@@ -79,6 +81,7 @@ const CARD_PARSERS = [
   ['design', DesignPayload],
   ['board', BoardPayload],
   ['generated_images', GeneratedImagesPayload],
+  ['mcp_sign_in', McpSignInPayload],
 ] as const
 
 /** Picks the renderer for a message; anything unknown degrades to its plain-text `content`. */

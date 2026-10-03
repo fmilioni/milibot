@@ -20,6 +20,7 @@ import type { McpSignInOutcome } from './oauth'
 import type { McpService } from './service'
 import {
   connectedText,
+  goneText,
   noSignInText,
   pendingText,
   rejectedText,
@@ -258,7 +259,15 @@ export class McpAdmin {
     const proposal = this.proposalOf(input.data)
     const bot = this.deps.findBot(input.requesterId)
     if (!proposal || !bot) return
-    if (proposal.kind !== 'add') this.deps.mcp.getServer(proposal.serverId)
+    if (proposal.kind !== 'add') {
+      try {
+        this.deps.mcp.getServer(proposal.serverId)
+      } catch (err) {
+        const name = input.params.serverName ?? ''
+        this.settle(input.confirmationId, bot.id, input.conversationId, goneText(proposal.kind, name))
+        throw err
+      }
+    }
     void this.apply(bot, input.conversationId, proposal)
       .catch((err: unknown) => {
         this.deps.log('warn', 'mcp server change failed', { err: errorMessage(err) })

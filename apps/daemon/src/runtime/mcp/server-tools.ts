@@ -14,7 +14,7 @@ import { type Bot, type BotScope, type McpServer, type McpTransport, secretRefRe
 import { DaemonError } from '../../errors'
 import { resolveByRef, type ToolHandlers, ToolSwitch } from '../tools-core'
 import type { McpAdmin, McpCardDetails, ProposedChanges, ProposedKeyValue, ProposedServer } from './admin'
-import type { McpStore } from './store'
+import { McpStore } from './store'
 import { listText } from './texts'
 
 /** Names of headers and variables that carry credentials: their values must come by reference. */
@@ -51,9 +51,9 @@ export class McpServerTools extends ToolSwitch {
         ),
       )
     },
-    mcp_server_test: async (_ctx, a) => toolText(await this.deps.admin.test(this.server(a).id)),
+    mcp_server_test: async (ctx, a) => toolText(await this.deps.admin.test(this.usable(ctx, a).id)),
     mcp_server_connect: async (ctx, a) => {
-      const server = this.server(a)
+      const server = this.usable(ctx, a)
       if (server.transport !== 'http')
         throw new ToolInputError(`${server.name} runs in the VM: only remote servers sign in`)
       return toolText(await this.deps.admin.connect(ctx, server.id))
@@ -80,6 +80,35 @@ export class McpServerTools extends ToolSwitch {
     throw new DaemonError('not_found', `No MCP server named "${ref}". Use mcp_server_list to see them.`)
   }
 
+  /** Testing and signing in act on the server's connection: only for the bots that can use it. */
+  private usable(ctx: ToolExecContext, a: ToolArgs): McpServer {
+    const server = this.server(a)
+    if (!McpStore.allows(server.allowedBots, ctx.bot.id))
+      throw new ToolInputError(
+        `${server.name} is not enabled for you: ask the user to allow you on it (mcp_server_update with "bots")`,
+      )
+    return server
+  }
+
+  private knownSecrets(): string[] {
+    return this.deps.secretValues().filter((v) => v.length >= MIN_KNOWN_SECRET)
+  }
+
+  /** `url`, `command` and `args` are stored and shown as they are: they can carry no secret. */
+  private plain(field: string, value: string): string {
+    if (refNames(value).length)
+      throw new ToolInputError(
+        `"${field}" cannot take {{secret:NAME}}: pass secrets only in "headers" (remote) or "env" (command), ` +
+          'e.g. a header "Authorization: Bearer {{secret:NAME}}".',
+      )
+    if (this.knownSecrets().some((secret) => value.includes(secret)))
+      throw new ToolInputError(
+        `"${field}" looks like it carries a credential: never pass it as text. Get it with request_secret and ` +
+          'pass {{secret:NAME}} in "headers" (remote) or "env" (command) instead.',
+      )
+    return value
+  }
+
   private reason(a: ToolArgs): string {
     return optionalString(a, 'reason')?.slice(0, 300) ?? ''
   }
@@ -98,6 +127,8 @@ export class McpServerTools extends ToolSwitch {
   ): { transport: McpTransport; url: string | null; command: string | null } | null {
     const url = optionalString(a, 'url')?.trim() || null
     const command = optionalString(a, 'command')?.trim() || null
+    if (url) this.plain('url', url)
+    if (command) this.plain('command', command)
     if (url && command)
       throw new ToolInputError('Give either "url" (remote) or "command" (run in the VM), not both')
     if (!url && !command) {
@@ -112,7 +143,7 @@ export class McpServerTools extends ToolSwitch {
     if (a.args === undefined) return undefined
     if (!Array.isArray(a.args) || a.args.some((v) => typeof v !== 'string'))
       throw new ToolInputError('"args" must be a list of strings')
-    return a.args as string[]
+    return (a.args as string[]).map((arg) => this.plain('args', arg))
   }
 
   /** `[{name, value}]` (or `{NAME: value}`); every value checked so that no secret comes as plain text. */
@@ -127,7 +158,7 @@ export class McpServerTools extends ToolSwitch {
     if (!Array.isArray(raw) && typeof raw !== 'object')
       throw new ToolInputError(`"${key}" must be a list of {name, value}`)
     const available = new Set(this.deps.secretNames(ctx.bot))
-    const known = this.deps.secretValues().filter((v) => v.length >= MIN_KNOWN_SECRET)
+    const known = this.knownSecrets()
     return items.map((item): ProposedKeyValue => {
       const entry = (item && typeof item === 'object' ? item : {}) as ToolArgs
       const name = textArg(entry, 'name')

@@ -62,6 +62,11 @@ export function rejectedText(kind: 'add' | 'update' | 'remove', name: string): s
   return `The user rejected ${what} the MCP server ${name}. Nothing changed.`
 }
 
+export function goneText(kind: 'update' | 'remove', name: string): string {
+  const what = kind === 'update' ? 'change' : 'removal'
+  return `The MCP server ${name} no longer exists, so the ${what} the user approved was not applied. Nothing changed.`
+}
+
 export function removedText(name: string): string {
   return `Removed the MCP server ${name}; its tools are gone for every bot.`
 }

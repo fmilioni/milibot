@@ -14,11 +14,10 @@ import { type Bot, type BotScope, type McpServer, type McpTransport, secretRefRe
 import { DaemonError } from '../../errors'
 import { resolveByRef, type ToolHandlers, ToolSwitch } from '../tools-core'
 import type { McpAdmin, McpCardDetails, ProposedChanges, ProposedKeyValue, ProposedServer } from './admin'
+import { credentialInText, SECRET_NAME } from './credential-text'
 import { McpStore } from './store'
 import { listText } from './texts'
 
-/** Names of headers and variables that carry credentials: their values must come by reference. */
-const SECRET_NAME = /auth|token|secret|key|pass(word|wd)?|pwd|cookie|credential|session|bearer|signature/i
 /** Shorter known values are too likely to appear by chance in a plain value. */
 const MIN_KNOWN_SECRET = 8
 
@@ -94,19 +93,26 @@ export class McpServerTools extends ToolSwitch {
     return this.deps.secretValues().filter((v) => v.length >= MIN_KNOWN_SECRET)
   }
 
-  /** `url`, `command` and `args` are stored and shown as they are: they can carry no secret. */
-  private plain(field: string, value: string): string {
-    if (refNames(value).length)
+  /**
+   * `url`, `command` and `args` are stored and shown as they are: they can carry no secret, neither one the
+   * workspace holds nor a literal written where a credential goes (`?api_key=`, `user:pass@`, `--token X`).
+   */
+  private plain(field: string, parts: string[]): void {
+    if (parts.some((part) => refNames(part).length))
       throw new ToolInputError(
         `"${field}" cannot take {{secret:NAME}}: pass secrets only in "headers" (remote) or "env" (command), ` +
           'e.g. a header "Authorization: Bearer {{secret:NAME}}".',
       )
-    if (this.knownSecrets().some((secret) => value.includes(secret)))
+    const known = this.knownSecrets()
+    const found = parts.some((part) => known.some((secret) => part.includes(secret)))
+      ? 'a saved secret'
+      : credentialInText(parts)
+    if (found)
       throw new ToolInputError(
-        `"${field}" looks like it carries a credential: never pass it as text. Get it with request_secret and ` +
-          'pass {{secret:NAME}} in "headers" (remote) or "env" (command) instead.',
+        `"${field}" looks like it carries a credential (${found}): never pass it as text. Ask the user for it ` +
+          'with request_secret and pass {{secret:NAME}} in "headers" (remote) or "env" (command) instead, ' +
+          'e.g. a header "Authorization: Bearer {{secret:NAME}}" or a variable API_KEY={{secret:NAME}}.',
       )
-    return value
   }
 
   private reason(a: ToolArgs): string {
@@ -127,8 +133,8 @@ export class McpServerTools extends ToolSwitch {
   ): { transport: McpTransport; url: string | null; command: string | null } | null {
     const url = optionalString(a, 'url')?.trim() || null
     const command = optionalString(a, 'command')?.trim() || null
-    if (url) this.plain('url', url)
-    if (command) this.plain('command', command)
+    if (url) this.plain('url', [url])
+    if (command) this.plain('command', command.split(/\s+/))
     if (url && command)
       throw new ToolInputError('Give either "url" (remote) or "command" (run in the VM), not both')
     if (!url && !command) {
@@ -143,7 +149,9 @@ export class McpServerTools extends ToolSwitch {
     if (a.args === undefined) return undefined
     if (!Array.isArray(a.args) || a.args.some((v) => typeof v !== 'string'))
       throw new ToolInputError('"args" must be a list of strings')
-    return (a.args as string[]).map((arg) => this.plain('args', arg))
+    const args = a.args as string[]
+    this.plain('args', args)
+    return args
   }
 
   /** `[{name, value}]` (or `{NAME: value}`); every value checked so that no secret comes as plain text. */

@@ -75,6 +75,73 @@ describe('McpServerTools', () => {
     expect(update.propose).not.toHaveBeenCalled()
   })
 
+  it('refuses credentials written as text in the url, command and args, even when not saved', async () => {
+    const { run, propose } = setup()
+    const literal = 'Zx9-literal-not-saved'
+    const refused: [Record<string, unknown>, RegExp][] = [
+      [{ url: `https://x.dev/mcp?api_key=${literal}` }, /query parameter "api_key"/],
+      [{ url: `https://x.dev/mcp?org=a&token=${literal}` }, /query parameter "token"/],
+      [{ url: `https://x.dev/mcp?access_token=${literal}` }, /query parameter "access_token"/],
+      [{ url: `https://x.dev/mcp?key=${literal}` }, /query parameter "key"/],
+      [{ url: `https://x.dev/mcp?client_secret=${literal}` }, /query parameter "client_secret"/],
+      [{ url: `https://x.dev/mcp?password=${literal}` }, /query parameter "password"/],
+      [{ url: `https://x.dev/mcp#access_token=${literal}` }, /query parameter "access_token"/],
+      [{ url: `https://ana:${literal}@x.dev/mcp` }, /user and password/],
+      [{ url: `https://${literal}@x.dev/mcp` }, /user and password/],
+      [{ url: 'https://x.dev/mcp/ghp_abcdefghijklmnopqrstuvwxyz0123456789' }, /API key or token/],
+      [{ command: 'npx', args: ['-y', 'srv', `--token=${literal}`] }, /flag "--token"/],
+      [{ command: 'npx', args: ['-y', 'srv', '--token', literal] }, /flag "--token"/],
+      [{ command: 'npx', args: ['srv', '--api-key', literal] }, /flag "--api-key"/],
+      [{ command: 'npx', args: ['srv', '--password', literal] }, /flag "--password"/],
+      [{ command: 'npx', args: ['srv', `-access_token=${literal}`] }, /flag "--access_token"/],
+      [{ command: 'npx', args: ['srv', `API_KEY=${literal}`] }, /"API_KEY"/],
+      [{ command: 'npx', args: ['srv', `GITHUB_TOKEN=${literal}`] }, /"GITHUB_TOKEN"/],
+      [{ command: 'npx', args: ['mcp-remote', `https://x.dev/sse?apikey=${literal}`] }, /"apikey"/],
+      [
+        { command: 'npx', args: ['mcp-remote', '--header', `Authorization: Bearer ${literal}`] },
+        /"Authorization"/,
+      ],
+      [{ command: 'npx', args: ['srv', 'sk-proj-abcdefghijklmnopqrstuvwxyz'] }, /API key or token/],
+      [{ command: `srv --token ${literal}` }, /"command" looks like.*flag "--token"/],
+    ]
+    for (const [args, reason] of refused) {
+      const result = text(await run('mcp_server_add', { name: 'D', ...args }))
+      expect(result, JSON.stringify(args)).toMatch(/"(url|command|args)" looks like it carries a credential/)
+      expect(result, JSON.stringify(args)).toMatch(reason)
+      expect(result).toMatch(/request_secret.*\{\{secret:NAME\}\}/)
+      expect(result).not.toContain(literal)
+    }
+    const server = { id: 'mcp_1', name: 'Files', slug: 'files', transport: 'stdio_vm', args: [] }
+    const update = setup([server as unknown as McpServer])
+    const changed = await update.run('mcp_server_update', { server: 'files', args: ['--api-key', literal] })
+    expect(text(changed)).toMatch(/"args" looks like.*flag "--api-key"/)
+    expect(propose).not.toHaveBeenCalled()
+    expect(update.propose).not.toHaveBeenCalled()
+  })
+
+  it('accepts url, command and args that only name or point to a credential', async () => {
+    const { run, propose } = setup()
+    const accepted: Record<string, unknown>[] = [
+      { url: 'https://x.dev/mcp' },
+      { url: 'https://x.dev/mcp?org=acme&region=us&keyboard=true' },
+      { url: 'https://x.dev/mcp?auth=oauth&session=true' },
+      { url: 'https://x.dev/auth/token/mcp' },
+      { command: 'npx', args: ['-y', '@acme/key-value-mcp', '--port', '3000'] },
+      { command: 'npx', args: ['srv', '--token-file', '/run/secrets/token'] },
+      { command: 'npx', args: ['srv', '--api-key-env', 'API_KEY', '--auth-type', 'bearer'] },
+      { command: 'npx', args: ['srv', '--key', './certs/client.key', '--no-auth'] },
+      { command: 'npx', args: ['srv', '--token', '$GITHUB_TOKEN', '--auth', '--verbose'] },
+      {
+        command: 'npx',
+        args: ['mcp-remote', 'https://x.dev/sse', '--header', 'Authorization:${AUTH_HEADER}'],
+      },
+      { command: 'npx', args: ['srv', 'MODE=production', 'API_KEY=${API_KEY}'] },
+    ]
+    for (const args of accepted)
+      expect(text(await run('mcp_server_add', { name: 'D', ...args })), JSON.stringify(args)).toBe('proposed')
+    expect(propose).toHaveBeenCalledTimes(accepted.length)
+  })
+
   it('proposes a server for the calling bot by default, with the card details', async () => {
     const { run, propose } = setup()
     await run('mcp_server_add', {

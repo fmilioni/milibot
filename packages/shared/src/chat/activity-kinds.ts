@@ -118,6 +118,8 @@ export const ACTIVITY_STEP_KINDS = [
   'board_comment',
   'board_link',
   'board_search',
+  'workspace_settings_get',
+  'workspace_settings_update',
 ] as const
 
 /** A readable tool name when nothing else is known: "list_bots" → "list bots", "NotebookRead" → "Notebook Read". */

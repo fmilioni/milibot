@@ -20,6 +20,7 @@ import { subagentTools } from './families/subagents'
 import { teamTools } from './families/team'
 import { userRequestTools } from './families/user-requests'
 import { webTools } from './families/web'
+import { workspaceSettingsTools } from './families/workspace-settings'
 
 /**
  * Every tool family, in the order models see the tools (a change of order changes every CLI session's
@@ -47,6 +48,7 @@ export const TOOL_CATALOG = [
   boardTools,
   imageTools,
   subagentTools,
+  workspaceSettingsTools,
 ] as const
 
 export const TOOL_DEFINITIONS = {
@@ -71,6 +73,7 @@ export const TOOL_DEFINITIONS = {
   ...boardTools.definitions,
   ...imageTools.definitions,
   ...subagentTools.definitions,
+  ...workspaceSettingsTools.definitions,
 } satisfies Record<string, ToolDefinition>
 
 export type ToolName = keyof typeof TOOL_DEFINITIONS

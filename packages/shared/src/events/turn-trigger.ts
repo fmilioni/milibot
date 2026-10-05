@@ -10,7 +10,9 @@ import { z } from 'zod'
  * brief is the `session_brief` card in the session's conversation); `session_finished`: a work session the bot
  * started ended, in the chat where it started (the result is the turn's note); `subagent`: a helper doing one
  * task for a work session (`subagent` tool), whose text goes back to the session instead of the chat;
- * `after_current_work`: the bot's other work it set a request aside for finished (the request is the turn's note).
+ * `after_current_work`: the bot is free again after setting a request aside (the request is the turn's note);
+ * `idle_watch`: a bot has stayed stopped with set-aside requests past the idle watch's limit (told to the bot the
+ * watch reports to, in its conversation with that bot; the details are the turn's note).
  */
 export const TurnTrigger = z.enum([
   'user_message',
@@ -25,5 +27,6 @@ export const TurnTrigger = z.enum([
   'session_finished',
   'subagent',
   'after_current_work',
+  'idle_watch',
 ])
 export type TurnTrigger = z.infer<typeof TurnTrigger>

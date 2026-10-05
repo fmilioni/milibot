@@ -106,6 +106,16 @@ export class PlanStore {
       .all(botId) as PlanRow[]
   }
 
+  /** The bot's plans awaiting approval, approved or executing, oldest first. */
+  unfinished(botId: string): PlanRow[] {
+    return this.db
+      .prepare(
+        `SELECT * FROM plans WHERE bot_id = ? AND deleted_at IS NULL
+         AND status IN ('awaiting_approval', 'approved', 'executing') ORDER BY created_at`,
+      )
+      .all(botId) as PlanRow[]
+  }
+
   list(query: ListPlansQuery): PlanRow[] {
     const where = ['deleted_at IS NULL']
     const args: unknown[] = []

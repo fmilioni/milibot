@@ -16,6 +16,7 @@ import type {
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { toApiError } from '../../../src/errors'
 import type { WorkspaceRuntime } from '../../../src/runtime/runtime'
 import type { MemorySecretStore } from '../../../src/secrets/secret-store'
 import { buildServer } from '../../fixtures/mcp-test-server.mjs'
@@ -36,6 +37,20 @@ let chiefId: string
 let chiefDm: string
 let requests: CompletionRequest[]
 let http: Server | null = null
+let logs: string[] = []
+
+/** HTTP server answering every request with a 500 that echoes the Authorization header back. */
+async function echoingServer(): Promise<string> {
+  http = createServer((req, res) => {
+    res
+      .writeHead(500, { 'content-type': 'text/plain' })
+      .end(`rejected Authorization: ${req.headers.authorization}`)
+  })
+  await new Promise<void>((resolve) => http?.listen(0, '127.0.0.1', resolve))
+  const address = http.address()
+  if (!address || typeof address === 'string') throw new Error('no address')
+  return `http://127.0.0.1:${address.port}/mcp`
+}
 
 const dir = useTempDir('mcp')
 afterEach(async () => {
@@ -49,8 +64,10 @@ type Step = { text?: string; toolCalls?: Array<{ name: string; arguments?: unkno
 
 async function boot(script: Step[] = [{ text: 'ok' }]) {
   requests = []
+  logs = []
   h = await bootRuntime({
     dir: dir(),
+    runtime: { log: (level, message, extra) => logs.push(JSON.stringify({ level, message, extra })) },
     host: { compaction: false },
     script: (request) => {
       if (request.tools.length === 0) return { text: 'Hi!' }
@@ -235,6 +252,97 @@ describe('external MCP servers', () => {
     })
     for (const leak of [tested, draft, requests, toolCalls, llmCalls])
       expect(JSON.stringify(leak)).not.toContain(token)
+  })
+
+  it('redacts a secret header echoed back in a server error from its state, events, API and logs', async () => {
+    await boot()
+    const token = 'echoed_secret_456'
+    const url = await echoingServer()
+    const headers = [{ name: 'Authorization', value: `Bearer ${token}`, secret: true }]
+
+    const draft = await call<McpTestResult>(
+      'testMcpDraft',
+      {},
+      { config: { name: 'Echo', transport: 'http', url, headers } },
+    )
+    expect(draft.ok).toBe(false)
+    expect(draft.error).toContain('rejected Authorization: ••••••')
+
+    const server = await call<McpServer>(
+      'createMcpServer',
+      {},
+      { name: 'Echo', transport: 'http', url, headers },
+    )
+    const tested = await call<McpTestResult>('testMcpServer', { serverId: server.id })
+    expect(tested.ok).toBe(false)
+    expect(tested.error).toContain('Authorization: ••••••')
+
+    await call('postMessage', { conversationId: chiefDm }, { content: 'hi' })
+    await host.idle()
+
+    const [listed] = await call<McpServer[]>('listMcpServers')
+    expect(listed?.state).toMatchObject({ status: 'error' })
+    expect(listed?.state.error).toContain('rejected Authorization: ••••••')
+    const updates = events.filter((e) => e.type === 'mcp.server.updated')
+    expect(JSON.stringify(updates)).toContain('Authorization: ••••••')
+    expect(logs.join('\n')).toContain('Authorization: ••••••')
+    for (const text of [JSON.stringify(listed), JSON.stringify(updates), logs.join('\n')])
+      expect(text).not.toContain(token)
+  })
+
+  it('redacts an echoed secret from the error a tools refresh and the OAuth proxy throw', async () => {
+    await boot()
+    const token = 'qa_secret_echo_123'
+    const url = await echoingServer()
+    const server = await call<McpServer>(
+      'createMcpServer',
+      {},
+      {
+        name: 'Echo',
+        transport: 'http',
+        url,
+        headers: [{ name: 'Authorization', value: `Bearer ${token}`, secret: true }],
+      },
+    )
+
+    // What the API answers and the runtime logs ("request failed" writes the error's message, stack and cause).
+    const failure = await call('listMcpTools', { serverId: server.id }, undefined, { refresh: true }).then(
+      () => null,
+      (err: unknown) => err,
+    )
+    expect(failure).toBeInstanceOf(Error)
+    const err = failure as Error
+    expect(err.message).toContain('rejected Authorization: ••••••')
+    const logged = JSON.stringify({
+      message: err.message,
+      stack: err.stack,
+      cause: String(err.cause),
+      api: toApiError(err),
+    })
+    expect(logged).not.toContain(token)
+
+    // A CLI engine bot listing the tools of an OAuth server through the daemon's proxy.
+    runtime.store.db
+      .prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)')
+      .run(
+        `mcp.oauth.${server.id}`,
+        JSON.stringify({ hasTokens: false, account: null, connectedAt: null }),
+        0,
+      )
+    await call('updateMcpServer', { serverId: server.id }, { name: 'Echo' })
+    const endpoint = await runtime.services.mcp.proxyEndpointFor(chiefId, 'claude_code')
+    const listed = await fetch(`${runtime.services.mcp.localUrl}/x/echo`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${endpoint.token}`,
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+      },
+      body: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}',
+    })
+    const proxied = await listed.text()
+    expect(proxied).toContain('rejected Authorization: ••••••')
+    expect(proxied).not.toContain(token)
   })
 
   it('gives API-provider bots only their enabled tools, runs them and logs them redacted', async () => {

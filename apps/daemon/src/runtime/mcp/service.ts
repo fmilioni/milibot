@@ -91,6 +91,7 @@ export class McpService {
       now: deps.now,
       fetch: deps.fetch,
       onChange: (id) => this.announce(id),
+      redact: (text) => this.redact(text),
       onConnected: async (id) => {
         await this.manager.reset(id)
         await this.refreshSecrets()
@@ -122,6 +123,7 @@ export class McpService {
         if (detected) this.oauth.markOAuth(id)
         this.announce(id)
       },
+      redact: (text) => this.redact(text),
     })
   }
 
@@ -218,7 +220,7 @@ export class McpService {
     } catch (err) {
       this.deps.log('warn', 'external MCP server unavailable for this turn', {
         serverId: id,
-        err: errorMessage(err),
+        err: this.redact(errorMessage(err)),
       })
     }
     const tools = this.store.stored().find((s) => s.id === id)?.tools ?? []
@@ -289,7 +291,8 @@ export class McpService {
     return this.redact(await mapMcpResult(result, this.deps.blobs))
   }
 
-  private async testConfig(config: McpServerConfig): Promise<McpTestResult> {
+  /** `draftSecrets`: secret values typed in an unsaved form, not known to `redact` yet. */
+  private async testConfig(config: McpServerConfig, draftSecrets: string[] = []): Promise<McpTestResult> {
     const started = this.deps.now()
     try {
       const { tools } = await this.manager.test(config)
@@ -307,7 +310,7 @@ export class McpService {
       return {
         ok: false,
         tools: [],
-        error: this.redact(errorMessage(err)),
+        error: redactSecrets(this.redact(errorMessage(err)), draftSecrets),
         latencyMs: null,
         ...(isAuthRequired(err) ? { authRequired: true } : {}),
       }
@@ -327,7 +330,10 @@ export class McpService {
       },
       testMcpDraft: async ({ body }) => {
         if (body.serverId) this.requireServer(body.serverId)
-        return this.testConfig(await this.store.draftConfig(body.config, body.serverId))
+        const typed = [...(body.config.env ?? []), ...(body.config.headers ?? [])].flatMap((item) =>
+          item.secret && typeof item.value === 'string' ? [item.value] : [],
+        )
+        return this.testConfig(await this.store.draftConfig(body.config, body.serverId), typed)
       },
       updateMcpServer: async ({ params, body }) => {
         this.checkBots(body.allowedBots)

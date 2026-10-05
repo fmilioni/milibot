@@ -4,6 +4,7 @@ import { boardEndpoints } from '../boards/boards'
 import { botControlEndpoints } from '../bots/control'
 import { botEndpoints } from '../bots/endpoints'
 import { promptVersionEndpoints } from '../bots/prompt-versions'
+import { setAsideEndpoints } from '../bots/set-aside'
 import { attachmentEndpoints } from '../chat/attachments'
 import { conversationEndpoints } from '../chat/conversations'
 import { groupEndpoints } from '../chat/groups'
@@ -43,6 +44,7 @@ export const api = defineApi(
   botEndpoints,
   botControlEndpoints,
   promptVersionEndpoints,
+  setAsideEndpoints,
   conversationEndpoints,
   sidebarEndpoints,
   groupEndpoints,

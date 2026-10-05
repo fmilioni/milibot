@@ -371,6 +371,100 @@ describe('idle watch', () => {
     })
   })
 
+  describe('when the alert turn does not run', () => {
+    /** Iris stopped past the limit with a request set aside; Ana is the one told. */
+    function stopIris(env: TestEnv) {
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 30
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchBotId] = ana.id
+      env.workStates.set(iris.id, {
+        sessions: [{ id: 'wses_1', conversationId: 'cnv_s', title: 'QA of PR #22' }],
+        plans: [],
+      })
+      env.setAside.add({
+        botId: iris.id,
+        conversationId: dmOf(env, iris),
+        task: 'QA of PR #23',
+        waitingOn: [],
+      })
+    }
+
+    const alertRequests = (provider: FakeProvider) =>
+      provider.requests.filter((r) => lastUserText(r).includes('Iris has done nothing for'))
+    const alertedAt = (env: TestEnv) => env.setAside.waiting(iris.id)[0]?.alertedAt
+
+    it('tells the bot again on the next check when its turn fails', async () => {
+      let fail = true
+      const { env, provider } = setup({
+        ana: (_r, text) => {
+          if (fail && text.includes('Iris has done nothing for')) return { error: 'boom' }
+          return { text: 'Asked Iris.' }
+        },
+      })
+      stopIris(env)
+      const host = await startHost(env, 10)
+      env.advance(31 * 60_000)
+      await until(() => alertRequests(provider).length > 0)
+      await host.idle()
+      expect(alertedAt(env)).toBeNull()
+
+      fail = false
+      await until(() => alertRequests(provider).length > 1)
+      await host.idle()
+      expect(alertedAt(env)).not.toBeNull()
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      await host.idle()
+      expect(alertRequests(provider)).toHaveLength(2)
+    })
+
+    it('tells the user after a few alert turns that did not run', async () => {
+      const { env, provider } = setup({
+        ana: (_r, text) => (text.includes('Iris has done nothing for') ? { error: 'boom' } : { text: 'ok' }),
+      })
+      stopIris(env)
+      const host = await startHost(env, 10)
+      env.advance(31 * 60_000)
+      const userAlerts = () =>
+        env.messages.filter((m) => m.payload?.type === 'system' && m.payload.event === 'idle_watch_alert')
+      await until(() => userAlerts().length > 0)
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      await host.idle()
+      expect(alertRequests(provider)).toHaveLength(3)
+      expect(userAlerts()).toHaveLength(1)
+      expect(userAlerts()[0]?.conversationId).toBe(dmOf(env, iris))
+      expect(alertedAt(env)).not.toBeNull()
+    })
+
+    it('tells the bot once more after a restart before its turn ran, and not again', async () => {
+      let slow = true
+      const { env, provider } = setup({
+        ana: (_r, text) => {
+          if (!text.includes('Iris has done nothing for')) return { text: 'ok' }
+          if (slow) return { text: 'Asking Iris.', delayMs: 5000 }
+          return { text: 'Asked Iris.' }
+        },
+      })
+      stopIris(env)
+      const first = await startHost(env, 10)
+      env.advance(31 * 60_000)
+      await until(() => alertRequests(provider).length > 0)
+      await first.stop()
+      expect(alertedAt(env)).toBeNull()
+
+      slow = false
+      const second = await startHost(env, 10)
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      expect(alertRequests(provider)).toHaveLength(1)
+      env.advance(31 * 60_000)
+      await until(() => alertRequests(provider).length > 1)
+      await second.idle()
+      expect(alertedAt(env)).not.toBeNull()
+      env.advance(31 * 60_000)
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      await second.idle()
+      expect(alertRequests(provider)).toHaveLength(2)
+    })
+  })
+
   it('stays quiet when it is off or the bot is working', async () => {
     const { env, provider } = setup({})
     env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 0

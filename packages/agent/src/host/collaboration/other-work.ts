@@ -27,6 +27,9 @@ const sessionLabel = (session: OpenSession) => `your work session "${session.tit
 /** How long a bot whose wake did not run (an error, a usage limit, a stop) waits before the next one. */
 const RETRY_WAKE_MS = 5 * 60_000
 
+/** Alert turns of the idle watch that did not run before the user is told instead of the watch's bot. */
+const MAX_ALERT_TURNS = 3
+
 /**
  * The bot's work as every chat turn sees it (its lanes, open sessions and plans, whichever conversation they
  * started in) and the requests it set aside until that work ends (`after_current_work`, kept by
@@ -35,7 +38,8 @@ const RETRY_WAKE_MS = 5 * 60_000
  * not it stays there for the bot (and the idle watch) instead of being retried. A wake turn that started
  * acting (its first tool call) and then did not end well (an error, a stop, a restart) is never retried
  * either: part of the work may be done, so the request stays there for the bot to finish or cancel. A bot left stopped with
- * requests past the idle watch's limit is reported to the bot the watch reports to.
+ * requests past the idle watch's limit is reported to the bot the watch reports to; those requests count as
+ * reported only once that bot's turn ran (or acted), so an alert lost to a failed turn or a restart is sent again.
  */
 export class OtherWork {
   /** Bot id → when one of its turns last ended (the idle watch's clock; the host's start before any). */
@@ -45,6 +49,10 @@ export class OtherWork {
   private readonly waking = new Map<string, string>()
   /** Bot id → when it may be woken again after a wake that did not run. */
   private readonly retryAt = new Map<string, number>()
+  /** Stopped bot id → its idle watch alert turn is queued or running. */
+  private readonly alerting = new Set<string>()
+  /** Stopped bot id → alert turns about it that did not run, in a row. */
+  private readonly failedAlerts = new Map<string, number>()
   private timer: ReturnType<typeof setInterval> | null = null
 
   constructor(private readonly ctx: HostContext) {}
@@ -56,6 +64,8 @@ export class OtherWork {
     this.lastTurnEnded.clear()
     this.waking.clear()
     this.retryAt.clear()
+    this.alerting.clear()
+    this.failedAlerts.clear()
     this.timer = setInterval(() => this.tick(), intervalMs)
     this.timer.unref?.()
     this.tick()
@@ -72,6 +82,8 @@ export class OtherWork {
     this.lastTurnEnded.delete(botId)
     this.waking.delete(botId)
     this.retryAt.delete(botId)
+    this.alerting.delete(botId)
+    this.failedAlerts.delete(botId)
   }
 
   /** The bot's lanes other than `laneKey` (helpers aside) with a running or queued turn, described for the bot. */
@@ -284,9 +296,13 @@ export class OtherWork {
   /**
    * A bot with nothing running for longer than the limit while it has requests set aside (an open session it
    * never finished, for one) is reported once per request to the watch's bot, in their private conversation.
+   * The requests are marked as reported only once that turn acted or ran: a turn that fails first, or a restart
+   * before it runs, leaves them unreported and the next check sends the alert again (to the user after
+   * `MAX_ALERT_TURNS` turns that did not run, so a watcher that cannot answer is not woken forever).
    */
   private watch(botId: string, entries: SetAsideEntry[]): void {
     const minutes = this.ctx.settings.idleWatchMinutes()
+    if (this.alerting.has(botId)) return
     if (minutes <= 0 || this.ctx.lanes.find(botId)?.paused || this.busyLanes(botId, null).length) return
     const fresh = entries.filter((e) => e.alertedAt === null)
     const oldest = fresh[0]
@@ -297,12 +313,19 @@ export class OtherWork {
     if (idleFor < minutes * 60_000) return
     const bot = env.getBot(botId)
     if (!bot) return
-    const watcher = this.watcher(botId)
+    const watcher = (this.failedAlerts.get(botId) ?? 0) >= MAX_ALERT_TURNS ? 'user' : this.watcher(botId)
     if (watcher === 'user') {
       this.tellUser(bot, Math.round(idleFor / 60_000), entries, fresh)
       return
     }
-    env.setAside.markAlerted(fresh.map((e) => e.id))
+    const ids = fresh.map((e) => e.id)
+    let alerted = false
+    const markAlerted = () => {
+      if (alerted) return
+      alerted = true
+      env.setAside.markAlerted(ids)
+    }
+    this.alerting.add(botId)
     // In the watcher's chat with the user, so the bot's answer to its message_bot comes back to it there.
     const conversation = env.findDirectConversation(watcher.id) ?? env.internalConversation(watcher.id, botId)
     this.ctx.scheduler.enqueue({
@@ -315,6 +338,13 @@ export class OtherWork {
         entries.map((e) => `"${clipLine(e.task, 200)}"`),
         this.openSessions(botId).map((s) => `"${s.title}"`),
       ),
+      onActing: markAlerted,
+      onFinished: (outcome, failed) => {
+        this.alerting.delete(botId)
+        if (outcome !== 'cancelled' && !failed) markAlerted()
+        if (alerted) this.failedAlerts.delete(botId)
+        else this.failedAlerts.set(botId, (this.failedAlerts.get(botId) ?? 0) + 1)
+      },
     })
   }
 
@@ -338,6 +368,7 @@ export class OtherWork {
     const conversation = env.findDirectConversation(bot.id)
     if (!conversation) return
     env.setAside.markAlerted(fresh.map((e) => e.id))
+    this.failedAlerts.delete(bot.id)
     const tasks = entries.map((e) => clipLine(e.task, 200))
     env.appendMessage({
       conversationId: conversation.id,

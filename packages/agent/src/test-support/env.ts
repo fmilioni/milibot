@@ -22,6 +22,7 @@ import type {
   ProjectDirectory,
   RepoInstructionFile,
   ResolvedModel,
+  ScreenState,
   ToolCallFinish,
   ToolCallStart,
   ToolExecContext,
@@ -84,6 +85,7 @@ export class TestEnv implements AgentEnvironment {
   endedSessions = new Map<string, { originConversationId: string; title: string }>()
   deltas: Array<{ messageId: string; delta: string }> = []
   activity: BotActivityAction[] = []
+  screens: Array<{ botId: string } & ScreenState> = []
   llmCalls: Array<LlmCallRecord & { id: string }> = []
   toolCalls = new Map<string, ToolCallStart & Partial<ToolCallFinish>>()
   toolLog: ToolCall[] = []
@@ -359,6 +361,10 @@ export class TestEnv implements AgentEnvironment {
 
   emitActivity(action: BotActivityAction): void {
     this.activity.push(action)
+  }
+
+  emitScreen(botId: string, screen: ScreenState): void {
+    this.screens.push({ botId, ...screen })
   }
 
   recordLlmCall(record: LlmCallRecord): string {

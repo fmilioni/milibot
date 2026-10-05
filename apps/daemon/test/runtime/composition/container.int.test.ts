@@ -305,6 +305,10 @@ describe('agent runtime (fake LLM + fake VM)', () => {
       paused: false,
       control: 'idle',
     })
+    expect(events.filter((e) => e.type === 'bot.screen' && e.payload.botId === ana.id)).toEqual([
+      { type: 'bot.screen', payload: { botId: ana.id, control: 'user', paused: true, busy: false } },
+      { type: 'bot.screen', payload: { botId: ana.id, control: 'idle', paused: false, busy: false } },
+    ])
     // Pausing an idle bot shows: its status becomes paused and the display says so.
     expect(await call('controlBot', { botId: ana.id }, { action: 'pause' })).toMatchObject({ paused: true })
     expect(runtime.store.bots.list().find((b) => b.id === ana.id)?.status).toBe('paused')

@@ -211,6 +211,8 @@ export interface ChatSink {
   deleteMessage(id: string): void
   emitDelta(conversationId: string, messageId: string, delta: string): void
   emitActivity(action: BotActivityAction): void
+  /** The bot's screen control, pause or busy flag changed through `AgentHost.control`. */
+  emitScreen(botId: string, screen: ScreenState): void
   /** Internal (bot↔bot) conversation of two bots, created (and announced) on first use. */
   internalConversation(fromBotId: string, toBotId: string): ConversationSummary
   /** Posts a confirmation card the user approves or rejects; approval runs the daemon's handler of `action`. */

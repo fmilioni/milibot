@@ -206,28 +206,47 @@ export class MemoryStore implements MemoryBackend {
 
   reviseNote(
     id: string,
-    input: { content: string; scope: MemoryScope; botId: string; projectId?: string | null },
+    input: {
+      content: string
+      scope: MemoryScope
+      botId: string
+      projectId?: string | null
+      absorbs?: string[]
+    },
   ): MemoryNote {
     const current = this.byId(id)
     const workspace = input.scope === 'workspace'
     const projectId = workspace ? (input.projectId === undefined ? current.projectId : input.projectId) : null
     this.checkProject(projectId)
-    this.db
-      .prepare(
-        `UPDATE memories SET content = ?, scope = ?, bot_id = ?, project_id = ?,
+    const absorbs = [...new Set(input.absorbs ?? [])].filter((other) => other !== id)
+    this.db.transaction(() => {
+      this.deleteAll(absorbs)
+      this.db
+        .prepare(
+          `UPDATE memories SET content = ?, scope = ?, bot_id = ?, project_id = ?,
            pinned = CASE WHEN ? THEN 1 ELSE pinned END, token_count = ?, updated_at = ? WHERE id = ?`,
-      )
-      .run(
-        input.content,
-        input.scope,
-        workspace ? null : input.botId,
-        projectId,
-        workspace ? 1 : 0,
-        estimateTokens(input.content),
-        this.now(),
-        id,
-      )
+        )
+        .run(
+          input.content,
+          input.scope,
+          workspace ? null : input.botId,
+          projectId,
+          workspace ? 1 : 0,
+          estimateTokens(input.content),
+          this.now(),
+          id,
+        )
+    })()
     return this.byId(id)
+  }
+
+  forgetNotes(ids: string[]): void {
+    this.db.transaction(() => this.deleteAll([...new Set(ids)]))()
+  }
+
+  private deleteAll(ids: string[]): void {
+    const remove = this.db.prepare('DELETE FROM memories WHERE id = ?')
+    for (const id of ids) if (remove.run(id).changes === 0) throw notFound('memory', id)
   }
 
   /** `owner`: the bot id, or `workspace` for a workspace note. */

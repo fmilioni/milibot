@@ -13,6 +13,7 @@ import { useMcpStore } from '@/features/mcp/store'
 import { usePlanStore } from '@/features/plans/store'
 import { useProjectStore } from '@/features/projects/store'
 import { useSessionStore } from '@/features/sessions/store'
+import { useSettingsStore } from '@/features/settings/store'
 import { applySetupAppEvent } from '@/features/setup/store'
 import { followSkillsScreen, useSkillsStore } from '@/features/skills/store'
 import { applyTeachEvent, followTeachWorkspace } from '@/features/vm/teach-store'
@@ -35,6 +36,7 @@ const EVENT_STORES: EventStore[] = [
   usePlanStore,
   useProjectStore,
   useSessionStore,
+  useSettingsStore,
   useSkillsStore,
 ]
 

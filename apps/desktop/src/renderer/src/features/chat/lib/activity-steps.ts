@@ -67,6 +67,8 @@ import {
   ScanText,
   Search,
   Send,
+  Settings2,
+  SlidersHorizontal,
   SquareKanban,
   SquareMousePointer,
   SquareTerminal,
@@ -195,6 +197,8 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   board_comment: MessageSquarePlus,
   board_link: Link2,
   board_search: Search,
+  workspace_settings_get: Settings2,
+  workspace_settings_update: SlidersHorizontal,
 }
 
 /** Steps whose detail is a command or code, shown in monospace. */

@@ -8,6 +8,7 @@ import { Button } from '@/ui/Button'
 import { Tooltip } from '@/ui/Tooltip'
 
 import { ProposedPromptDiff } from './PromptCards'
+import { ProposedSettingChanges } from './SettingsCards'
 
 export function ConfirmationCard({
   payload,
@@ -22,7 +23,10 @@ export function ConfirmationCard({
   const [busy, setBusy] = useState(false)
   const reason = payload.description.replace(/\s*\n\s*/g, ' ').trim()
   const pending = payload.status === 'pending'
-  const mild = payload.action === 'update_prompt' || payload.action === 'continue_bot_exchange'
+  const mild =
+    payload.action === 'update_prompt' ||
+    payload.action === 'continue_bot_exchange' ||
+    payload.action === 'workspace_settings'
   const action =
     payload.action === 'update_prompt' && author && payload.params?.botId === author.id
       ? 'update_prompt_own'
@@ -57,6 +61,9 @@ export function ConfirmationCard({
           added={Number(payload.params.added ?? 0)}
           removed={Number(payload.params.removed ?? 0)}
         />
+      )}
+      {payload.action === 'workspace_settings' && payload.params?.changes && (
+        <ProposedSettingChanges changes={payload.params.changes} />
       )}
       {pending ? (
         <div className="flex gap-2">

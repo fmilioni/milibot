@@ -306,6 +306,10 @@
       "board_link_empty": "Linked something to a card",
       "board_search": "Searched the boards: {{detail}}",
       "board_search_empty": "Searched the boards",
+      "workspace_settings_get": "Read the workspace settings",
+      "workspace_settings_get_empty": "Read the workspace settings",
+      "workspace_settings_update": "Workspace settings change: {{detail}}",
+      "workspace_settings_update_empty": "Workspace settings change",
       "list_models": "Listed models “{{detail}}”",
       "list_models_empty": "Listed the available models"
     },
@@ -338,7 +342,8 @@
       "remove_member": "{{name}} wants to remove {{botName}} from {{groupName}}",
       "update_prompt": "{{name}} wants to update the prompt of {{botName}}",
       "update_prompt_own": "{{name}} wants to update its own prompt",
-      "continue_bot_exchange": "{{name}} and {{botName}} have been going back and forth without you"
+      "continue_bot_exchange": "{{name}} and {{botName}} have been going back and forth without you",
+      "workspace_settings": "{{name}} wants to change workspace settings"
     },
     "status": {
       "pending": "Waiting",
@@ -350,7 +355,8 @@
       "remove_member": "Remove",
       "delete_bot": "Delete",
       "update_prompt": "Approve",
-      "continue_bot_exchange": "Continue"
+      "continue_bot_exchange": "Continue",
+      "workspace_settings": "Apply"
     },
     "rejectActions": {
       "continue_bot_exchange": "Stop"
@@ -359,6 +365,22 @@
       "continue_bot_exchange": {
         "approved": "You let them continue",
         "rejected": "You stopped them"
+      }
+    },
+    "settings": {
+      "on": "On",
+      "off": "Off",
+      "noLimit": "No limit",
+      "perDay": "{{value}} a day",
+      "promptUpdates": {
+        "auto": "Automatic, with a note",
+        "approval": "Ask for my approval"
+      },
+      "fields": {
+        "spendWarnUsd": "Warn when today's spend passes",
+        "spendPauseUsd": "Pause every bot when today's spend reaches",
+        "autoMergePrs": "Bots may merge their own pull requests",
+        "promptUpdates": "Changes to bot prompts"
       }
     }
   },

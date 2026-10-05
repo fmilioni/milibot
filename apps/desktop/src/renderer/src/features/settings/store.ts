@@ -2,6 +2,7 @@ import {
   DEFAULT_WORKSPACE_PREFERENCES,
   type HostInfo,
   type UpdateWorkspacePreferencesBody,
+  type WorkspaceEvent,
   type WorkspacePreferences,
 } from '@milibot/shared'
 import { useCallback, useEffect } from 'react'
@@ -20,6 +21,8 @@ interface SettingsState {
   updatePreferences(workspaceId: string, patch: UpdateWorkspacePreferencesBody): Promise<void>
   /** Cached after the first load; `force` re-reads it (e.g. QEMU installed meanwhile). */
   loadHost(force?: boolean): Promise<void>
+  /** A change from anywhere (another window, a bot's tool, an approved card) shows at once. */
+  applyEvent(workspaceId: string, event: WorkspaceEvent): void
 }
 
 /** Workspace preferences and host limits shared by the settings sections. */
@@ -56,6 +59,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => {
     async loadHost(force = false) {
       if (get().host && !force) return
       set({ host: await api().call('getHostInfo', {}) })
+    },
+
+    applyEvent(workspaceId, event) {
+      if (event.type === 'preferences.updated')
+        commit(workspaceId, { preferences: event.payload.preferences })
     },
   }
 })

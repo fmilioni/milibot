@@ -306,6 +306,10 @@
       "board_link_empty": "Vinculou algo a um card",
       "board_search": "Buscou nos quadros: {{detail}}",
       "board_search_empty": "Buscou nos quadros",
+      "workspace_settings_get": "Leu as configurações do workspace",
+      "workspace_settings_get_empty": "Leu as configurações do workspace",
+      "workspace_settings_update": "Mudança nas configurações do workspace: {{detail}}",
+      "workspace_settings_update_empty": "Mudança nas configurações do workspace",
       "list_models": "Listou os modelos “{{detail}}”",
       "list_models_empty": "Listou os modelos disponíveis"
     },
@@ -338,7 +342,8 @@
       "remove_member": "{{name}} quer remover {{botName}} do grupo {{groupName}}",
       "update_prompt": "{{name}} quer atualizar o prompt de {{botName}}",
       "update_prompt_own": "{{name}} quer atualizar o próprio prompt",
-      "continue_bot_exchange": "{{name}} e {{botName}} estão conversando há um tempo sem você"
+      "continue_bot_exchange": "{{name}} e {{botName}} estão conversando há um tempo sem você",
+      "workspace_settings": "{{name}} quer alterar configurações do workspace"
     },
     "status": {
       "pending": "Aguardando",
@@ -350,7 +355,8 @@
       "remove_member": "Remover",
       "delete_bot": "Excluir",
       "update_prompt": "Aprovar",
-      "continue_bot_exchange": "Continuar"
+      "continue_bot_exchange": "Continuar",
+      "workspace_settings": "Aplicar"
     },
     "rejectActions": {
       "continue_bot_exchange": "Parar"
@@ -359,6 +365,22 @@
       "continue_bot_exchange": {
         "approved": "Você deixou continuar",
         "rejected": "Você parou a conversa"
+      }
+    },
+    "settings": {
+      "on": "Ligado",
+      "off": "Desligado",
+      "noLimit": "Sem limite",
+      "perDay": "{{value}} por dia",
+      "promptUpdates": {
+        "auto": "Automático, com aviso",
+        "approval": "Pedir minha aprovação"
+      },
+      "fields": {
+        "spendWarnUsd": "Avisar quando o gasto do dia passar de",
+        "spendPauseUsd": "Pausar todos os bots quando o gasto do dia chegar a",
+        "autoMergePrs": "Bots podem fazer merge dos próprios PRs",
+        "promptUpdates": "Mudanças no prompt dos bots"
       }
     }
   },

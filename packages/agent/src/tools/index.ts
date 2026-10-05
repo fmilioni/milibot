@@ -24,6 +24,7 @@ export { MAX_COMPUTER_BATCH, SCREEN_HEIGHT, SCREEN_WIDTH } from './families/comp
 export { type DesignToolName, designTools } from './families/design'
 export { imageTools } from './families/images'
 export { knowledgeTools } from './families/knowledge'
+export { mcpServerTools } from './families/mcp-servers'
 export { planTools } from './families/plans'
 export { projectTools, projectViewArg } from './families/projects'
 export { routineTools } from './families/routines'

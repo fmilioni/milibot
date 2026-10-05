@@ -126,6 +126,12 @@ describe('toolsForLane main', () => {
       'subagent',
       'workspace_settings_get',
       'workspace_settings_update',
+      'mcp_server_list',
+      'mcp_server_add',
+      'mcp_server_update',
+      'mcp_server_remove',
+      'mcp_server_test',
+      'mcp_server_connect',
     ])
   })
 

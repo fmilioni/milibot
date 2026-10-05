@@ -114,6 +114,12 @@ const ACTIVITY_KEYS = {
   board_comment: 'plans',
   board_link: 'plans',
   board_search: 'plans',
+  mcp_server_list: 'external',
+  mcp_server_add: 'external',
+  mcp_server_update: 'external',
+  mcp_server_remove: 'external',
+  mcp_server_test: 'external',
+  mcp_server_connect: 'external',
 } as const
 
 export type ActivityKey = (typeof ACTIVITY_KEYS)[keyof typeof ACTIVITY_KEYS]

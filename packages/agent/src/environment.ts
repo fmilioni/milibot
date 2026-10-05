@@ -525,6 +525,8 @@ export interface TurnRequest {
   note?: string
   /** Bot-to-bot requests this turn answers; its reply goes back to the askers. */
   botRequests?: string[]
+  /** Bot whose answer this turn reads (`bot_reply`). */
+  replyFrom?: string
   /** Bots waiting on this turn up the ask_bot/message_bot chain (cycle detection). */
   chain?: string[]
   /** Bot-to-bot hops since a user message (depth limit). */

@@ -311,7 +311,19 @@
       "workspace_settings_update": "Mudança nas configurações do workspace: {{detail}}",
       "workspace_settings_update_empty": "Mudança nas configurações do workspace",
       "list_models": "Listou os modelos “{{detail}}”",
-      "list_models_empty": "Listou os modelos disponíveis"
+      "list_models_empty": "Listou os modelos disponíveis",
+      "mcp_server_list": "Consultou os servidores MCP",
+      "mcp_server_list_empty": "Consultou os servidores MCP",
+      "mcp_server_add": "Pediu para adicionar o servidor MCP {{detail}}",
+      "mcp_server_add_empty": "Pediu para adicionar um servidor MCP",
+      "mcp_server_update": "Pediu para alterar o servidor MCP “{{detail}}”",
+      "mcp_server_update_empty": "Pediu para alterar um servidor MCP",
+      "mcp_server_remove": "Pediu para remover o servidor MCP “{{detail}}”",
+      "mcp_server_remove_empty": "Pediu para remover um servidor MCP",
+      "mcp_server_test": "Testou o servidor MCP “{{detail}}”",
+      "mcp_server_test_empty": "Testou um servidor MCP",
+      "mcp_server_connect": "Pediu login no servidor MCP “{{detail}}”",
+      "mcp_server_connect_empty": "Pediu login em um servidor MCP"
     },
     "showDesign": "Ver design",
     "openDesign": "Abrir o design"
@@ -343,7 +355,10 @@
       "update_prompt": "{{name}} quer atualizar o prompt de {{botName}}",
       "update_prompt_own": "{{name}} quer atualizar o próprio prompt",
       "continue_bot_exchange": "{{name}} e {{botName}} estão conversando há um tempo sem você",
-      "workspace_settings": "{{name}} quer alterar configurações do workspace"
+      "workspace_settings": "{{name}} quer alterar configurações do workspace",
+      "mcp_add": "{{name}} quer adicionar o servidor MCP {{serverName}}",
+      "mcp_update": "{{name}} quer alterar o servidor MCP {{serverName}}",
+      "mcp_remove": "{{name}} quer remover o servidor MCP {{serverName}}"
     },
     "status": {
       "pending": "Aguardando",
@@ -356,15 +371,32 @@
       "delete_bot": "Excluir",
       "update_prompt": "Aprovar",
       "continue_bot_exchange": "Continuar",
-      "workspace_settings": "Aplicar"
+      "workspace_settings": "Aplicar",
+      "mcp_add": "Adicionar",
+      "mcp_update": "Alterar",
+      "mcp_remove": "Remover"
     },
     "rejectActions": {
-      "continue_bot_exchange": "Parar"
+      "continue_bot_exchange": "Parar",
+      "mcp_add": "Recusar",
+      "mcp_update": "Recusar"
     },
     "statusActions": {
       "continue_bot_exchange": {
         "approved": "Você deixou continuar",
         "rejected": "Você parou a conversa"
+      },
+      "mcp_add": {
+        "approved": "Você adicionou",
+        "rejected": "Você recusou"
+      },
+      "mcp_update": {
+        "approved": "Você alterou",
+        "rejected": "Você recusou"
+      },
+      "mcp_remove": {
+        "approved": "Você removeu",
+        "rejected": "Você manteve"
       }
     },
     "settings": {
@@ -382,6 +414,20 @@
         "autoMergePrs": "Bots podem fazer merge dos próprios PRs",
         "promptUpdates": "Mudanças no prompt dos bots"
       }
+    },
+    "mcp": {
+      "remote": "Endereço",
+      "command": "Comando",
+      "name": "Novo nome",
+      "headers": "Cabeçalhos",
+      "env": "Variáveis",
+      "bots": "Bots",
+      "allBots": "Todos os bots",
+      "enabled": "Ligado",
+      "on": "Sim",
+      "off": "Não",
+      "keep": "mantém o valor salvo",
+      "secret": "segredo {{name}}"
     }
   },
   "error": {
@@ -598,5 +644,19 @@
   "designPresence": "{{name}} está editando {{design}}",
   "designPresenceOpen": "Abrir",
   "showMore": "Mostrar mais",
-  "showLess": "Mostrar menos"
+  "showLess": "Mostrar menos",
+  "mcpSignIn": {
+    "title": "Entrar no servidor MCP {{serverName}}",
+    "hint": "Abre no navegador do seu computador. Volte aqui quando terminar.",
+    "open": "Entrar",
+    "status": {
+      "pending": "Aguardando login",
+      "connected": "Conectado",
+      "failed": "Falhou",
+      "expired": "Expirou",
+      "cancelled": "Cancelado"
+    },
+    "account": "Conectado como {{account}}",
+    "preview": "Login no servidor MCP {{serverName}}"
+  }
 }

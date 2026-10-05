@@ -199,6 +199,12 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   board_search: Search,
   workspace_settings_get: Settings2,
   workspace_settings_update: SlidersHorizontal,
+  mcp_server_list: Plug,
+  mcp_server_add: Plug,
+  mcp_server_update: Plug,
+  mcp_server_remove: Trash2,
+  mcp_server_test: RefreshCw,
+  mcp_server_connect: KeyRound,
 }
 
 /** Steps whose detail is a command or code, shown in monospace. */

@@ -120,6 +120,12 @@ export const ACTIVITY_STEP_KINDS = [
   'board_search',
   'workspace_settings_get',
   'workspace_settings_update',
+  'mcp_server_list',
+  'mcp_server_add',
+  'mcp_server_update',
+  'mcp_server_remove',
+  'mcp_server_test',
+  'mcp_server_connect',
 ] as const
 
 /** A readable tool name when nothing else is known: "list_bots" → "list bots", "NotebookRead" → "Notebook Read". */

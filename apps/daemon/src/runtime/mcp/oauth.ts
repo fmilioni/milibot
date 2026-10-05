@@ -16,12 +16,21 @@ import type { McpStore } from './store'
 const FLOW_TIMEOUT_MS = 10 * 60_000
 const CALLBACK_PATH = '/callback'
 
+/** How a sign-in in the browser ended. `cancelled`: replaced by another sign-in, cancelled or the runtime stopped. */
+export type McpSignInOutcome =
+  | { status: 'connected'; account: string | null }
+  | { status: 'failed'; error: string }
+  | { status: 'expired' }
+  | { status: 'cancelled' }
+
 interface Flow {
   serverId: string
   serverUrl: string
   provider: McpOAuthProvider
   listener: Server
   timer: NodeJS.Timeout
+  outcome: Promise<McpSignInOutcome>
+  settle: (outcome: McpSignInOutcome) => void
 }
 
 export interface McpOAuthDeps {
@@ -32,6 +41,7 @@ export interface McpOAuthDeps {
   onChange: (serverId: string) => void
   onConnected: (serverId: string) => Promise<void>
   log: LogFn
+  redact: (text: string) => string
 }
 
 // Portuguese on purpose: the browser page after a sign-in is shown in the browser's language.
@@ -183,19 +193,33 @@ export class McpOAuthService {
       }
     } catch (err) {
       listener.close()
-      throw new DaemonError('conflict', `Could not start the sign-in: ${errorMessage(err)}`, {
-        reason: 'oauth_start_failed',
-      })
+      throw new DaemonError(
+        'conflict',
+        `Could not start the sign-in: ${this.deps.redact(errorMessage(err))}`,
+        {
+          reason: 'oauth_start_failed',
+        },
+      )
     }
+    let settle: (outcome: McpSignInOutcome) => void = () => undefined
+    const outcome = new Promise<McpSignInOutcome>((resolve) => {
+      settle = resolve
+    })
+    const state = provider.state()
     const flow: Flow = {
       serverId: config.id,
       serverUrl: config.url,
       provider,
       listener,
-      timer: setTimeout(() => this.cancel(config.id), FLOW_TIMEOUT_MS),
+      timer: setTimeout(() => {
+        this.end(state, { status: 'expired' })
+        this.deps.onChange(config.id)
+      }, FLOW_TIMEOUT_MS),
+      outcome,
+      settle,
     }
     flow.timer.unref?.()
-    this.flows.set(provider.state(), flow)
+    this.flows.set(state, flow)
     listener.on('request', (req, res) => void this.callback(req, res, flow))
     this.deps.onChange(config.id)
     return authorizationUrl
@@ -223,20 +247,26 @@ export class McpOAuthService {
         fetch: this.deps.fetch,
       })
       page(res, 200, language, true)
-      this.end(state)
-      await this.finish(flow.serverId)
+      this.end(state, null)
+      const account = await this.finish(flow.serverId)
+      flow.settle({ status: 'connected', account })
     } catch (err) {
-      this.deps.log('warn', 'mcp oauth sign-in failed', {
-        serverId: flow.serverId,
-        err: errorMessage(err),
-      })
-      page(res, 400, language, false, errorMessage(err))
-      this.end(state)
+      const message = this.deps.redact(errorMessage(err))
+      this.deps.log('warn', 'mcp oauth sign-in failed', { serverId: flow.serverId, err: message })
+      if (!res.headersSent) page(res, 400, language, false, message)
+      this.end(state, null)
+      flow.settle({ status: 'failed', error: message })
       this.deps.onChange(flow.serverId)
     }
   }
 
-  private async finish(serverId: string): Promise<void> {
+  /** The outcome of the sign-in waiting for the browser, or null when none is. */
+  pending(serverId: string): Promise<McpSignInOutcome> | null {
+    for (const flow of this.flows.values()) if (flow.serverId === serverId) return flow.outcome
+    return null
+  }
+
+  private async finish(serverId: string): Promise<string | null> {
     const record = await this.storage(serverId).load()
     const account = await oauthAccount(record, this.deps.fetch)
     this.deps.store.setOAuthInfo(serverId, {
@@ -246,13 +276,16 @@ export class McpOAuthService {
     })
     this.deps.log('info', 'mcp oauth connected', { serverId, account: account !== null })
     await this.deps.onConnected(serverId)
+    return account
   }
 
-  private end(state: string): void {
+  /** `outcome` null: the caller settles the flow itself once the sign-in is complete. */
+  private end(state: string, outcome: McpSignInOutcome | null): void {
     const flow = this.flows.get(state)
     if (!flow) return
     this.flows.delete(state)
     clearTimeout(flow.timer)
+    if (outcome) flow.settle(outcome)
     // Frees the port now; the page being sent finishes on its open connection.
     flow.listener.close()
     flow.listener.closeIdleConnections()
@@ -262,7 +295,7 @@ export class McpOAuthService {
     let cancelled = false
     for (const [state, flow] of this.flows) {
       if (flow.serverId !== serverId) continue
-      this.end(state)
+      this.end(state, { status: 'cancelled' })
       cancelled = true
     }
     if (cancelled) this.deps.onChange(serverId)
@@ -287,6 +320,6 @@ export class McpOAuthService {
   }
 
   close(): void {
-    for (const state of [...this.flows.keys()]) this.end(state)
+    for (const state of [...this.flows.keys()]) this.end(state, { status: 'cancelled' })
   }
 }

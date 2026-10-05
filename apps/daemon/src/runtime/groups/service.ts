@@ -248,7 +248,13 @@ export class GroupService {
             ? `${input.bot.name} and ${input.params.botName} have been going back and forth without you`
             : input.action === 'workspace_settings'
               ? `${input.bot.name} wants to change workspace settings`
-              : `${input.bot.name} wants to delete ${input.params.botName}`
+              : input.action === 'mcp_add'
+                ? `${input.bot.name} wants to add the MCP server ${input.params.serverName}`
+                : input.action === 'mcp_update'
+                  ? `${input.bot.name} wants to change the MCP server ${input.params.serverName}`
+                  : input.action === 'mcp_remove'
+                    ? `${input.bot.name} wants to remove the MCP server ${input.params.serverName}`
+                    : `${input.bot.name} wants to delete ${input.params.botName}`
     const payload: ConfirmationPayload = {
       type: 'confirmation',
       confirmationId: id,

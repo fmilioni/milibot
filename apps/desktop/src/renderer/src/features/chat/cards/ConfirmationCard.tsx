@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { Tooltip } from '@/ui/Tooltip'
 
+import { McpChangeDetails } from './McpCards'
 import { ProposedPromptDiff } from './PromptCards'
 import { ProposedSettingChanges } from './SettingsCards'
 
@@ -26,7 +27,9 @@ export function ConfirmationCard({
   const mild =
     payload.action === 'update_prompt' ||
     payload.action === 'continue_bot_exchange' ||
-    payload.action === 'workspace_settings'
+    payload.action === 'workspace_settings' ||
+    payload.action === 'mcp_add' ||
+    payload.action === 'mcp_update'
   const action =
     payload.action === 'update_prompt' && author && payload.params?.botId === author.id
       ? 'update_prompt_own'
@@ -50,6 +53,7 @@ export function ConfirmationCard({
             name: author?.name ?? '',
             botName: payload.params?.botName ?? '',
             groupName: payload.params?.groupName ?? '',
+            serverName: payload.params?.serverName ?? '',
             defaultValue: t('chat.confirmation.generic', { name: author?.name ?? '' }),
           })}
         </span>
@@ -64,6 +68,9 @@ export function ConfirmationCard({
       )}
       {payload.action === 'workspace_settings' && payload.params?.changes && (
         <ProposedSettingChanges changes={payload.params.changes} />
+      )}
+      {payload.action.startsWith('mcp_') && payload.params?.details && (
+        <McpChangeDetails details={payload.params.details} />
       )}
       {pending ? (
         <div className="flex gap-2">

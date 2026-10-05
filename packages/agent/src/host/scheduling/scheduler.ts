@@ -41,6 +41,8 @@ export class Scheduler {
         duplicate.botRequests = [...(duplicate.botRequests ?? []), ...request.botRequests]
       if (request.note)
         duplicate.note = duplicate.note ? `${duplicate.note}\n\n${request.note}` : request.note
+      // The merged turn reads answers from more than one bot.
+      if (duplicate.replyFrom !== request.replyFrom) delete duplicate.replyFrom
       if (request.onFinished) {
         const first = duplicate.onFinished
         const second = request.onFinished

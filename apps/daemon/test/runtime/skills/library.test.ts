@@ -19,6 +19,7 @@ describe('built-in skills', () => {
       'design-to-code',
       'documents-pdf',
       'knowledge-base',
+      'mcp-servers',
       'plans-and-sessions',
       'projects',
       'routines',

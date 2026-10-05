@@ -14,22 +14,25 @@ import { CLI_ENGINE_DRIVERS, type CliMcpConfig } from '@milibot/agent/cli'
 import {
   type Bot,
   type CliEngine,
+  type CreateMcpServerBody,
   type LogFn,
   type mcpEndpoints,
   type McpServer,
+  type McpServerState,
   type McpTestResult,
   redactSecrets,
+  type UpdateMcpServerBody,
   type WorkspaceEvent,
 } from '@milibot/shared'
 
 import type { Db } from '../../db/sqlite'
 import { errorMessage, notFound } from '../../errors'
-import type { EndpointHandlers } from '../../handlers'
+import type { EndpointHandlers, Parsed } from '../../handlers'
 import type { SecretStore } from '../../secrets/secret-store'
 import { GUEST_HOST_ADDRESS } from '../mcp-server'
 import type { GuestClient, VmController } from '../vm'
 import { McpManager } from './manager'
-import { McpOAuthService } from './oauth'
+import { McpOAuthService, type McpSignInOutcome } from './oauth'
 import { isAuthRequired } from './oauth-client'
 import type { GuestProcBackend } from './proc-transport'
 import { mapMcpResult } from './result'
@@ -91,6 +94,7 @@ export class McpService {
       now: deps.now,
       fetch: deps.fetch,
       onChange: (id) => this.announce(id),
+      redact: (text) => this.redact(text),
       onConnected: async (id) => {
         await this.manager.reset(id)
         await this.refreshSecrets()
@@ -122,6 +126,7 @@ export class McpService {
         if (detected) this.oauth.markOAuth(id)
         this.announce(id)
       },
+      redact: (text) => this.redact(text),
     })
   }
 
@@ -170,8 +175,14 @@ export class McpService {
     }
   }
 
+  /** Servers often echo the request in their errors, credentials included. */
+  private state(id: string): McpServerState {
+    const state = this.manager.state(id)
+    return state.error ? { ...state, error: this.redact(state.error) } : state
+  }
+
   private server(id: string): McpServer {
-    return this.withOAuth(this.store.get(id, this.manager.state(id)))
+    return this.withOAuth(this.store.get(id, this.state(id)))
   }
 
   private announce(id: string): void {
@@ -218,7 +229,7 @@ export class McpService {
     } catch (err) {
       this.deps.log('warn', 'external MCP server unavailable for this turn', {
         serverId: id,
-        err: errorMessage(err),
+        err: this.redact(errorMessage(err)),
       })
     }
     const tools = this.store.stored().find((s) => s.id === id)?.tools ?? []
@@ -285,7 +296,8 @@ export class McpService {
     return mapMcpResult(result, this.deps.blobs)
   }
 
-  private async testConfig(config: McpServerConfig): Promise<McpTestResult> {
+  /** `draftSecrets`: secret values typed in an unsaved form, not known to `redact` yet. */
+  private async testConfig(config: McpServerConfig, draftSecrets: string[] = []): Promise<McpTestResult> {
     const started = this.deps.now()
     try {
       const { tools } = await this.manager.test(config)
@@ -303,6 +315,72 @@ export class McpService {
       return {
         ok: false,
         tools: [],
+        error: redactSecrets(this.redact(errorMessage(err)), draftSecrets),
+        latencyMs: null,
+        ...(isAuthRequired(err) ? { authRequired: true } : {}),
+      }
+    }
+  }
+
+  listServers(): McpServer[] {
+    return this.store.list((id) => this.state(id)).map((s) => this.withOAuth(s))
+  }
+
+  getServer(id: string): McpServer {
+    this.requireServer(id)
+    return this.server(id)
+  }
+
+  async createServer(body: Parsed<typeof CreateMcpServerBody>): Promise<McpServer> {
+    this.checkBots(body.allowedBots)
+    const id = await this.store.create(body)
+    await this.refreshSecrets()
+    const server = this.server(id)
+    this.deps.emit({ type: 'mcp.server.updated', payload: { server } })
+    return server
+  }
+
+  async updateServer(serverId: string, body: Parsed<typeof UpdateMcpServerBody>): Promise<McpServer> {
+    this.checkBots(body.allowedBots)
+    const previousUrl = this.store.get(serverId, this.manager.state(serverId)).url
+    const { connectionChanged } = await this.store.update(serverId, body)
+    if (this.store.get(serverId, this.manager.state(serverId)).url !== previousUrl)
+      await this.oauth.forget(serverId)
+    await this.refreshSecrets()
+    if (connectionChanged) {
+      const enabled = this.store.stored().find((s) => s.id === serverId)?.enabled ?? false
+      await this.manager.reset(serverId, enabled ? 'idle' : 'disabled')
+    }
+    this.announce(serverId)
+    return this.server(serverId)
+  }
+
+  async deleteServer(serverId: string): Promise<void> {
+    this.oauth.cancel(serverId)
+    await this.store.delete(serverId)
+    await this.manager.remove(serverId)
+    await this.refreshSecrets()
+    this.deps.emit({ type: 'mcp.server.deleted', payload: { serverId } })
+  }
+
+  /** Reconnects, lists the tools and refreshes the cached list (a disabled server is only tried). */
+  async testServer(serverId: string): Promise<McpTestResult> {
+    const config = await this.requireConfig(serverId)
+    const started = this.deps.now()
+    if (!config.enabled) return this.testConfig(config)
+    await this.manager.reset(serverId)
+    try {
+      await this.manager.listTools(serverId, { refresh: true })
+      return {
+        ok: true,
+        tools: this.store.tools(serverId),
+        error: null,
+        latencyMs: this.deps.now() - started,
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        tools: [],
         error: this.redact(errorMessage(err)),
         latencyMs: null,
         ...(isAuthRequired(err) ? { authRequired: true } : {}),
@@ -310,66 +388,33 @@ export class McpService {
     }
   }
 
+  /** The authorization URL to open, or null when the stored sign-in could be refreshed. */
+  async startSignIn(serverId: string): Promise<string | null> {
+    return this.oauth.start(await this.requireConfig(serverId))
+  }
+
+  /** The outcome of the sign-in waiting for the browser, or null when none is. */
+  signInOutcome(serverId: string): Promise<McpSignInOutcome> | null {
+    return this.oauth.pending(serverId)
+  }
+
   handlers(): EndpointHandlers<keyof typeof mcpEndpoints> {
     return {
-      listMcpServers: () => this.store.list((id) => this.manager.state(id)).map((s) => this.withOAuth(s)),
-      createMcpServer: async ({ body }) => {
-        this.checkBots(body.allowedBots)
-        const id = await this.store.create(body)
-        await this.refreshSecrets()
-        const server = this.server(id)
-        this.deps.emit({ type: 'mcp.server.updated', payload: { server } })
-        return server
-      },
+      listMcpServers: () => this.listServers(),
+      createMcpServer: ({ body }) => this.createServer(body),
       testMcpDraft: async ({ body }) => {
         if (body.serverId) this.requireServer(body.serverId)
-        return this.testConfig(await this.store.draftConfig(body.config, body.serverId))
+        const typed = [...(body.config.env ?? []), ...(body.config.headers ?? [])].flatMap((item) =>
+          item.secret && typeof item.value === 'string' ? [item.value] : [],
+        )
+        return this.testConfig(await this.store.draftConfig(body.config, body.serverId), typed)
       },
-      updateMcpServer: async ({ params, body }) => {
-        this.checkBots(body.allowedBots)
-        const previousUrl = this.store.get(params.serverId, this.manager.state(params.serverId)).url
-        const { connectionChanged } = await this.store.update(params.serverId, body)
-        if (this.store.get(params.serverId, this.manager.state(params.serverId)).url !== previousUrl)
-          await this.oauth.forget(params.serverId)
-        await this.refreshSecrets()
-        if (connectionChanged) {
-          const enabled = this.store.stored().find((s) => s.id === params.serverId)?.enabled ?? false
-          await this.manager.reset(params.serverId, enabled ? 'idle' : 'disabled')
-        }
-        this.announce(params.serverId)
-        return this.server(params.serverId)
-      },
+      updateMcpServer: ({ params, body }) => this.updateServer(params.serverId, body),
       deleteMcpServer: async ({ params }) => {
-        this.oauth.cancel(params.serverId)
-        await this.store.delete(params.serverId)
-        await this.manager.remove(params.serverId)
-        await this.refreshSecrets()
-        this.deps.emit({ type: 'mcp.server.deleted', payload: { serverId: params.serverId } })
+        await this.deleteServer(params.serverId)
         return { ok: true as const }
       },
-      testMcpServer: async ({ params }) => {
-        const config = await this.requireConfig(params.serverId)
-        const started = this.deps.now()
-        if (!config.enabled) return this.testConfig(config)
-        await this.manager.reset(params.serverId)
-        try {
-          await this.manager.listTools(params.serverId, { refresh: true })
-          return {
-            ok: true,
-            tools: this.store.tools(params.serverId),
-            error: null,
-            latencyMs: this.deps.now() - started,
-          }
-        } catch (err) {
-          return {
-            ok: false,
-            tools: [],
-            error: this.redact(errorMessage(err)),
-            latencyMs: null,
-            ...(isAuthRequired(err) ? { authRequired: true } : {}),
-          }
-        }
-      },
+      testMcpServer: ({ params }) => this.testServer(params.serverId),
       listMcpTools: async ({ params, query }) => {
         this.requireServer(params.serverId)
         if (query.refresh) await this.manager.listTools(params.serverId, { refresh: true })
@@ -384,7 +429,7 @@ export class McpService {
         return this.store.updateBotServer(params.botId, params.serverId, body)
       },
       startMcpOAuth: async ({ params }) => {
-        const authorizationUrl = await this.oauth.start(await this.requireConfig(params.serverId))
+        const authorizationUrl = await this.startSignIn(params.serverId)
         return { authorizationUrl, server: this.server(params.serverId) }
       },
       cancelMcpOAuth: ({ params }) => {

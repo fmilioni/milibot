@@ -32,6 +32,7 @@ export interface McpOAuthDeps {
   onChange: (serverId: string) => void
   onConnected: (serverId: string) => Promise<void>
   log: LogFn
+  redact: (text: string) => string
 }
 
 // Portuguese on purpose: the browser page after a sign-in is shown in the browser's language.
@@ -183,9 +184,13 @@ export class McpOAuthService {
       }
     } catch (err) {
       listener.close()
-      throw new DaemonError('conflict', `Could not start the sign-in: ${errorMessage(err)}`, {
-        reason: 'oauth_start_failed',
-      })
+      throw new DaemonError(
+        'conflict',
+        `Could not start the sign-in: ${this.deps.redact(errorMessage(err))}`,
+        {
+          reason: 'oauth_start_failed',
+        },
+      )
     }
     const flow: Flow = {
       serverId: config.id,
@@ -226,11 +231,9 @@ export class McpOAuthService {
       this.end(state)
       await this.finish(flow.serverId)
     } catch (err) {
-      this.deps.log('warn', 'mcp oauth sign-in failed', {
-        serverId: flow.serverId,
-        err: errorMessage(err),
-      })
-      page(res, 400, language, false, errorMessage(err))
+      const message = this.deps.redact(errorMessage(err))
+      this.deps.log('warn', 'mcp oauth sign-in failed', { serverId: flow.serverId, err: message })
+      page(res, 400, language, false, message)
       this.end(state)
       this.deps.onChange(flow.serverId)
     }

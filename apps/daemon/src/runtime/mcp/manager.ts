@@ -41,6 +41,8 @@ export interface McpManagerDeps {
   oauthProvider?: (config: McpServerConfig) => OAuthClientProvider
   /** A server needs the user to sign in (again); `detected`: it was not known to use OAuth. */
   onAuthRequired?: (serverId: string, detected: boolean) => void
+  /** Removes secret values (e.g. a header a server echoes back) from an error before it is reported. */
+  redact?: (text: string) => string
 }
 
 interface Connection {
@@ -118,6 +120,7 @@ export class McpManager {
 
   private setState(serverId: string, status: McpServerState['status'], error: string | null = null): void {
     const entry = this.entry(serverId)
+    if (error !== null && this.deps.redact) error = this.deps.redact(error)
     if (entry.state.status === status && entry.state.error === error) return
     entry.state = { status, error, since: this.now() }
     this.deps.onState(serverId, entry.state)

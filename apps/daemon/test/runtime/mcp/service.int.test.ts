@@ -36,6 +36,7 @@ let chiefId: string
 let chiefDm: string
 let requests: CompletionRequest[]
 let http: Server | null = null
+let logs: string[] = []
 
 const dir = useTempDir('mcp')
 afterEach(async () => {
@@ -49,8 +50,10 @@ type Step = { text?: string; toolCalls?: Array<{ name: string; arguments?: unkno
 
 async function boot(script: Step[] = [{ text: 'ok' }]) {
   requests = []
+  logs = []
   h = await bootRuntime({
     dir: dir(),
+    runtime: { log: (level, message, extra) => logs.push(JSON.stringify({ level, message, extra })) },
     host: { compaction: false },
     script: (request) => {
       if (request.tools.length === 0) return { text: 'Hi!' }
@@ -184,6 +187,50 @@ describe('external MCP servers', () => {
       },
     )
     expect(edited.ok).toBe(true)
+  })
+
+  it('redacts a secret header echoed back in a server error from its state, events, API and logs', async () => {
+    await boot()
+    const token = 'echoed_secret_456'
+    http = createServer((req, res) => {
+      res
+        .writeHead(500, { 'content-type': 'text/plain' })
+        .end(`rejected Authorization: ${req.headers.authorization}`)
+    })
+    await new Promise<void>((resolve) => http?.listen(0, '127.0.0.1', resolve))
+    const address = http.address()
+    if (!address || typeof address === 'string') throw new Error('no address')
+    const url = `http://127.0.0.1:${address.port}/mcp`
+    const headers = [{ name: 'Authorization', value: `Bearer ${token}`, secret: true }]
+
+    const draft = await call<McpTestResult>(
+      'testMcpDraft',
+      {},
+      { config: { name: 'Echo', transport: 'http', url, headers } },
+    )
+    expect(draft.ok).toBe(false)
+    expect(draft.error).toContain('rejected Authorization: ••••••')
+
+    const server = await call<McpServer>(
+      'createMcpServer',
+      {},
+      { name: 'Echo', transport: 'http', url, headers },
+    )
+    const tested = await call<McpTestResult>('testMcpServer', { serverId: server.id })
+    expect(tested.ok).toBe(false)
+    expect(tested.error).toContain('Authorization: ••••••')
+
+    await call('postMessage', { conversationId: chiefDm }, { content: 'hi' })
+    await host.idle()
+
+    const [listed] = await call<McpServer[]>('listMcpServers')
+    expect(listed?.state).toMatchObject({ status: 'error' })
+    expect(listed?.state.error).toContain('rejected Authorization: ••••••')
+    const updates = events.filter((e) => e.type === 'mcp.server.updated')
+    expect(JSON.stringify(updates)).toContain('Authorization: ••••••')
+    expect(logs.join('\n')).toContain('Authorization: ••••••')
+    for (const text of [JSON.stringify(listed), JSON.stringify(updates), logs.join('\n')])
+      expect(text).not.toContain(token)
   })
 
   it('gives API-provider bots only their enabled tools, runs them and logs them redacted', async () => {

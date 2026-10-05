@@ -46,6 +46,7 @@ const ACTIVITY_KEYS = {
   update_own_prompt: 'memory',
   memory_search: 'memory',
   history_search: 'memory',
+  memory_forget: 'memory',
   skill_load: 'skills',
   skill_read: 'skills',
   skill_save: 'skills',

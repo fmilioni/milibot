@@ -63,12 +63,21 @@ export interface MemoryBackend {
   botNotes(botId: string): MemoryNote[]
   /**
    * Replaces a note's text (and moves it to `scope`; workspace notes have no bot). `projectId` moves a
-   * workspace note to that project (null: general); undefined keeps it.
+   * workspace note to that project (null: general); undefined keeps it. `absorbs` are notes merged into
+   * this one: they are deleted in the same transaction.
    */
   reviseNote(
     id: string,
-    input: { content: string; scope: MemoryScope; botId: string; projectId?: string | null },
+    input: {
+      content: string
+      scope: MemoryScope
+      botId: string
+      projectId?: string | null
+      absorbs?: string[]
+    },
   ): MemoryNote
+  /** Deletes the notes (all or none). */
+  forgetNotes(ids: string[]): void
   /** The bot's notes and the workspace ones of the projects in `project` (default: every project). */
   searchNotes(botId: string, terms: string[], limit: number, project?: ProjectView): MemoryNote[]
   searchMessages(terms: string[], options: MessageSearchOptions): StoredMessage[]

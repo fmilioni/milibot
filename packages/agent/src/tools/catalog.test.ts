@@ -61,6 +61,7 @@ describe('toolsForLane main', () => {
       'memory_save',
       'memory_search',
       'history_search',
+      'memory_forget',
       'knowledge_search',
       'knowledge_read',
       'knowledge_list',

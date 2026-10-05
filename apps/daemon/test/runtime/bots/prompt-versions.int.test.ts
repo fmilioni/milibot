@@ -257,6 +257,57 @@ describe('workspace memory', () => {
     expect(notes.map((n) => n.content)).toEqual(['The user prefers ISO dates (YYYY-MM-DD).'])
   })
 
+  it('a bot merges repeated workspace notes and forgets an outdated one; other bots see only the result', async () => {
+    const steps: FakeStep[] = [
+      {
+        toolCalls: [
+          {
+            name: 'memory_save',
+            arguments: {
+              note: 'Never write comments on GitHub PRs.',
+              replaces: ['Never comment on PRs.', 'No PR comments, not even reviews.'],
+            },
+          },
+        ],
+      },
+      {
+        toolCalls: [
+          {
+            name: 'memory_forget',
+            arguments: { notes: 'Exceptions valid for 0.3', reason: 'Version 0.3 is over.' },
+          },
+        ],
+      },
+      { text: 'ok' },
+    ]
+    await boot((_request, i) => steps[i] ?? { text: 'ok' })
+    for (const content of [
+      'Never comment on PRs.',
+      'Exceptions valid for 0.3 only.',
+      'No PR comments, not even reviews.',
+    ])
+      await call('createWorkspaceMemory', {}, { content })
+    const [first] = await call<MemoryNote[]>('listWorkspaceMemories')
+
+    await say('Tidy up the memory.')
+    const notes = await call<MemoryNote[]>('listWorkspaceMemories')
+    expect(notes.map((n) => [n.id, n.content])).toEqual([[first?.id, 'Never write comments on GitHub PRs.']])
+    const activity = (await messages()).find((m) => m.kind === 'activity')
+    expect(activity?.content).toContain('Exceptions valid for 0.3 only.')
+    expect(activity?.content).toContain('Version 0.3 is over.')
+
+    const chief = runtime.store.bots.first() as Bot
+    const chiefDm = runtime.store.conversations.findDirect(chief.id)?.id as string
+    await say('hi', chiefDm)
+    const system = provider.requests.at(-1)?.messages[0]
+    const block = system?.content[1]
+    const text = block?.type === 'text' ? block.text : ''
+    expect(text).toContain('Never write comments on GitHub PRs.')
+    expect(text).not.toContain('Never comment on PRs.')
+    expect(text).not.toContain('not even reviews')
+    expect(text).not.toContain('0.3')
+  })
+
   it('workspace notes are managed through their own routes', async () => {
     await boot(() => ({ text: 'ok' }))
     const note = await call<MemoryNote>('createWorkspaceMemory', {}, { content: 'The team uses Notion.' })

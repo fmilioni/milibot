@@ -48,10 +48,17 @@ export class InMemoryMemory implements MemoryBackend {
 
   reviseNote(
     id: string,
-    input: { content: string; scope: MemoryScope; botId: string; projectId?: string | null },
+    input: {
+      content: string
+      scope: MemoryScope
+      botId: string
+      projectId?: string | null
+      absorbs?: string[]
+    },
   ): MemoryNote {
     const note = this.notes.find((n) => n.id === id)
     if (!note) throw new Error(`memory note not found: ${id}`)
+    this.forgetNotes((input.absorbs ?? []).filter((other) => other !== id))
     note.content = input.content
     note.scope = input.scope
     note.botId = input.scope === 'workspace' ? null : input.botId
@@ -61,6 +68,12 @@ export class InMemoryMemory implements MemoryBackend {
     note.tokenCount = estimateTokens(input.content)
     note.updatedAt = this.now()
     return note
+  }
+
+  forgetNotes(ids: string[]): void {
+    const missing = ids.find((id) => !this.notes.some((n) => n.id === id))
+    if (missing) throw new Error(`memory note not found: ${missing}`)
+    this.notes = this.notes.filter((n) => !ids.includes(n.id))
   }
 
   saveNote(input: {

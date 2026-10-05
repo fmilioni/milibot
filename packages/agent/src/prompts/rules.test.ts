@@ -144,9 +144,12 @@ describe('global rules', () => {
 
   it('leaves out of a helper what it cannot do: ask the user, save memory, change its role', () => {
     const helper = composeSystemPrompt({ bot, team: [], helper: true })
-    for (const tool of ['ask_user', 'memory_save', 'update_own_prompt', 'request_secret'])
+    for (const tool of ['ask_user', 'memory_save', 'memory_forget', 'update_own_prompt', 'request_secret'])
       expect(helper).not.toContain(tool)
-    for (const tool of ['ask_user', 'memory_save', 'update_own_prompt']) expect(prompt(false)).toContain(tool)
+    for (const tool of ['ask_user', 'memory_save', 'memory_forget', 'update_own_prompt'])
+      expect(prompt(false)).toContain(tool)
+    expect(prompt(false)).toContain('Keep memory current')
+    expect(helper).not.toContain('Keep memory current')
     expect(helper).toContain('history_search')
   })
 

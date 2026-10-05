@@ -5,6 +5,7 @@ import {
   Archive,
   ArrowLeft,
   ArrowUpRight,
+  BookmarkMinus,
   BookmarkPlus,
   BookOpenText,
   BookPlus,
@@ -118,6 +119,7 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   set_model: Cpu,
   memory_search: Brain,
   history_search: History,
+  memory_forget: BookmarkMinus,
   knowledge_search: BookSearch,
   knowledge_read: BookOpenText,
   knowledge_list: Library,
@@ -284,7 +286,7 @@ function meaningless(detail: string): boolean {
  * does not know reads as "Used <tool name>", never as its raw arguments.
  */
 export function stepText(
-  step: Pick<ActivityStep, 'kind' | 'detail'>,
+  step: Pick<ActivityStep, 'kind' | 'detail'> & { status?: ActivityStep['status'] },
   t: TFunction,
   rawDetail = step.detail,
 ): string {
@@ -292,10 +294,13 @@ export function stepText(
   const borrowed = step.kind === 'tool' ? KIND_ALIASES[rawDetail.trim().toLowerCase()] : undefined
   const detail = borrowed || meaningless(rawDetail) ? '' : rawDetail
   const kind = borrowed ?? canonicalKind(step.kind)
-  const key = `chat.activity.kinds.${kind}`
-  if (STEP_ICONS[kind] === undefined || !t(key, { defaultValue: '' }))
+  const base = `chat.activity.kinds.${kind}`
+  if (STEP_ICONS[kind] === undefined || !t(base, { defaultValue: '' }))
     return String(t('chat.activity.kinds.tool', { detail: humanToolName(kind) })).trim()
   if (MONO_KINDS.has(kind) && detail) return detail
+  // Kinds whose text says the thing was done ("Removed from memory") have their own text for a failure.
+  const failed = step.status === 'error' && Boolean(t(`${base}_failed`, { defaultValue: '' }))
+  const key = failed ? `${base}_failed` : base
   // Steps without a detail (or whose detail is only known after running) read on their own.
   if (!detail) {
     const bare = String(t(`${key}_empty`, { defaultValue: '' }))

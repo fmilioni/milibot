@@ -182,4 +182,59 @@ describe('workspace memory', () => {
     const moved = memory.reviseNote(shared.id, { content: 'Leo only now.', scope: 'bot', botId: leo.id })
     expect(moved).toMatchObject({ scope: 'bot', botId: leo.id })
   })
+
+  it('merges notes into one in a transaction and forgets notes', () => {
+    const { ana } = setup()
+    const first = memory.saveNote({
+      botId: ana.id,
+      content: 'Never comment on PRs.',
+      pinned: true,
+      scope: 'workspace',
+    })
+    const second = memory.saveNote({
+      botId: ana.id,
+      content: 'No PR comments, ever.',
+      pinned: true,
+      scope: 'workspace',
+    })
+    const third = memory.saveNote({
+      botId: ana.id,
+      content: 'Reviews go on the board card.',
+      pinned: true,
+      scope: 'workspace',
+    })
+    const kept = memory.saveNote({
+      botId: ana.id,
+      content: 'Branches are in English.',
+      pinned: true,
+      scope: 'workspace',
+    })
+
+    expect(() =>
+      memory.reviseNote(first.id, {
+        content: 'Merged.',
+        scope: 'workspace',
+        botId: ana.id,
+        absorbs: [second.id, 'memory_missing'],
+      }),
+    ).toThrow(/not found/)
+    expect(memory.workspaceNotes().map((n) => n.content)).toHaveLength(4)
+
+    const merged = memory.reviseNote(first.id, {
+      content: 'Never comment on PRs; reviews go on the board card.',
+      scope: 'workspace',
+      botId: ana.id,
+      absorbs: [second.id, third.id, second.id, first.id],
+    })
+    expect(merged).toMatchObject({ id: first.id, createdAt: first.createdAt })
+    expect(memory.workspaceNotes().map((n) => n.id)).toEqual([first.id, kept.id])
+    expect(memory.searchNotes(ana.id, searchTerms('ever'), 5)).toEqual([])
+    expect(memory.searchNotes(ana.id, searchTerms('board card'), 5).map((n) => n.id)).toEqual([first.id])
+
+    expect(() => memory.forgetNotes([kept.id, second.id])).toThrow(/not found/)
+    expect(memory.workspaceNotes()).toHaveLength(2)
+    memory.forgetNotes([kept.id, kept.id])
+    expect(memory.workspaceNotes().map((n) => n.id)).toEqual([first.id])
+    expect(memory.searchNotes(ana.id, searchTerms('branches english'), 5)).toEqual([])
+  })
 })

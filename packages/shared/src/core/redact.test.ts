@@ -33,6 +33,15 @@ describe('secret redaction of auth headers', () => {
     expect(redactSecrets('user alice', [header])).toBe('user alice')
   })
 
+  it('redacts the lone token of a Basic header with an empty user or password', () => {
+    const pat = `Basic ${btoa(':azdo-pat-123456')}`
+    expect(redactSecrets('denied for azdo-pat-123456', [pat])).toBe(`denied for ${REDACTED}`)
+    const key = `Basic ${btoa('sk_live_abc123:')}`
+    expect(redactSecrets('invalid key sk_live_abc123', [key])).toBe(`invalid key ${REDACTED}`)
+    expect(redactSecrets('pat short', [`Basic ${btoa(':short')}`])).toBe('pat short')
+    expect(redactSecrets('key short', [`Basic ${btoa('short:')}`])).toBe('key short')
+  })
+
   it('leaves short or non-credential parts alone', () => {
     expect(redactSecrets('Bearer abc and abc', ['Bearer abc'])).toBe(`${REDACTED} and abc`)
     expect(redactSecrets('ok then ok', ['Basic ok'])).toBe('ok then ok')

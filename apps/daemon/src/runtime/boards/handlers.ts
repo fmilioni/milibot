@@ -64,6 +64,7 @@ export class BoardRoutes {
         boards.deleteBoard(params.boardId)
         return { ok: true as const }
       },
+      reorderBoard: ({ params, body }) => boards.reorderBoard(params.boardId, body.index),
       createBoardCard: ({ params, body }) => {
         boards.requireBoard(params.boardId)
         const card = boards.addCard(params.boardId, {
@@ -95,6 +96,16 @@ export class BoardRoutes {
         boards.moveCard(params.cardId, body.status, body.index, null)
         boards.changed(params.boardId, { cards: true })
         return boards.store.toCards(params.boardId)
+      },
+      moveBoardCardToBoard: ({ params, body }) => {
+        boards.requireCard(params.cardId, params.boardId)
+        const card = boards.moveCardToBoard(params.cardId, body.toBoardId, {
+          ...(body.status ? { status: body.status } : {}),
+          ...(body.index !== undefined ? { index: body.index } : {}),
+          author: USER,
+        })
+        if (card.board_id === params.boardId) boards.changed(params.boardId, { cards: true })
+        return boards.store.toCard(card)
       },
       deleteBoardCard: ({ params }) => {
         boards.requireCard(params.cardId, params.boardId)

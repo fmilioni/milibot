@@ -33,7 +33,7 @@ import type { VmController } from '../vm'
 import { BoardImages } from './images'
 import { type BoardCardLinks, type LinkTarget, linkTarget, type LinkTargets } from './links'
 import { BOARD_CORPUS, boardCorpus, searchBoardItems } from './search'
-import { type BoardRow, BoardStore, type CardRow } from './store'
+import { assetShas, type BoardRow, BoardStore, type CardRow } from './store'
 
 /** Color for a new label: the one the board's labels use least (in palette order on a tie). */
 function nextLabelColor(labels: ReadonlyArray<Pick<BoardLabel, 'color'>>): BoardLabelColor {
@@ -200,7 +200,10 @@ export class BoardService implements BoardCardLinks {
     }
   }
 
-  /** Announces a board after a change: its row (and cards when they changed) and its chat card. */
+  /**
+   * Announces a board after a change: its row (and cards when they changed) and its chat card. It never moves
+   * the board in the list (that order is `position`), since it also runs for pull request polls.
+   */
   changed(boardId: string, options: { cards?: boolean; reindex?: string[] } = {}): Board {
     this.store.syncCompletion(boardId)
     const row = this.store.updateBoard(boardId, {})
@@ -262,10 +265,23 @@ export class BoardService implements BoardCardLinks {
       projectId?: string | null
       dueDate?: string | null
       archived?: boolean
+      doingLimit?: number | null
     },
   ): Board {
     const row = this.requireBoard(id)
+    if (
+      patch.doingLimit !== undefined &&
+      patch.doingLimit !== null &&
+      (!Number.isInteger(patch.doingLimit) ||
+        patch.doingLimit < 1 ||
+        patch.doingLimit > BOARD_LIMITS.doingLimit)
+    )
+      throw new DaemonError(
+        'validation_failed',
+        `The Doing limit goes from 1 to ${BOARD_LIMITS.doingLimit} cards.`,
+      )
     this.store.updateBoard(id, {
+      ...(patch.doingLimit !== undefined ? { doing_limit: patch.doingLimit } : {}),
       ...(patch.title !== undefined ? { title: patch.title } : {}),
       ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
       ...(patch.projectId !== undefined ? { project_id: patch.projectId } : {}),
@@ -275,6 +291,24 @@ export class BoardService implements BoardCardLinks {
         : {}),
     })
     return this.changed(id, { reindex: patch.title !== undefined || patch.summary !== undefined ? [id] : [] })
+  }
+
+  /** Puts a board at `index` among every board (archived included) and announces the boards that moved. */
+  reorderBoard(id: string, index: number): Board[] {
+    this.requireBoard(id)
+    for (const moved of this.store.reorderBoard(id, index)) {
+      const row = this.store.board(moved)
+      if (row) this.deps.emit({ type: 'board.updated', payload: { board: this.store.toBoard(row) } })
+    }
+    return this.list('all')
+  }
+
+  /** How far the Doing column is past the board's limit (0 when within it or without one). */
+  doingOverLimit(boardId: string): { doing: number; limit: number } | null {
+    const row = this.store.board(boardId)
+    if (!row?.doing_limit) return null
+    const doing = this.store.cards(boardId).filter((c) => c.status === 'doing').length
+    return doing > row.doing_limit ? { doing, limit: row.doing_limit } : null
   }
 
   deleteBoard(id: string): void {
@@ -358,6 +392,56 @@ export class BoardService implements BoardCardLinks {
     const before = this.store.cards(card.board_id)
     this.store.savePlaces(before, applyCardMove(before, id, status, index))
     if (status === 'doing' && card.status !== 'doing' && botId) this.store.addAssignee(id, botId)
+    return this.requireCard(id)
+  }
+
+  /**
+   * Moves a card to another board, keeping its id, comments, links (plans and sessions stay linked),
+   * assignees, due date and images; labels follow by name. A comment by `author` records the move.
+   */
+  moveCardToBoard(
+    id: string,
+    toBoardId: string,
+    options: {
+      status?: BoardCardStatus
+      index?: number
+      author: { type: 'user' | 'bot'; botId: string | null }
+    },
+  ): CardRow {
+    const card = this.requireCard(id)
+    const from = this.requireBoard(card.board_id)
+    const to = this.requireBoard(toBoardId)
+    const status = options.status ?? card.status
+    if (to.id === from.id)
+      return this.moveCard(id, status, options.index ?? Number.MAX_SAFE_INTEGER, options.author.botId)
+    if (to.archived_at !== null)
+      throw new DaemonError('conflict', `The board "${to.title}" is archived; unarchive it first.`, {
+        reason: 'archived',
+      })
+    if (this.store.cards(to.id).length >= BOARD_LIMITS.cards)
+      throw new DaemonError('conflict', `A board holds at most ${BOARD_LIMITS.cards} cards.`, {
+        reason: 'cards_limit',
+      })
+    const missing = this.store
+      .cardLabelIds(id)
+      .flatMap((labelId) => this.store.label(labelId) ?? [])
+      .filter((l) => !this.store.labelByName(to.id, l.name))
+    if (this.store.labels(to.id).length + missing.length > BOARD_LIMITS.labels)
+      throw new DaemonError('conflict', `A board has at most ${BOARD_LIMITS.labels} labels.`, {
+        reason: 'labels_limit',
+      })
+    const texts = [card.body, ...this.store.comments(id).map((c) => c.body)]
+    const images = [...new Set(texts.flatMap(assetShas))].flatMap((sha) => {
+      const image = this.store.image(from.id, sha)
+      return image ? [this.images.placeIn(to, image)] : []
+    })
+    this.store.moveCardToBoard(id, to.id, status, options.index ?? Number.MAX_SAFE_INTEGER, images)
+    if (status === 'doing' && card.status !== 'doing' && options.author.botId)
+      this.store.addAssignee(id, options.author.botId)
+    this.store.addComment(id, options.author, `Moved from "${from.title}" to "${to.title}".`)
+    if (images.length) this.images.kick()
+    this.changed(from.id, { cards: true })
+    this.changed(to.id, { cards: true })
     return this.requireCard(id)
   }
 

@@ -55,3 +55,27 @@ export function applyCardMove<T extends { status: BoardCardStatus; position: num
     return next && (next.status !== c.status || next.position !== c.position) ? { ...c, ...next } : c
   })
 }
+
+/**
+ * Where an item dropped at `visibleIndex` of a filtered list goes in the full list: before the item it lands
+ * on, else right after the last visible one. Both lists are in order and the moving item is left out of the
+ * index, as `applyCardMove` expects.
+ */
+export function fullListIndex(
+  full: readonly string[],
+  visible: readonly string[],
+  movingId: string,
+  visibleIndex: number,
+): number {
+  const rest = full.filter((id) => id !== movingId)
+  const shown = visible.filter((id) => id !== movingId)
+  const anchor = shown[visibleIndex]
+  if (anchor !== undefined) {
+    const at = rest.indexOf(anchor)
+    if (at >= 0) return at
+  }
+  const last = shown[shown.length - 1]
+  if (last === undefined) return rest.length
+  const at = rest.indexOf(last)
+  return at >= 0 ? at + 1 : rest.length
+}

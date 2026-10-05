@@ -57,6 +57,15 @@ function clipped(value: unknown, max: number, name: string): string | undefined 
   return text
 }
 
+/** A whole number given as a number or numeric text; undefined when absent, null for "" (clears). */
+function wholeNumber(value: unknown, name: string): number | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null || (typeof value === 'string' && !value.trim())) return null
+  const n = typeof value === 'number' ? value : Number(String(value).trim())
+  if (!Number.isInteger(n) || n < 0) throw new ToolInputError(`"${name}" must be a whole number from 0`)
+  return n
+}
+
 function nameList(value: unknown, name: string): string[] | undefined {
   if (value === undefined || value === null) return undefined
   const items = typeof value === 'string' ? (value.trim() ? value.split(',') : []) : value
@@ -223,10 +232,8 @@ export class BoardTools extends ToolSwitch {
           ? 'There are no boards here.'
           : 'There are no active boards here (archived: true includes archived ones).',
       )
-    const done = rows.filter((r) => this.store.toBoard(r).status === 'done')
-    const open = rows.filter((r) => !done.includes(r))
     return toolText(
-      [...open, ...done]
+      rows
         .slice(0, 60)
         .map((r) => this.boardLine(r))
         .join('\n') + '\n\nOpen one with board_get.',
@@ -248,7 +255,8 @@ export class BoardTools extends ToolSwitch {
     ]
     for (const status of BOARD_CARD_STATUSES) {
       const column = columnCards(cards, status)
-      lines.push('', `## ${COLUMN_NAME[status]} (${column.length})`)
+      const limit = status === 'doing' && row.doing_limit ? `/${row.doing_limit} limit` : ''
+      lines.push('', `## ${COLUMN_NAME[status]} (${column.length}${limit})`)
       for (const card of column) {
         const extras = [
           card.assignees.length ? `assigned to ${this.assigneeNames(card.assignees)}` : '',
@@ -269,20 +277,38 @@ export class BoardTools extends ToolSwitch {
 
   private update(a: ToolArgs): ToolResult {
     const archived = flagArg(a, 'archived')
-    const other = ['title', 'summary', 'due'].some((k) => a[k] !== undefined && a[k] !== null)
+    const other = ['title', 'summary', 'due', 'doing_limit'].some((k) => a[k] !== undefined && a[k] !== null)
     const row = this.boards.resolveBoard(textArg(a, 'board'), other && archived !== false)
     const title = clipped(a.title, BOARD_LIMITS.title, 'title')
     if (title === '') throw new ToolInputError('"title" cannot be empty')
     const summary = clipped(a.summary, BOARD_LIMITS.summary, 'summary')
     const due = parseDue(a.due)
+    const position = wholeNumber(a.position, 'position')
+    const rawLimit = wholeNumber(a.doing_limit, 'doing_limit')
+    const doingLimit = rawLimit === 0 ? null : rawLimit
+    if (doingLimit !== undefined && doingLimit !== null && doingLimit > BOARD_LIMITS.doingLimit)
+      throw new ToolInputError(`"doing_limit" goes up to ${BOARD_LIMITS.doingLimit} (0 or "" removes it)`)
     this.boards.updateBoard(row.id, {
       ...(title !== undefined ? { title } : {}),
       ...(summary !== undefined ? { summary } : {}),
       ...(due !== undefined ? { dueDate: due } : {}),
       ...(archived !== undefined ? { archived } : {}),
+      ...(doingLimit !== undefined ? { doingLimit } : {}),
     })
+    if (position !== undefined && position !== null) this.boards.reorderBoard(row.id, position)
     const what = archived === true ? 'Archived' : archived === false ? 'Unarchived' : 'Updated'
-    return toolText(`${what} the board "${title ?? row.title}" (${row.id}).`, false, { detail: row.title })
+    const over = this.overLimitText(row.id)
+    return toolText(`${what} the board "${title ?? row.title}" (${row.id}).${over}`, false, {
+      detail: row.title,
+    })
+  }
+
+  /** A warning when the board's Doing column is past its limit ('' otherwise). */
+  private overLimitText(boardId: string): string {
+    const over = this.boards.doingOverLimit(boardId)
+    return over
+      ? ` Doing now has ${over.doing} cards, over the board's limit of ${over.limit}: finish or move one before starting more.`
+      : ''
   }
 
   private remove(a: ToolArgs): ToolResult {
@@ -376,6 +402,7 @@ export class BoardTools extends ToolSwitch {
       this.boards.changed(board.id, { cards: true, reindex: [card.id] })
       return toolText(
         `Added the card "${title}" (${card.id}) to ${COLUMN_NAME[cardStatus]} of "${board.title}".` +
+          (cardStatus === 'doing' ? this.overLimitText(board.id) : '') +
           this.problemsText(imported.problems),
         false,
         { detail: title },
@@ -383,8 +410,20 @@ export class BoardTools extends ToolSwitch {
     }
 
     const card = this.boards.resolveCard(textArg(a, 'card'), true)
-    const board = this.boards.resolveBoard(card.board_id)
     if (title === '') throw new ToolInputError('"title" cannot be empty')
+    const from = this.boards.resolveBoard(card.board_id)
+    const to = textArg(a, 'board') ? this.boards.resolveBoard(textArg(a, 'board'), true) : from
+    const changesBoard = to.id !== from.id
+    if (changesBoard) {
+      const target = status?.data ?? card.status
+      const index = a.before === undefined ? undefined : this.placeIndex(to.id, target, a.before, card.id)
+      this.boards.moveCardToBoard(card.id, to.id, {
+        status: target,
+        ...(index !== undefined ? { index } : {}),
+        author: { type: 'bot', botId: ctx.bot.id },
+      })
+    }
+    const board = to
     const imported = rawBody !== undefined ? await this.boards.images.importMarkdown(board, rawBody) : null
     const labelIds = this.labelIds(board.id, a.labels)
     this.boards.updateCard(card.id, {
@@ -396,18 +435,29 @@ export class BoardTools extends ToolSwitch {
       ...(labelIds ? { labelIds } : {}),
     })
     const target = status?.data ?? card.status
-    if (status || a.before !== undefined)
+    if (!changesBoard && (status || a.before !== undefined))
       this.boards.moveCard(card.id, target, this.placeIndex(board.id, target, a.before, card.id), ctx.bot.id)
     this.boards.changed(board.id, {
       cards: true,
       reindex: title !== undefined || summary !== undefined ? [card.id] : [],
     })
-    const moved = status && status.data !== card.status ? ` Moved to ${COLUMN_NAME[status.data]}.` : ''
-    const finished = this.store.toBoard(this.store.board(board.id) as BoardRow).status === 'done'
+    const moved = changesBoard
+      ? ` Moved from "${from.title}" to ${COLUMN_NAME[target]} of "${to.title}", with its comments, links and images.`
+      : status && status.data !== card.status
+        ? ` Moved to ${COLUMN_NAME[status.data]}.`
+        : ''
+    const finished = (row: BoardRow) =>
+      this.store.toBoard(this.store.board(row.id) as BoardRow).status === 'done'
+    const statusChanged = status?.data !== card.status
+    const completed = [
+      ...(changesBoard && finished(from) ? [from] : []),
+      ...((changesBoard || statusChanged) && finished(board) ? [board] : []),
+    ]
     return toolText(
       `Updated the card "${title ?? card.title}" (${card.id}).${moved}` +
-        (finished && status?.data !== card.status
-          ? ` Every card of "${board.title}" is now done or dropped.`
+        completed.map((b) => ` Every card of "${b.title}" is now done or dropped.`).join('') +
+        (target === 'doing' && (changesBoard || card.status !== 'doing')
+          ? this.overLimitText(board.id)
           : '') +
         this.problemsText(imported?.problems ?? []),
       false,

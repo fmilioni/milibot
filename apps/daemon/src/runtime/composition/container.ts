@@ -84,11 +84,18 @@ import {
   ProviderRoutes,
   ProviderStore,
   resolveBotModelChange,
+  resolveBotModelRequest,
 } from '../providers'
 import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
-import { GitPolicySync, OfficeService, SettingsService } from '../settings'
+import {
+  GitPolicySync,
+  OfficeService,
+  SettingChanges,
+  SettingsService,
+  WorkspaceSettingsTools,
+} from '../settings'
 import { SetupRoutes } from '../setup'
 import { defaultBuiltinSkillsDir, SkillService, SkillTools } from '../skills'
 import { SpendGuard, SpendRoutes } from '../spend'
@@ -294,6 +301,7 @@ export function createContainer(options: ContainerOptions) {
     office,
     gitPolicy,
     cliUsage: (providerId) => cliPlans.usage(providerId),
+    emit,
     now,
     log,
   })
@@ -505,6 +513,33 @@ export function createContainer(options: ContainerOptions) {
     getMessage,
     now,
     log,
+  })
+  const settingChanges: SettingChanges = new SettingChanges({
+    settings,
+    confirmations: {
+      request: (input) => groups.requestConfirmation(input),
+      onConfirmed: (action, handler) => groups.onConfirmed(action, handler),
+      onRejected: (action, handler) => groups.onRejected(action, handler),
+    },
+    host,
+    findBot: (id) => store.bots.find(id),
+    describe: (bot, change): string => settingsTools.describe(bot, change),
+    timeoutSeconds: () => userRequests.timeoutSeconds(),
+    log,
+  })
+  const settingsTools: WorkspaceSettingsTools = new WorkspaceSettingsTools({
+    settings,
+    changes: settingChanges,
+    listBots: () => store.bots.list(),
+    catalog: (bot) => catalog.catalog(bot),
+    resolveModel: (bot, request) => resolveBotModelRequest(catalog, bot, request, null),
+    imageModels: () =>
+      providers.imageModels().map(({ model, providerName }) => ({
+        providerId: model.providerId,
+        modelId: model.modelId,
+        displayName: model.displayName,
+        providerName,
+      })),
   })
 
   const embeddingOptions = overrides.embeddings
@@ -847,6 +882,7 @@ export function createContainer(options: ContainerOptions) {
     boardTools,
     attachments.tools,
     new ImageTools({ images }),
+    settingsTools,
   ]
   const tools = new ToolRegistry(toolProviders, redact)
 
@@ -991,6 +1027,7 @@ export function createContainer(options: ContainerOptions) {
     { name: 'procedures', start: () => procedures.start() },
     { name: 'skills', start: () => skills.start(), stop: () => skills.stop() },
     { name: 'external MCP', start: () => externalMcp.start(), stop: () => externalMcp.stop() },
+    { name: 'setting changes', stop: () => settingChanges.stop() },
     { name: 'credentials', start: () => credentials.start(), stop: () => credentials.stop() },
     { name: 'spend', start: () => spend.start(), stop: () => spend.stop() },
     { name: 'vm admin', stop: () => vmAdmin.close() },

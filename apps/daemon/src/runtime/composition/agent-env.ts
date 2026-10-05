@@ -147,6 +147,7 @@ export function createAgentEnvironment(deps: AgentEnvDeps): AgentEnvironment {
     emitDelta: (conversationId, messageId, delta) => messages.emitDelta(conversationId, messageId, delta),
     emitActivity: (action) =>
       emit({ type: 'bot.activity', payload: { botId: action.botId, action: redact(action) } }),
+    emitScreen: (botId, screen) => emit({ type: 'bot.screen', payload: { botId, ...screen } }),
     internalConversation: (fromBotId, toBotId) => {
       const { conversation, created } = store.conversations.internal(fromBotId, toBotId)
       if (created) emit({ type: 'conversation.created', payload: { conversation } })

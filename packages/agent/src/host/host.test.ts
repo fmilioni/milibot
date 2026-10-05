@@ -169,6 +169,22 @@ describe('DefaultAgentHost', () => {
     expect(env.messages.at(-1)?.content).toBe('done')
   })
 
+  it('announces screen control changes only when the state changes', async () => {
+    const { env, host, bot } = await setup([])
+    host.control(bot.id, 'takeover')
+    host.control(bot.id, 'takeover')
+    host.control(bot.id, 'release')
+    host.control(bot.id, 'release')
+    host.control(bot.id, 'pause')
+    host.control(bot.id, 'resume')
+    expect(env.screens).toEqual([
+      { botId: bot.id, control: 'user', paused: true, busy: false },
+      { botId: bot.id, control: 'idle', paused: false, busy: false },
+      { botId: bot.id, control: 'idle', paused: true, busy: false },
+      { botId: bot.id, control: 'idle', paused: false, busy: false },
+    ])
+  })
+
   it('after takeover/release refuses stale GUI actions and asks for a screenshot', async () => {
     const { env, host, bot, say, provider } = await setup([
       { toolCalls: [{ name: 'computer', arguments: { action: 'click', x: 10, y: 10 } }], delayMs: 20 },
@@ -182,6 +198,10 @@ describe('DefaultAgentHost', () => {
     await new Promise((r) => setTimeout(r, 40))
     expect(env.toolLog).toHaveLength(0)
     expect(host.control(bot.id, 'release').paused).toBe(false)
+    expect(env.screens).toEqual([
+      { botId: bot.id, control: 'user', paused: true, busy: true },
+      { botId: bot.id, control: 'bot', paused: false, busy: true },
+    ])
     await host.idle(bot.id)
 
     // The pending click is refused, the screenshot and the later click run.

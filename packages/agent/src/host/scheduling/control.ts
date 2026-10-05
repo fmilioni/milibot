@@ -43,6 +43,15 @@ export class BotControl {
   }
 
   control(botId: string, action: BotControlAction, options: BotControlOptions = {}): ScreenState {
+    const before = this.screenState(botId)
+    this.apply(botId, action, options)
+    const after = this.screenState(botId)
+    if (after.control !== before.control || after.paused !== before.paused || after.busy !== before.busy)
+      this.ctx.env().emitScreen(botId, after)
+    return after
+  }
+
+  private apply(botId: string, action: BotControlAction, options: BotControlOptions): void {
     const env = this.ctx.env()
     const { lanes, scheduler } = this.ctx
     const state = lanes.bot(botId)
@@ -103,7 +112,6 @@ export class BotControl {
         break
       }
     }
-    return this.screenState(botId)
   }
 
   /** Waits while the bot is paused (by the user or while the user has its screen). */

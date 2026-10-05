@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { Board, BoardCard } from '../boards/boards'
 import { Bot, BotStatus } from '../bots/bots'
-import { BotActivityAction } from '../bots/control'
+import { BotActivityAction, ScreenControl } from '../bots/control'
 import { Attachment } from '../chat/attachments'
 import { ConversationSummary } from '../chat/conversations'
 import { Message } from '../chat/messages'
@@ -70,6 +70,11 @@ export const WorkspaceEvent = z.discriminatedUnion('type', [
   /** Full replacement (final streamed text, activity step progress, card status). */
   event('message.updated', z.object({ message: Message })),
   event('bot.activity', z.object({ botId: z.string(), action: BotActivityAction })),
+  /** The bot's screen control or pause changed (take over, give back, pause, resume, stop). */
+  event(
+    'bot.screen',
+    z.object({ botId: z.string(), control: ScreenControl, paused: z.boolean(), busy: z.boolean() }),
+  ),
   event('vm.status', z.object({ vm: VmInfo })),
   /** The workspace preferences after a change (settings screen, a bot's tool or an approved card). */
   event('preferences.updated', z.object({ preferences: WorkspacePreferences })),

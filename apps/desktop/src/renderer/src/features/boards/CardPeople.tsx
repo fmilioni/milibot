@@ -8,9 +8,10 @@ import {
   foldText,
 } from '@milibot/shared'
 import { Check, Plus, Tag as TagIcon, Trash2, User, UserPlus } from 'lucide-react'
-import { type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { avatarStack } from '@/features/boards/lib/boards'
 import { LABEL_COLOR_CLASSES } from '@/features/boards/lib/label-colors'
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { toastOnError, useAppStore } from '@/features/workspace/store'
@@ -21,20 +22,28 @@ import { Tooltip } from '@/ui/Tooltip'
 
 import { useBoardStore } from './store'
 
-export function LabelChip({ label }: { label: BoardLabel }) {
+export function LabelChip({ label, size = 'sm' }: { label: BoardLabel; size?: 'sm' | 'md' }) {
   return (
     <span
-      className={`inline-flex h-[18px] max-w-full items-center truncate rounded-md px-1.5 text-xs font-medium ${LABEL_COLOR_CLASSES[label.color].chip}`}
+      className={cn(
+        'inline-flex max-w-full items-center truncate font-medium',
+        size === 'md' ? 'h-8 rounded-md px-2.5 text-base' : 'h-5 rounded-[5px] px-1.5 text-xs',
+        LABEL_COLOR_CLASSES[label.color].chip,
+      )}
     >
       {label.name}
     </span>
   )
 }
 
-function UserAvatar({ size }: { size: number }) {
+/** The user: a person on a round tint; `ring` adds the gap and thin ring that tell it apart from bots. */
+export function UserAvatar({ size, ring = false }: { size: number; ring?: boolean }) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong',
+        ring && 'shadow-[0_0_0_2px_var(--surface-2),0_0_0_3.5px_var(--text-muted)]',
+      )}
       style={{ width: size, height: size }}
     >
       <User size={Math.round(size * 0.62)} aria-hidden />
@@ -42,35 +51,51 @@ function UserAvatar({ size }: { size: number }) {
   )
 }
 
-/** Avatars of a card's assignees, overlapping; the user as a person icon. */
-export function AssigneeStack({ assignees, size = 18 }: { assignees: readonly string[]; size?: number }) {
+/** Avatars of a card's assignees, overlapping, the first `max` and then "+N"; the user as a person icon. */
+export function AssigneeStack({
+  assignees,
+  size = 18,
+  max = 4,
+}: {
+  assignees: readonly string[]
+  size?: number
+  max?: number
+}) {
   const { t } = useTranslation()
   const bots = useAppStore((s) => s.bots)
   const names = assignees
     .map((a) => (a === BOARD_USER ? t('boards.card.you') : (bots[a]?.name ?? t('boards.card.deletedBot'))))
     .join(', ')
+  const { shown, extra } = avatarStack(assignees, max)
   return (
     <Tooltip content={names}>
-      <span className="flex shrink-0 items-center -space-x-1.5" aria-label={names}>
-        {assignees.slice(0, 4).map((a) => {
+      <span className="flex shrink-0 items-center" role="img" aria-label={names}>
+        {shown.map((a, i) => {
           const bot = bots[a]
           // A round ring only fits the user's round avatar: on a bot's shape it cuts a dark arc into its neighbor.
-          return a === BOARD_USER || !bot ? (
-            <span key={a} className="flex rounded-full ring-2 ring-surface-2">
-              <UserAvatar size={size} />
-            </span>
-          ) : (
-            <span key={a} className="flex">
-              <BotAvatar avatar={bot.avatar} state={bot.status} size={size} animated={false} />
+          return (
+            <span key={a} className="flex" style={i ? { marginLeft: -Math.round(size * 0.35) } : undefined}>
+              {a === BOARD_USER || !bot ? (
+                <span className="flex rounded-full ring-2 ring-surface-2">
+                  <UserAvatar size={size} />
+                </span>
+              ) : (
+                <BotAvatar avatar={bot.avatar} state={bot.status} size={size} animated={false} />
+              )}
             </span>
           )
         })}
+        {extra > 0 && (
+          <span className="ml-1 text-xs font-semibold text-fg-secondary tabular-nums">
+            {t('boards.moreAssignees', { count: extra })}
+          </span>
+        )}
       </span>
     </Tooltip>
   )
 }
 
-function PickerRow({
+export function PickerRow({
   checked,
   onToggle,
   children,
@@ -129,13 +154,18 @@ function PickerTrigger({
   )
 }
 
-/** Who is on the card: the user and any bots, toggled from a list. */
+/** Opens a picker from the trigger a caller draws. */
+export type PickerOpener = (trigger: HTMLButtonElement) => void
+
+/** Who is on the card: the user and any bots, toggled from a list; `trigger` draws what opens it. */
 export function AssigneePicker({
   value,
   onChange,
+  trigger,
 }: {
   value: readonly string[]
   onChange: (assignees: string[]) => void
+  trigger?: (open: PickerOpener) => ReactNode
 }) {
   const { t } = useTranslation()
   const bots = useAppStore((s) => s.bots)
@@ -155,21 +185,25 @@ export function AssigneePicker({
     .join(', ')
   return (
     <>
-      <PickerTrigger
-        label={t('boards.card.assignees')}
-        empty={value.length === 0}
-        icon={<UserPlus size={13} aria-hidden />}
-        onOpen={(rect, trigger) => setOpen(open ? null : { rect, trigger })}
-      >
-        {value.length === 0 ? (
-          t('boards.card.assign')
-        ) : (
-          <>
-            <AssigneeStack assignees={value} />
-            <span className="min-w-0 truncate">{names}</span>
-          </>
-        )}
-      </PickerTrigger>
+      {trigger ? (
+        trigger((el) => setOpen(open ? null : { rect: el.getBoundingClientRect(), trigger: el }))
+      ) : (
+        <PickerTrigger
+          label={t('boards.card.assignees')}
+          empty={value.length === 0}
+          icon={<UserPlus size={13} aria-hidden />}
+          onOpen={(rect, el) => setOpen(open ? null : { rect, trigger: el })}
+        >
+          {value.length === 0 ? (
+            t('boards.card.assign')
+          ) : (
+            <>
+              <AssigneeStack assignees={value} />
+              <span className="min-w-0 truncate">{names}</span>
+            </>
+          )}
+        </PickerTrigger>
+      )}
       {open && (
         <Popover
           anchor={open.rect}
@@ -210,10 +244,12 @@ export function LabelPicker({
   board,
   value,
   onChange,
+  trigger,
 }: {
   board: Board
   value: readonly string[]
   onChange: (labelIds: string[]) => void
+  trigger?: (open: PickerOpener) => ReactNode
 }) {
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
@@ -222,7 +258,6 @@ export function LabelPicker({
   const deleteLabel = useBoardStore((s) => s.deleteLabel)
   const [open, setOpen] = useState<{ rect: DOMRect; trigger: HTMLButtonElement } | null>(null)
   const [query, setQuery] = useState('')
-  const input = useRef<HTMLInputElement>(null)
   const picked = board.labels.filter((l) => value.includes(l.id))
   const key = foldText(query, { trim: true })
   const shown = board.labels.filter((l) => !key || foldText(l.name, { trim: true }).includes(key))
@@ -242,27 +277,29 @@ export function LabelPicker({
     const next = BOARD_LABEL_COLORS[(BOARD_LABEL_COLORS.indexOf(label.color) + 1) % BOARD_LABEL_COLORS.length]
     void toastOnError(updateLabel(workspaceId, board.id, label.id, { color: next }))
   }
+  const show = (rect: DOMRect, el: HTMLButtonElement) => setOpen(open ? null : { rect, trigger: el })
   return (
     <>
-      <PickerTrigger
-        label={t('boards.card.labels')}
-        empty={picked.length === 0}
-        icon={<TagIcon size={13} aria-hidden />}
-        onOpen={(rect, trigger) => {
-          setOpen(open ? null : { rect, trigger })
-          setTimeout(() => input.current?.focus(), 0)
-        }}
-      >
-        {picked.length === 0 ? (
-          t('boards.card.labels')
-        ) : (
-          <span className="flex min-w-0 flex-wrap items-center gap-1">
-            {picked.map((label) => (
-              <LabelChip key={label.id} label={label} />
-            ))}
-          </span>
-        )}
-      </PickerTrigger>
+      {trigger ? (
+        trigger((el) => show(el.getBoundingClientRect(), el))
+      ) : (
+        <PickerTrigger
+          label={t('boards.card.labels')}
+          empty={picked.length === 0}
+          icon={<TagIcon size={13} aria-hidden />}
+          onOpen={show}
+        >
+          {picked.length === 0 ? (
+            t('boards.card.labels')
+          ) : (
+            <span className="flex min-w-0 flex-wrap items-center gap-1">
+              {picked.map((label) => (
+                <LabelChip key={label.id} label={label} />
+              ))}
+            </span>
+          )}
+        </PickerTrigger>
+      )}
       {open && (
         <Popover
           anchor={open.rect}
@@ -273,7 +310,7 @@ export function LabelPicker({
         >
           <div role="menu" className="flex w-[240px] flex-col gap-1">
             <input
-              ref={input}
+              autoFocus
               value={query}
               maxLength={BOARD_LIMITS.labelName}
               onChange={(e) => setQuery(e.target.value)}

@@ -17,12 +17,14 @@ export function useImageUpload(board: Board) {
   const showToast = useAppStore((s) => s.showToast)
   const uploadImage = useBoardStore((s) => s.uploadImage)
   const [uploading, setUploading] = useState(0)
+  const [current, setCurrent] = useState<string | null>(null)
   const upload = async (files: File[]): Promise<string[]> => {
     const images = files.filter((f) => IMAGE_TYPES.includes(f.type))
     if (images.length < files.length) showToast('boardImageType')
     setUploading((n) => n + images.length)
     const out: string[] = []
     for (const file of images) {
+      setCurrent(file.name)
       try {
         out.push((await uploadImage(workspaceId, board.id, file)).markdown)
       } catch {
@@ -31,7 +33,9 @@ export function useImageUpload(board: Board) {
         setUploading((n) => n - 1)
       }
     }
+    setCurrent(null)
     return out
   }
-  return { uploading: uploading > 0, upload }
+  /** `current`: the name of the image being sent. */
+  return { uploading: uploading > 0, current, upload }
 }

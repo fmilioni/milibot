@@ -17,6 +17,29 @@
   --accent-soft: #3b82f614;
   /* Accent fill under small text (counters), dark enough for AA. */
   --accent-strong: #2563eb;
+  /* Text-size success, danger and warning that keep AA on light surfaces (the plain ones are fills). */
+  --success-strong: #0f7b52;
+  --danger-strong: #be123c;
+  --warning-strong: #b45309;
+  /* Board labels: text (700/800 here, AA on their tint) and the tint. */
+  --label-gray: #3f3f46;
+  --label-gray-bg: #71717a26;
+  --label-red: #b91c1c;
+  --label-red-bg: #ef444426;
+  --label-orange: #9a3412;
+  --label-orange-bg: #f9731626;
+  --label-yellow: #854d0e;
+  --label-yellow-bg: #eab30833;
+  --label-green: #166534;
+  --label-green-bg: #22c55e26;
+  --label-teal: #0f766e;
+  --label-teal-bg: #14b8a626;
+  --label-blue: #1d4ed8;
+  --label-blue-bg: #3b82f626;
+  --label-violet: #6d28d9;
+  --label-violet-bg: #8b5cf626;
+  --label-pink: #be185d;
+  --label-pink-bg: #ec489926;
   --on-accent: #ffffff;
   --success: #1fa971;
   --success-soft: #1fa9711a;
@@ -75,6 +98,18 @@
   --accent: #8b93ff;
   --accent-soft: #8b93ff22;
   --accent-strong: #8b93ff;
+  --success-strong: #3dd68c;
+  --danger-strong: #f26d6d;
+  --warning-strong: #f5b94a;
+  --label-gray: #d4d4d8;
+  --label-red: #fca5a5;
+  --label-orange: #fdba74;
+  --label-yellow: #fef08a;
+  --label-green: #86efac;
+  --label-teal: #5eead4;
+  --label-blue: #93c5fd;
+  --label-violet: #c4b5fd;
+  --label-pink: #f9a8d4;
   --on-accent: #0d0e11;
   --success: #3dd68c;
   --success-soft: #3dd68c1f;
@@ -120,6 +155,36 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-strong: var(--accent-strong);
+  --color-success-strong: var(--success-strong);
+  --color-danger-strong: var(--danger-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-label-gray: var(--label-gray);
+  --color-label-gray-bg: var(--label-gray-bg);
+  --color-label-gray-dot: #71717a;
+  --color-label-red: var(--label-red);
+  --color-label-red-bg: var(--label-red-bg);
+  --color-label-red-dot: #ef4444;
+  --color-label-orange: var(--label-orange);
+  --color-label-orange-bg: var(--label-orange-bg);
+  --color-label-orange-dot: #f97316;
+  --color-label-yellow: var(--label-yellow);
+  --color-label-yellow-bg: var(--label-yellow-bg);
+  --color-label-yellow-dot: #eab308;
+  --color-label-green: var(--label-green);
+  --color-label-green-bg: var(--label-green-bg);
+  --color-label-green-dot: #22c55e;
+  --color-label-teal: var(--label-teal);
+  --color-label-teal-bg: var(--label-teal-bg);
+  --color-label-teal-dot: #14b8a6;
+  --color-label-blue: var(--label-blue);
+  --color-label-blue-bg: var(--label-blue-bg);
+  --color-label-blue-dot: #3b82f6;
+  --color-label-violet: var(--label-violet);
+  --color-label-violet-bg: var(--label-violet-bg);
+  --color-label-violet-dot: #8b5cf6;
+  --color-label-pink: var(--label-pink);
+  --color-label-pink-bg: var(--label-pink-bg);
+  --color-label-pink-dot: #ec4899;
   --color-scrim-panel: var(--scrim-panel);
   --color-on-accent: var(--on-accent);
   --color-success: var(--success);
@@ -154,6 +219,9 @@
   --text-6xl: 24px;
   --text-7xl: 26px;
   --text-display: 48px;
+
+  /* Cards on boards and their dialog. */
+  --radius-card: 10px;
 
   /* Backdrops under dialogs and full-window previews. */
   --color-scrim: #0d0e1166;
@@ -396,6 +464,21 @@
     content: '';
     position: absolute;
     inset: -6px;
+  }
+}
+
+/* Grows the pointer target to at least 44×44 around a smaller control, centered, without changing its look. */
+@utility hit {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 }
 

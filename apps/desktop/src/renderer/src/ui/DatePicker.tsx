@@ -1,6 +1,6 @@
 import { localDate } from '@milibot/shared'
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useNow } from '@/hooks/use-now'
@@ -26,6 +26,7 @@ export function DatePicker({
   placeholder,
   className = '',
   size = 'md',
+  children,
 }: {
   value: string | null
   onChange: (value: string | null) => void
@@ -33,6 +34,8 @@ export function DatePicker({
   placeholder?: string
   className?: string
   size?: 'sm' | 'md'
+  /** Drawn as the trigger instead of the field (`className` then styles the whole button). */
+  children?: ReactNode
 }) {
   const { t, i18n } = useTranslation()
   const [open, setOpen] = useState<{ anchor: DOMRect; trigger: HTMLButtonElement } | null>(null)
@@ -52,16 +55,24 @@ export function DatePicker({
         onClick={(e) =>
           setOpen(open ? null : { anchor: e.currentTarget.getBoundingClientRect(), trigger: e.currentTarget })
         }
-        className={cn(
-          'focus-ring flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-left text-fg hover:bg-surface-2',
-          size === 'sm' ? 'h-[27px] text-sm' : 'h-[34px] text-base',
-          className,
-        )}
+        className={
+          children
+            ? cn('focus-ring', className)
+            : cn(
+                'focus-ring flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-left text-fg hover:bg-surface-2',
+                size === 'sm' ? 'h-[27px] text-sm' : 'h-[34px] text-base',
+                className,
+              )
+        }
       >
-        <CalendarDays size={size === 'sm' ? 13 : 14} className="shrink-0 text-fg-muted" aria-hidden />
-        <span className={cn('min-w-0 flex-1 truncate', !value && 'text-fg-muted')}>
-          {value ? formatDueDate(value, i18n.language, today) : (placeholder ?? t('datePicker.none'))}
-        </span>
+        {children ?? (
+          <>
+            <CalendarDays size={size === 'sm' ? 13 : 14} className="shrink-0 text-fg-muted" aria-hidden />
+            <span className={cn('min-w-0 flex-1 truncate', !value && 'text-fg-muted')}>
+              {value ? formatDueDate(value, i18n.language, today) : (placeholder ?? t('datePicker.none'))}
+            </span>
+          </>
+        )}
       </button>
       {open && (
         <Popover anchor={open.anchor} onClose={() => setOpen(null)} trigger={open.trigger} label={label} menu>

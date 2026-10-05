@@ -10,7 +10,16 @@
   "filters": {
     "active": "Active",
     "done": "Done",
-    "archived": "Archived"
+    "archived": "Archived",
+    "label": "Board filters",
+    "text": "Filter cards",
+    "assignee": "Assignee",
+    "labels": "Label",
+    "mine": "Only mine",
+    "clear": "Clear filters",
+    "active_one": "{{count}} filter on",
+    "active_other": "{{count}} filters on",
+    "noLabels": "This board has no labels yet."
   },
   "status": {
     "active": "In progress",
@@ -24,7 +33,7 @@
     "dropped": "Dropped"
   },
   "progress": "{{done}} of {{total}} done",
-  "progressShort": "{{done}}/{{total}}",
+  "progressShort": "{{done}} of {{total}}",
   "doingCount": "{{count}} in progress",
   "droppedCount_one": "{{count}} dropped",
   "droppedCount_other": "{{count}} dropped",
@@ -43,7 +52,8 @@
     "edit": "Edit",
     "archive": "Archive",
     "unarchive": "Unarchive",
-    "delete": "Delete board"
+    "delete": "Delete board",
+    "copyId": "Copy ID"
   },
   "delete": {
     "title": "Delete the board “{{title}}”?",
@@ -59,7 +69,10 @@
       "title": "Title",
       "summary": "Summary",
       "summaryHint": "helps the bots find the board",
-      "due": "Due date"
+      "due": "Due date",
+      "doingLimit": "Doing limit",
+      "doingLimitHint": "Doing limit: optional, from 1 to 50. The column counter warns when it is reached; nothing is blocked.",
+      "doingLimitNone": "No limit"
     }
   },
   "links": {
@@ -114,7 +127,55 @@
     "assignees": "Assignees",
     "assign": "Assign",
     "deletedBot": "deleted bot",
-    "labels": "Labels"
+    "labels": "Labels",
+    "copyId": "Copy ID",
+    "moveTo": "Move to board…",
+    "board": "Board",
+    "created": "created {{time}}",
+    "details": "Details",
+    "setDue": "Set a due date",
+    "clearDue": "Remove the due date",
+    "dueToday": "today",
+    "dueIn_one": "in {{count}} day",
+    "dueIn_other": "in {{count}} days",
+    "dueAgo_one": "{{count}} day overdue",
+    "dueAgo_other": "{{count}} days overdue",
+    "addSummary": "Add a one or two sentence summary",
+    "saveHint": "Enter saves · Esc cancels",
+    "saveHintMultiline": "{{shortcut}} saves · Esc cancels",
+    "editing": "editing",
+    "noDescriptionTitle": "No description yet",
+    "noDescriptionHint": "Give the context and the acceptance criteria, and paste images. Markdown works.",
+    "writeDescription": "Write a description",
+    "saveDescription": "Save description",
+    "editor": {
+      "tabs": "Editor mode",
+      "write": "Write",
+      "preview": "Preview",
+      "nothingToPreview": "Nothing to preview.",
+      "toolbar": "Formatting",
+      "heading": "Heading",
+      "bold": "Bold",
+      "italic": "Italic",
+      "list": "Numbered list",
+      "code": "Code",
+      "link": "Link",
+      "image": "Image",
+      "hint": "Paste or drop images · Markdown"
+    },
+    "changesFiles_one": "{{count}} file",
+    "changesFiles_other": "{{count}} files",
+    "showChanges": "Show",
+    "hideChanges": "Hide",
+    "noComments": "No comments yet. Use them for decisions, deviations and blockers.",
+    "commentHint": "Markdown · {{shortcut}} sends",
+    "comment": "Comment",
+    "noLinksHint": "No links yet. Plans, sessions and designs show up here when a bot links them to the card; you link pull requests, commits and URLs.",
+    "addAssignee": "Add an assignee",
+    "addLabel": "Add a label",
+    "linkState": "{{kind}} · {{state}}",
+    "running": "In progress",
+    "close": "Close"
   },
   "labels": {
     "search": "Find or create a label",
@@ -122,5 +183,58 @@
     "color": "Change the color",
     "delete": "Delete the label",
     "empty": "Type a name to create the first label."
+  },
+  "list": {
+    "label": "List of boards",
+    "collapse": "Collapse the list of boards",
+    "expand": "Show the list of boards",
+    "show": "Boards",
+    "reorder": "Drag to change the order"
+  },
+  "progressDetail": "{{percent}}%",
+  "nothingDoing": "nothing in progress",
+  "createdOn": "Created by {{name}} · {{date}}",
+  "createdOnUser": "Created by you · {{date}}",
+  "dropHere": "Drop here",
+  "newCardHint": "Enter saves · Esc cancels",
+  "noMatches": "No cards match these filters",
+  "emptyColumn": {
+    "todo": {
+      "title": "Nothing to do",
+      "hint": "Add a card with +."
+    },
+    "doing": {
+      "title": "Nothing in progress",
+      "hint": "Drag a card here when someone starts."
+    },
+    "done": {
+      "title": "No cards done",
+      "hint": "Finished cards show up here."
+    },
+    "dropped": {
+      "title": "No dropped cards",
+      "hint": "What won't be done goes here."
+    }
+  },
+  "doingLimit": "Limit of {{limit}} cards in Doing",
+  "doingOver": "Doing reached its limit of {{limit}} cards",
+  "live": "{{name}} working now",
+  "moreAssignees": "+{{count}}",
+  "indicators": {
+    "plan": "Plan: {{label}}",
+    "design": "Design: {{label}}",
+    "pr": "Pull request: {{label}}",
+    "comments_one": "{{count}} comment",
+    "comments_other": "{{count}} comments",
+    "due": "Due: {{date}}",
+    "overdue": "{{date}} · overdue"
+  },
+  "move": {
+    "title": "Move to another board",
+    "description": "“{{title}}” takes its comments, links, images and labels along.",
+    "board": "Board",
+    "column": "Column",
+    "confirm": "Move",
+    "noBoards": "There is no other board to move it to. Create one or unarchive a board."
   }
 }

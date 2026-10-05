@@ -10,7 +10,16 @@
   "filters": {
     "active": "Ativos",
     "done": "Concluídos",
-    "archived": "Arquivados"
+    "archived": "Arquivados",
+    "label": "Filtros do quadro",
+    "text": "Filtrar cards",
+    "assignee": "Responsável",
+    "labels": "Etiqueta",
+    "mine": "Só os meus",
+    "clear": "Limpar filtros",
+    "active_one": "{{count}} filtro ativo",
+    "active_other": "{{count}} filtros ativos",
+    "noLabels": "Este quadro ainda não tem etiquetas."
   },
   "status": {
     "active": "Em andamento",
@@ -24,7 +33,7 @@
     "dropped": "Descartado"
   },
   "progress": "{{done}} de {{total}} feitos",
-  "progressShort": "{{done}}/{{total}}",
+  "progressShort": "{{done}} de {{total}}",
   "doingCount": "{{count}} fazendo",
   "droppedCount_one": "{{count}} descartado",
   "droppedCount_other": "{{count}} descartados",
@@ -43,7 +52,8 @@
     "edit": "Editar",
     "archive": "Arquivar",
     "unarchive": "Desarquivar",
-    "delete": "Excluir quadro"
+    "delete": "Excluir quadro",
+    "copyId": "Copiar ID"
   },
   "delete": {
     "title": "Excluir o quadro “{{title}}”?",
@@ -59,7 +69,10 @@
       "title": "Título",
       "summary": "Resumo",
       "summaryHint": "ajuda os bots a encontrar o quadro",
-      "due": "Data de entrega"
+      "due": "Data de entrega",
+      "doingLimit": "Limite em Fazendo",
+      "doingLimitHint": "Limite em Fazendo: opcional, de 1 a 50. O contador da coluna avisa ao chegar nele; nada é bloqueado.",
+      "doingLimitNone": "Sem limite"
     }
   },
   "links": {
@@ -114,7 +127,55 @@
     "assignees": "Responsáveis",
     "assign": "Atribuir",
     "deletedBot": "bot excluído",
-    "labels": "Etiquetas"
+    "labels": "Etiquetas",
+    "copyId": "Copiar ID",
+    "moveTo": "Mover para quadro…",
+    "board": "Quadro",
+    "created": "criado {{time}}",
+    "details": "Detalhes",
+    "setDue": "Definir prazo",
+    "clearDue": "Tirar o prazo",
+    "dueToday": "hoje",
+    "dueIn_one": "em {{count}} dia",
+    "dueIn_other": "em {{count}} dias",
+    "dueAgo_one": "atrasado há {{count}} dia",
+    "dueAgo_other": "atrasado há {{count}} dias",
+    "addSummary": "Adicionar um resumo em uma ou duas frases",
+    "saveHint": "Enter salva · Esc cancela",
+    "saveHintMultiline": "{{shortcut}} salva · Esc cancela",
+    "editing": "editando",
+    "noDescriptionTitle": "Sem descrição ainda",
+    "noDescriptionHint": "Conte o contexto, os critérios de aceite e cole imagens. Aceita Markdown.",
+    "writeDescription": "Escrever descrição",
+    "saveDescription": "Salvar descrição",
+    "editor": {
+      "tabs": "Modo do editor",
+      "write": "Escrever",
+      "preview": "Visualizar",
+      "nothingToPreview": "Nada para visualizar.",
+      "toolbar": "Formatação",
+      "heading": "Título",
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "list": "Lista numerada",
+      "code": "Código",
+      "link": "Link",
+      "image": "Imagem",
+      "hint": "Cole ou arraste imagens · Markdown"
+    },
+    "changesFiles_one": "{{count}} arquivo",
+    "changesFiles_other": "{{count}} arquivos",
+    "showChanges": "Mostrar",
+    "hideChanges": "Ocultar",
+    "noComments": "Nenhum comentário ainda. Use para decisões, desvios e bloqueios.",
+    "commentHint": "Markdown · {{shortcut}} envia",
+    "comment": "Comentar",
+    "noLinksHint": "Nenhum vínculo ainda. Planos, sessões e designs aparecem aqui quando um bot os liga ao card; PRs, commits e links você vincula.",
+    "addAssignee": "Adicionar responsável",
+    "addLabel": "Adicionar etiqueta",
+    "linkState": "{{kind}} · {{state}}",
+    "running": "Em andamento",
+    "close": "Fechar"
   },
   "labels": {
     "search": "Buscar ou criar etiqueta",
@@ -122,5 +183,58 @@
     "color": "Trocar a cor",
     "delete": "Excluir a etiqueta",
     "empty": "Digite um nome para criar a primeira etiqueta."
+  },
+  "list": {
+    "label": "Lista de quadros",
+    "collapse": "Recolher a lista de quadros",
+    "expand": "Mostrar a lista de quadros",
+    "show": "Quadros",
+    "reorder": "Arraste para mudar a ordem"
+  },
+  "progressDetail": "{{percent}}%",
+  "nothingDoing": "nada em andamento",
+  "createdOn": "Criado por {{name}} · {{date}}",
+  "createdOnUser": "Criado por você · {{date}}",
+  "dropHere": "Soltar aqui",
+  "newCardHint": "Enter salva · Esc cancela",
+  "noMatches": "Nenhum card com esses filtros",
+  "emptyColumn": {
+    "todo": {
+      "title": "Nada a fazer",
+      "hint": "Adicione um card com o +."
+    },
+    "doing": {
+      "title": "Nada em andamento",
+      "hint": "Arraste um card para cá quando alguém começar."
+    },
+    "done": {
+      "title": "Nenhum card feito",
+      "hint": "Os cards concluídos aparecem aqui."
+    },
+    "dropped": {
+      "title": "Nenhum card descartado",
+      "hint": "O que não vai ser feito fica aqui."
+    }
+  },
+  "doingLimit": "Limite de {{limit}} cards em Fazendo",
+  "doingOver": "Fazendo chegou ao limite de {{limit}} cards",
+  "live": "{{name}} trabalhando agora",
+  "moreAssignees": "+{{count}}",
+  "indicators": {
+    "plan": "Plano: {{label}}",
+    "design": "Design: {{label}}",
+    "pr": "Pull request: {{label}}",
+    "comments_one": "{{count}} comentário",
+    "comments_other": "{{count}} comentários",
+    "due": "Entrega: {{date}}",
+    "overdue": "{{date}} · atrasado"
+  },
+  "move": {
+    "title": "Mover para outro quadro",
+    "description": "“{{title}}” leva os comentários, vínculos, imagens e etiquetas.",
+    "board": "Quadro",
+    "column": "Coluna",
+    "confirm": "Mover",
+    "noBoards": "Não há outro quadro para onde mover. Crie um ou desarquive um quadro."
   }
 }

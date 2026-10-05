@@ -28,5 +28,7 @@
   "designImportInvalid": "This file is not a Milibot design.",
   "designImportTooNew": "This design comes from a newer Milibot. Update the app to import it.",
   "designImportFailed": "The design could not be imported.",
-  "boardImageType": "Only PNG and JPEG images can go on a card."
+  "boardImageType": "Only PNG and JPEG images can go on a card.",
+  "idCopied": "ID copied",
+  "cardMoved": "Card moved"
 }

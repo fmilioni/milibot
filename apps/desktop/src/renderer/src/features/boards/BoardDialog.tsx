@@ -30,17 +30,25 @@ export function BoardDialog({
   const [title, setTitle] = useState(board?.title ?? '')
   const [summary, setSummary] = useState(board?.summary ?? '')
   const [due, setDue] = useState(board?.dueDate ?? '')
+  const [limit, setLimit] = useState(board?.doingLimit ? String(board.doingLimit) : '')
+  const limitValue = limit.trim() ? Number(limit) : null
+  const limitValid =
+    limitValue === null || (Number.isInteger(limitValue) && limitValue >= 1 && limitValue <= 50)
   const [busy, setBusy] = useState(false)
 
   const save = async () => {
-    if (!title.trim() || busy) return
+    if (!title.trim() || !limitValid || busy) return
     setBusy(true)
     try {
       const body = { title: title.trim(), summary: summary.trim(), dueDate: due || null }
       if (board) {
-        await updateBoard(workspaceId, board.id, body)
+        await updateBoard(workspaceId, board.id, { ...body, doingLimit: limitValue })
         onClose()
-      } else onSaved?.(await createBoard(workspaceId, body))
+      } else {
+        const created = await createBoard(workspaceId, body)
+        if (limitValue !== null) await updateBoard(workspaceId, created.id, { doingLimit: limitValue })
+        onSaved?.(created)
+      }
     } catch {
       showToast('error')
       setBusy(false)
@@ -56,7 +64,11 @@ export function BoardDialog({
       footer={
         <>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
-          <Button variant="primary" disabled={!title.trim() || busy} onClick={() => void save()}>
+          <Button
+            variant="primary"
+            disabled={!title.trim() || !limitValid || busy}
+            onClick={() => void save()}
+          >
             {t(board ? 'boards.dialog.save' : 'boards.dialog.create')}
           </Button>
         </>
@@ -91,15 +103,36 @@ export function BoardDialog({
             onChange={(e) => setSummary(e.target.value)}
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <FieldLabel>{t('boards.dialog.fields.due')}</FieldLabel>
-          <DatePicker
-            className="w-44"
-            label={t('boards.dialog.fields.due')}
-            value={due || null}
-            onChange={(value) => setDue(value ?? '')}
-          />
+        <div className="flex gap-6">
+          <div className="flex flex-col gap-1.5">
+            <FieldLabel>{t('boards.dialog.fields.due')}</FieldLabel>
+            <DatePicker
+              className="w-44"
+              label={t('boards.dialog.fields.due')}
+              value={due || null}
+              onChange={(value) => setDue(value ?? '')}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <FieldLabel htmlFor="board-doing-limit">{t('boards.dialog.fields.doingLimit')}</FieldLabel>
+            <TextInput
+              id="board-doing-limit"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={50}
+              value={limit}
+              placeholder={t('boards.dialog.fields.doingLimitNone')}
+              aria-invalid={!limitValid}
+              aria-describedby="board-doing-limit-hint"
+              onChange={(e) => setLimit(e.target.value)}
+              className="w-36"
+            />
+          </div>
         </div>
+        <p id="board-doing-limit-hint" className="-mt-2 text-sm text-fg-secondary">
+          {t('boards.dialog.fields.doingLimitHint')}
+        </p>
       </form>
     </Modal>
   )

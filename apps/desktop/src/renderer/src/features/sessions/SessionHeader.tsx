@@ -392,7 +392,7 @@ function PanelToggleButton({
         aria-controls={toggle.open ? toggle.controls : undefined}
         onClick={toggle.onToggle}
         className={cn(
-          'no-drag hit-44 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+          'no-drag hit-44 focus-ring flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors',
           toggle.open ? 'bg-accent-soft text-accent' : 'text-fg-secondary hover:bg-surface-3',
         )}
       >

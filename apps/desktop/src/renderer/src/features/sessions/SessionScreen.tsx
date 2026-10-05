@@ -259,7 +259,7 @@ function SessionPanelOverlay({
   const close = useEffectEvent(onClose)
 
   useEffect(() => {
-    ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()
+    ref.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus({ preventScroll: true })
   }, [])
 
   useEffect(() => {

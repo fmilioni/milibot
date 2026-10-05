@@ -159,6 +159,16 @@ describe('SessionScreen collapsed panel overlay', () => {
     expect(aside()).toBeNull()
   })
 
+  it('focuses the selected tab without scrolling the page while the overlay slides in', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    openOverlay(680)
+    const call = focus.mock.contexts.findIndex(
+      (el) => (el as HTMLElement).getAttribute('aria-selected') === 'true',
+    )
+    expect(focus.mock.calls[call]?.[0]).toEqual({ preventScroll: true })
+    focus.mockRestore()
+  })
+
   it('closes on Escape and gives the focus back to the toggle', () => {
     const overlay = openOverlay(680)
     fireEvent.keyDown(overlay, { key: 'Escape' })

@@ -1,6 +1,6 @@
 import type { Bot, QuestionAnswer, QuestionPayload, UserQuestion } from '@milibot/shared'
 import { Check, PencilLine, Sparkles } from 'lucide-react'
-import { type KeyboardEvent, type ReactNode, useMemo, useReducer, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useId, useMemo, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
@@ -15,6 +15,7 @@ import {
 } from '@/features/chat/lib/question-card'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 export function PendingQuestions({
   payload,
@@ -33,6 +34,7 @@ export function PendingQuestions({
   const [draft, dispatch] = useReducer(reducer, questions, initialDraft)
   const [busy, setBusy] = useState(false)
   const otherInputs = useRef<Array<HTMLInputElement | null>>([])
+  const optionId = useId()
   const name = bot?.name ?? '…'
   const several = questions.length > 1
   const tab = draft.tab
@@ -62,6 +64,7 @@ export function PendingQuestions({
     const typing = event.target instanceof HTMLInputElement
     if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
       if (event.target instanceof HTMLButtonElement && !event.target.dataset.option) return
+      if (event.target instanceof HTMLAnchorElement) return
       event.preventDefault()
       advance()
       return
@@ -127,7 +130,9 @@ export function PendingQuestions({
       )}
 
       <div className="flex flex-col gap-1">
-        <p className="selectable text-md leading-[19px] font-semibold text-fg">{question.question}</p>
+        <p className="selectable text-md leading-[19px] font-semibold text-fg">
+          <LinkifiedText text={question.question} />
+        </p>
         {question.multiSelect && <p className="text-xs text-fg-muted">{t('chat.question.multiHint')}</p>}
       </div>
 
@@ -138,37 +143,51 @@ export function PendingQuestions({
       >
         {question.options.map((option, index) => {
           const selected = answer.selected.includes(option.label)
+          const id = `${optionId}-${tab}-${index}`
+          // A link can't sit inside a <button>: the button covers the row and the text is drawn over it,
+          // letting only its links take the pointer.
           return (
-            <button
-              key={option.label}
-              type="button"
-              role={question.multiSelect ? 'checkbox' : 'radio'}
-              aria-checked={selected}
-              data-option
-              disabled={busy}
-              onClick={() => dispatch({ type: 'toggle', question: tab, option: index })}
-              className={cn(
-                'flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors outline-none focus-visible:border-accent',
-                selected ? 'border-accent bg-accent-soft' : 'border-border bg-surface hover:bg-surface-3/50',
-              )}
-            >
-              <KeyBadge active={selected}>{index + 1}</KeyBadge>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-semibold text-fg">{option.label}</span>
-                  {option.recommended && (
-                    <span className="flex items-center gap-1 rounded-full bg-success-soft px-[7px] py-px text-xs font-semibold text-success">
-                      <Sparkles size={11} aria-hidden />
-                      {t('chat.question.recommended')}
+            <div key={option.label} className="relative">
+              <button
+                type="button"
+                role={question.multiSelect ? 'checkbox' : 'radio'}
+                aria-checked={selected}
+                aria-labelledby={option.recommended ? `${id}-label ${id}-recommended` : `${id}-label`}
+                aria-describedby={option.description ? `${id}-description` : undefined}
+                data-option
+                disabled={busy}
+                onClick={() => dispatch({ type: 'toggle', question: tab, option: index })}
+                className={cn(
+                  'absolute inset-0 rounded-lg border transition-colors outline-none focus-visible:border-accent',
+                  selected ? 'border-accent bg-accent-soft' : 'border-border bg-surface hover:bg-surface-3/50',
+                )}
+              />
+              <div className="pointer-events-none relative flex items-center gap-2.5 border border-transparent px-3 py-2.5 text-left">
+                <KeyBadge active={selected}>{index + 1}</KeyBadge>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span id={`${id}-label`} className="text-base font-semibold text-fg">
+                      <LinkifiedText text={option.label} linkClassName="pointer-events-auto" />
+                    </span>
+                    {option.recommended && (
+                      <span
+                        id={`${id}-recommended`}
+                        className="flex items-center gap-1 rounded-full bg-success-soft px-[7px] py-px text-xs font-semibold text-success"
+                      >
+                        <Sparkles size={11} aria-hidden />
+                        {t('chat.question.recommended')}
+                      </span>
+                    )}
+                  </span>
+                  {option.description && (
+                    <span id={`${id}-description`} className="text-sm leading-[16px] text-fg-secondary">
+                      <LinkifiedText text={option.description} linkClassName="pointer-events-auto" />
                     </span>
                   )}
                 </span>
-                {option.description && (
-                  <span className="text-sm leading-[16px] text-fg-secondary">{option.description}</span>
-                )}
-              </span>
-              <Mark multi={question.multiSelect} checked={selected} />
-            </button>
+                <Mark multi={question.multiSelect} checked={selected} />
+              </div>
+            </div>
           )
         })}
         <OtherRow

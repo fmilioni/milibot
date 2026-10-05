@@ -1,4 +1,4 @@
-import { createServer, type Server } from 'node:http'
+import { createServer, type Server, type ServerResponse } from 'node:http'
 import { fileURLToPath } from 'node:url'
 
 import type { DefaultAgentHost } from '@milibot/agent'
@@ -92,8 +92,9 @@ const stdioBody = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 })
 
-async function startHttp(token: string): Promise<string> {
+async function startHttp(token: string, intercept?: (res: ServerResponse) => boolean): Promise<string> {
   http = createServer((req, res) => {
+    if (intercept?.(res)) return
     if (req.headers.authorization !== `Bearer ${token}`) {
       res.writeHead(401).end()
       return
@@ -201,6 +202,56 @@ describe('external MCP servers', () => {
       },
     )
     expect(edited.ok).toBe(true)
+  })
+
+  it('redacts a token the server echoes without its auth scheme', async () => {
+    await boot([{ toolCalls: [{ name: 'mcp__echo__add', arguments: { a: 1, b: 2 } }] }, { text: 'Failed.' }])
+    const token = 'qa_draft_secret_558'
+    let rejecting = false
+    const url = await startHttp(token, (res) => {
+      if (!rejecting) return false
+      res.writeHead(500, { 'content-type': 'text/plain' }).end(`invalid token ${token}`)
+      return true
+    })
+    const server = await call<McpServer>(
+      'createMcpServer',
+      {},
+      {
+        name: 'Echo',
+        transport: 'http',
+        url,
+        headers: [{ name: 'Authorization', value: `Bearer ${token}`, secret: true }],
+      },
+    )
+    expect((await call<McpTestResult>('testMcpServer', { serverId: server.id })).ok).toBe(true)
+    rejecting = true
+
+    const tested = await call<McpTestResult>('testMcpServer', { serverId: server.id })
+    expect(tested.error).toContain('invalid token ••••••')
+    const draft = await call<McpTestResult>(
+      'testMcpDraft',
+      {},
+      {
+        serverId: server.id,
+        config: { name: 'Echo', transport: 'http', url, headers: [{ name: 'Authorization', secret: true }] },
+      },
+    )
+    expect(draft.error).toContain('invalid token ••••••')
+
+    await call('postMessage', { conversationId: chiefDm }, { content: 'add 1 and 2' })
+    await host.idle()
+    const toolResult = requests[1]?.messages.at(-1)
+    expect(toolResult).toMatchObject({ role: 'tool', toolName: 'mcp__echo__add', isError: true })
+    expect(JSON.stringify(toolResult)).toContain('invalid token ••••••')
+
+    const toolCalls = await call<ToolCallRow[]>('listToolCalls', { conversationId: chiefDm }, undefined, {
+      limit: 20,
+    })
+    const llmCalls = await call<LlmCallRow[]>('listLlmCalls', { conversationId: chiefDm }, undefined, {
+      limit: 20,
+    })
+    for (const leak of [tested, draft, requests, toolCalls, llmCalls])
+      expect(JSON.stringify(leak)).not.toContain(token)
   })
 
   it('redacts a secret header echoed back in a server error from its state, events, API and logs', async () => {

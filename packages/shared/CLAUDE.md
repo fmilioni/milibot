@@ -13,8 +13,9 @@ One folder per domain (`workspace/`, `bots/`, `chat/`, `models/`, `work/`, `desi
 - `http/`: `endpoint()`/`defineApi()`, the assembled `api`, errors and their HTTP status, path params, the
   typed client, `daemon.json`.
 - `events/`: WebSocket events and envelopes.
-- `core/`: ids, text helpers, line diffs, secret redaction (`redactSecrets`), small cross-domain schemas
-  (`AuthorType`, `Progress`) and the settings keys registry.
+- `core/`: ids, text helpers, line diffs, secret redaction (`redactSecrets`, which also redacts the
+  credentials after an auth scheme such as `Bearer`, and a `Basic` header's decoded pair and password), small
+  cross-domain schemas (`AuthorType`, `Progress`) and the settings keys registry.
 - `portable/`: see below.
 
 Tests sit next to their module. Inside the package import the file itself (`../chat/messages`), never a

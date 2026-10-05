@@ -44,12 +44,20 @@ export function DueChip({
   )
 }
 
-/** Done in green and doing in blue over the cards that count. */
-export function BoardProgressBar({ counts, className = '' }: { counts: BoardCounts; className?: string }) {
+/** Done in green and doing in blue over the cards that count. `track` must contrast with the surface behind it. */
+export function BoardProgressBar({
+  counts,
+  className = '',
+  track = 'bg-surface-3',
+}: {
+  counts: BoardCounts
+  className?: string
+  track?: string
+}) {
   const { total } = boardProgress(counts)
   const width = (n: number) => `${total ? (n / total) * 100 : 0}%`
   return (
-    <div className={`flex h-1.5 overflow-hidden rounded-full bg-surface-3 ${className}`} aria-hidden>
+    <div className={`flex h-1.5 overflow-hidden rounded-full ${track} ${className}`} aria-hidden>
       <div className="h-full bg-success" style={{ width: width(counts.done) }} />
       <div className="h-full bg-accent" style={{ width: width(counts.doing) }} />
     </div>

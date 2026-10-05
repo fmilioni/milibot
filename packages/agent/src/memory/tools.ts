@@ -128,6 +128,11 @@ function where(n: Pick<MemoryNote, 'scope' | 'projectId'>): string {
   return n.scope === 'bot' ? 'your memory' : n.projectId ? "the project's memory" : 'workspace memory'
 }
 
+/** How many bots see a note: private, the project's, the whole workspace. */
+function reach(n: Pick<MemoryNote, 'scope' | 'projectId'>): number {
+  return n.scope === 'bot' ? 0 : n.projectId ? 1 : 2
+}
+
 type SaveScope = MemoryScope | 'project'
 
 function saveNote(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResult {
@@ -170,6 +175,14 @@ function saveNote(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResul
         true,
       )
     const target = scope ? stored(scope) : { scope: first.scope, projectId: first.projectId ?? null }
+    const wider = rest.length ? resolved.notes.find((n) => reach(n) > reach(target)) : undefined
+    if (wider)
+      return toolText(
+        `Not saved: merging into ${where(target)} would take a note out of ${where(wider)} ` +
+          `(${quote(wider)}), which other bots read. Pass "scope" as wide as the widest note, or merge the ` +
+          'shared notes on their own. Nothing was changed.',
+        true,
+      )
     const revised = ctx.memory.reviseNote(first.id, {
       content: note,
       botId: ctx.bot.id,

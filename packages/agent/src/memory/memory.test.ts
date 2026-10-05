@@ -668,6 +668,11 @@ describe('workspace memory', () => {
     expect(mixed.isError).toBe(true)
     expect(textOf(mixed.content)).toContain('"scope"')
     expect(save({ note: 'Merged.', replaces: Array.from({ length: 11 }, () => a.id) }).isError).toBe(true)
+    const narrowed = save({ note: 'Merged.', scope: 'bot', replaces: [mine.id, a.id] })
+    expect(narrowed.isError).toBe(true)
+    expect(textOf(narrowed.content)).toContain('would take a note out of workspace memory')
+    expect(textOf(narrowed.content)).toContain('Never comment on PRs.')
+    expect(save({ note: 'Merged.', scope: 'bot', replaces: [a.id, b.id] }).isError).toBe(true)
     expect(w.memory.notes).toEqual(before)
 
     const merged = save({
@@ -691,6 +696,55 @@ describe('workspace memory', () => {
     ])
     expect(w.memory.botNotes(w.bot.id)).toEqual([])
     expect(w.memory.botNotes(other.id)).toHaveLength(1)
+  })
+
+  it('memory_save never merges shared notes into a narrower scope', () => {
+    const w = world()
+    const project = { id: 'prj_site' }
+    const ctx = {
+      bot: w.bot,
+      conversationId: CONV,
+      botsById: w.botsById,
+      memory: w.memory,
+      projectId: project.id,
+    }
+    const save = (args: Record<string, unknown>) =>
+      executeMemoryTool(ctx, { id: 'x', name: 'memory_save', arguments: args })
+    const general = w.memory.saveNote({
+      botId: w.bot.id,
+      content: 'Dates are written DD/MM/YYYY.',
+      pinned: true,
+      scope: 'workspace',
+    })
+    const scoped = w.memory.saveNote({
+      botId: w.bot.id,
+      content: 'The site deploys on Fridays.',
+      pinned: true,
+      scope: 'workspace',
+      projectId: project.id,
+    })
+    const mine = w.memory.saveNote({ botId: w.bot.id, content: 'I deploy the site myself.', pinned: true })
+    const before = w.memory.notes.map((n) => ({ ...n }))
+
+    const intoProject = save({ note: 'Merged.', scope: 'project', replaces: [scoped.id, general.id] })
+    expect(intoProject.isError).toBe(true)
+    expect(textOf(intoProject.content)).toContain("merging into the project's memory")
+    const intoBot = save({ note: 'Merged.', scope: 'bot', replaces: [mine.id, scoped.id] })
+    expect(intoBot.isError).toBe(true)
+    expect(textOf(intoBot.content)).toContain("out of the project's memory")
+    expect(w.memory.notes).toEqual(before)
+
+    const widened = save({
+      note: 'The site deploys on Fridays, by me.',
+      scope: 'project',
+      replaces: [scoped.id, mine.id],
+    })
+    expect(textOf(widened.content)).toContain("Merged 2 notes into one in the project's memory")
+    expect(w.memory.projectNotes(project.id).map((n) => n.content)).toEqual([
+      'The site deploys on Fridays, by me.',
+    ])
+    expect(w.memory.botNotes(w.bot.id)).toEqual([])
+    expect(w.memory.workspaceNotes().map((n) => n.id)).toEqual([general.id])
   })
 
   it('memory_forget removes notes with a reason, all or none, never private notes of another bot', () => {

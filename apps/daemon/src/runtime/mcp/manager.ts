@@ -41,6 +41,8 @@ export interface McpManagerDeps {
   oauthProvider?: (config: McpServerConfig) => OAuthClientProvider
   /** A server needs the user to sign in (again); `detected`: it was not known to use OAuth. */
   onAuthRequired?: (serverId: string, detected: boolean) => void
+  /** Removes secret values (e.g. a header a server echoes back) from an error before it is reported. */
+  redact?: (text: string) => string
 }
 
 interface Connection {
@@ -118,9 +120,19 @@ export class McpManager {
 
   private setState(serverId: string, status: McpServerState['status'], error: string | null = null): void {
     const entry = this.entry(serverId)
+    if (error !== null && this.deps.redact) error = this.deps.redact(error)
     if (entry.state.status === status && entry.state.error === error) return
     entry.state = { status, error, since: this.now() }
     this.deps.onState(serverId, entry.state)
+  }
+
+  /**
+   * What callers get instead of `err`: a new error with the secrets removed from its message. The
+   * original is dropped (not kept as `cause`), since its message and stack may hold an echoed secret.
+   */
+  private redacted(err: unknown): unknown {
+    if (!this.deps.redact || isAuthRequired(err)) return err
+    return new Error(this.deps.redact(errorMessage(err)))
   }
 
   /** Open connection to the server, connecting if needed (`boot`: may start the VM). */
@@ -148,7 +160,7 @@ export class McpManager {
             this.deps.onAuthRequired?.(serverId, err instanceof McpAuthRequiredError && err.detected)
           } else this.setState(serverId, 'error', errorMessage(err))
         }
-        throw err
+        throw this.redacted(err)
       }
       if (entry.generation !== generation || this.closed) {
         connection.closing = true
@@ -314,7 +326,7 @@ export class McpManager {
       connection.tools = await this.fetchTools(connection)
     } catch (err) {
       this.setState(serverId, 'error', errorMessage(err))
-      throw err
+      throw this.redacted(err)
     }
     this.deps.onTools(serverId, connection.tools, connection.httpKind)
     return connection.tools
@@ -340,9 +352,11 @@ export class McpManager {
       // The HTTP session expired on the server: the request was refused, not run. Reconnect once.
       if (err instanceof StreamableHTTPError && err.code === 404) {
         await this.reset(serverId)
-        return call()
+        return call().catch((retryErr: unknown) => {
+          throw this.redacted(retryErr)
+        })
       }
-      throw err
+      throw this.redacted(err)
     }
   }
 
@@ -351,10 +365,14 @@ export class McpManager {
    * The persistent connection of the server, if any, is left alone.
    */
   async test(config: McpServerConfig): Promise<{ tools: McpToolInfo[]; httpKind: McpHttpKind | null }> {
-    const connection = await this.open(config, true)
+    const connection = await this.open(config, true).catch((err: unknown) => {
+      throw this.redacted(err)
+    })
     connection.closing = true
     try {
       return { tools: await this.fetchTools(connection), httpKind: connection.httpKind }
+    } catch (err) {
+      throw this.redacted(err)
     } finally {
       await connection.client.close().catch(() => undefined)
     }

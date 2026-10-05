@@ -506,8 +506,8 @@
       "commitEmailHint": "{slug} vira o identificador do bot",
       "draftPrs": "Abrir PRs como rascunho",
       "draftPrsHint": "Você revisa antes de marcar como pronto",
-      "autoMergePrs": "Mergear PRs automaticamente",
-      "autoMergePrsHint": "Sem isso, os bots abrem o PR e você faz o merge. Um plano pode permitir o merge ao ser aprovado.",
+      "autoMergePrs": "Permitir que os bots façam merge de PRs",
+      "autoMergePrsHint": "Ligado, os bots podem fazer merge dos próprios PRs depois que os checks passarem. Desligado, eles só abrem o PR e quem faz o merge é você; ao aprovar um plano, você ainda pode liberar o merge só para ele.",
       "checkFailed": "Não deu para verificar este token com o GitHub."
     },
     "webSearch": {

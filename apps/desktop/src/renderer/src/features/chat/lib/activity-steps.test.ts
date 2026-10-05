@@ -51,6 +51,20 @@ describe('activity step texts', () => {
     expect(stepText({ kind: 'update_bot', detail: 'Iris' }, t)).toBe('Atualizou o bot Iris')
   })
 
+  it('never says a failed memory_forget removed anything', () => {
+    const t = ts['pt-BR']
+    const step = { kind: 'memory_forget', detail: 'A versão 0.3 acabou.' }
+    expect(stepText({ ...step, status: 'ok' }, t)).toBe('Removeu da memória: A versão 0.3 acabou.')
+    expect(stepText({ ...step, status: 'error' }, t)).toBe('Não removeu da memória: A versão 0.3 acabou.')
+    expect(stepText({ kind: 'memory_forget', detail: '', status: 'error' }, t)).toBe(
+      'Não removeu nada da memória',
+    )
+    expect(stepText({ ...step, status: 'error' }, ts.en)).toBe(
+      'Did not remove from memory: A versão 0.3 acabou.',
+    )
+    expect(stepText({ kind: 'list_bots', detail: '', status: 'error' }, t)).toBe('Consultou a equipe')
+  })
+
   it('falls back to the humanized tool name for kinds the app does not know', () => {
     expect(stepText({ kind: 'some_future_tool', detail: '{"x":1}' }, ts['pt-BR'])).toBe(
       'Usou some future tool',

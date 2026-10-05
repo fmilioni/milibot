@@ -4,7 +4,10 @@ import { tokenize } from './linkify'
 
 const link = (url: string) => ({ type: 'link', kind: 'url', text: url, href: url })
 const text = (value: string) => ({ type: 'text', text: value })
-const links = (value: string) => tokenize(value).filter((t) => t.type === 'link').map((t) => t.text)
+const links = (value: string) =>
+  tokenize(value)
+    .filter((t) => t.type === 'link')
+    .map((t) => t.text)
 
 describe('tokenize', () => {
   it('finds a URL in the middle of the text', () => {

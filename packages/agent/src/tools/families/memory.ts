@@ -2,6 +2,9 @@ import type { ToolDefinition } from '../../llm/provider'
 import { defineTools, scalarText } from './kit'
 import { PROJECT_SCOPE_ARG } from './projects'
 
+/** Most notes one `replaces` list or `memory_forget` call may name. */
+export const MAX_NOTE_REFS = 10
+
 const definitions = {
   memory_save: {
     name: 'memory_save',
@@ -13,7 +16,9 @@ const definitions = {
       'number and date formats, tools they use, preferences) and team-wide facts; scope "bot" (default) is ' +
       'for what only your role needs; scope "project" is shared by every bot, but only while working on the ' +
       "conversation's current project (that project's conventions, decisions, environments). To correct or " +
-      'complete a note, pass "replaces" with its text instead of adding a contradicting one. Pinned bot notes ' +
+      'complete a note, pass "replaces" with it instead of adding a contradicting one; to merge repeated ' +
+      'notes into this one, pass them all as a list (the first keeps its place and date, the rest are ' +
+      'removed; nothing changes if one does not match). Pinned bot notes ' +
       '(default) are always in your context; unpinned ones are only found with memory_search. Workspace notes ' +
       "are always in every bot's context; project notes whenever that project is current.",
     inputSchema: {
@@ -31,8 +36,12 @@ const definitions = {
             '"workspace" for facts every bot should know, "project" for facts of the current project; default "bot".',
         },
         replaces: {
-          type: 'string',
-          description: 'Text (or a unique part of it) of the existing note this one replaces.',
+          anyOf: [
+            { type: 'string' },
+            { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: MAX_NOTE_REFS },
+          ],
+          description:
+            'The existing note this one replaces (its id, text or a unique part of it), or a list of notes to merge into this one.',
         },
         pinned: { type: 'boolean', description: 'Bot notes: keep it always in context (default true).' },
       },
@@ -71,12 +80,43 @@ const definitions = {
       required: ['query'],
     },
   },
+  memory_forget: {
+    name: 'memory_forget',
+    description:
+      'Remove notes from memory that are outdated or wrong: your own notes, the workspace ones and those of ' +
+      "the current project (never another bot's private notes). All or none: nothing is removed if one does " +
+      'not match. The user sees what was removed and the reason. To merge repeated notes, use memory_save ' +
+      'with "replaces" instead.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        notes: {
+          anyOf: [
+            { type: 'string' },
+            { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: MAX_NOTE_REFS },
+          ],
+          description: 'The note (its id, text or a unique part of it), or a list of notes.',
+        },
+        reason: {
+          type: 'string',
+          description: "Why it no longer holds, in one short sentence in the user's language.",
+        },
+      },
+      required: ['notes', 'reason'],
+    },
+  },
 } satisfies Record<string, ToolDefinition>
 
 export const memoryTools = defineTools({
   definitions,
   describe(name, a, view) {
+    if (name === 'memory_forget') return { kind: name, detail: view.clip(scalarText(a.reason), 60) }
     return { kind: name, detail: view.clip(scalarText(name === 'memory_save' ? a.note : a.query), 60) }
   },
-  labels: { memory_save: 'remember', memory_search: 'memory search', history_search: 'history search' },
+  labels: {
+    memory_save: 'remember',
+    memory_search: 'memory search',
+    history_search: 'history search',
+    memory_forget: 'forget',
+  },
 })

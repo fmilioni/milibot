@@ -3,7 +3,7 @@ import { type Bot, foldText } from '@milibot/shared'
 import type { ProjectDirectory, ToolResult } from '../environment'
 import type { ToolCall } from '../llm/messages'
 import { argsObject } from '../tools/args'
-import { type memoryTools } from '../tools/families/memory'
+import { MAX_NOTE_REFS, type memoryTools } from '../tools/families/memory'
 import { projectViewArg } from '../tools/families/projects'
 import { toolText } from '../tools/result'
 import { localStamp } from './compaction'
@@ -74,6 +74,60 @@ function findReplaced(candidates: MemoryNote[], ref: string): MemoryNote | Memor
   return partial.length > 1 ? partial : null
 }
 
+/** A `replaces`/`notes` argument: one reference or a list of them. */
+function noteRefs(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : [value]
+  return list
+    .filter((v): v is string => typeof v === 'string')
+    .map((v) => v.trim())
+    .filter(Boolean)
+}
+
+/**
+ * Every note `refs` point at (deduplicated, in order), or what is wrong with the first ref that matches no
+ * note or several.
+ */
+function resolveNotes(
+  candidates: MemoryNote[],
+  refs: string[],
+  arg: string,
+): { notes: MemoryNote[] } | { problem: string } {
+  if (refs.length > MAX_NOTE_REFS) return { problem: `"${arg}" names at most ${MAX_NOTE_REFS} notes.` }
+  const notes: MemoryNote[] = []
+  for (const [i, ref] of refs.entries()) {
+    const item = refs.length > 1 ? `item ${i + 1} of "${arg}"` : `"${arg}"`
+    const found = findReplaced(candidates, ref)
+    if (!found)
+      return {
+        problem:
+          `No note matches ${item} (${ref.slice(0, 80)}). Quote the note's text exactly as it appears in ` +
+          'your memory. Nothing was changed.',
+      }
+    if (Array.isArray(found))
+      return {
+        problem:
+          `${item} matches ${found.length} notes: ${found.slice(0, 4).map(quote).join('; ')}. Quote more of ` +
+          'the one you mean. Nothing was changed.',
+      }
+    if (!notes.includes(found)) notes.push(found)
+  }
+  return { notes }
+}
+
+/** Notes a bot may change: the workspace's, the current project's and its own. */
+function changeableNotes(ctx: MemoryToolContext): MemoryNote[] {
+  const projectId = ctx.projectId ?? null
+  return [
+    ...ctx.memory.workspaceNotes(),
+    ...(projectId ? ctx.memory.projectNotes(projectId) : []),
+    ...ctx.memory.botNotes(ctx.bot.id),
+  ]
+}
+
+function where(n: Pick<MemoryNote, 'scope' | 'projectId'>): string {
+  return n.scope === 'bot' ? 'your memory' : n.projectId ? "the project's memory" : 'workspace memory'
+}
+
 type SaveScope = MemoryScope | 'project'
 
 function saveNote(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResult {
@@ -99,32 +153,31 @@ function saveNote(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResul
         'note with scope "workspace" (every project) or "bot".',
       true,
     )
-  const candidates = [
-    ...ctx.memory.workspaceNotes(),
-    ...(projectId ? ctx.memory.projectNotes(projectId) : []),
-    ...ctx.memory.botNotes(ctx.bot.id),
-  ]
-  const where = (n: Pick<MemoryNote, 'scope' | 'projectId'>) =>
-    n.scope === 'bot' ? 'your memory' : n.projectId ? "the project's memory" : 'workspace memory'
+  const candidates = changeableNotes(ctx)
   const stored = (s: SaveScope): { scope: MemoryScope; projectId: string | null } =>
     s === 'project' ? { scope: 'workspace', projectId } : { scope: s, projectId: null }
 
-  const replaces = typeof a.replaces === 'string' ? a.replaces.trim() : ''
-  if (replaces) {
-    const found = findReplaced(candidates, replaces)
-    if (!found)
+  const replaces = noteRefs(a.replaces)
+  if (replaces.length) {
+    const resolved = resolveNotes(candidates, replaces, 'replaces')
+    if ('problem' in resolved) return toolText(resolved.problem, true)
+    const [first, ...rest] = resolved.notes as [MemoryNote, ...MemoryNote[]]
+    const places = new Set(resolved.notes.map(where))
+    if (!scope && places.size > 1)
       return toolText(
-        `No note matches "replaces" (${replaces.slice(0, 80)}). Quote the old note's text exactly as it appears in your memory.`,
+        `Not saved: the notes to merge are in different places (${[...places].join(', ')}). Pass "scope" ` +
+          'with where the merged note goes. Nothing was changed.',
         true,
       )
-    if (Array.isArray(found))
-      return toolText(
-        `"replaces" matches ${found.length} notes: ${found.slice(0, 4).map(quote).join('; ')}. Quote more of the one to replace.`,
-        true,
-      )
-    const target = scope ? stored(scope) : { scope: found.scope, projectId: found.projectId ?? null }
-    const revised = ctx.memory.reviseNote(found.id, { content: note, botId: ctx.bot.id, ...target })
-    return toolText(`Updated the note in ${where(revised)}.`)
+    const target = scope ? stored(scope) : { scope: first.scope, projectId: first.projectId ?? null }
+    const revised = ctx.memory.reviseNote(first.id, {
+      content: note,
+      botId: ctx.bot.id,
+      ...target,
+      absorbs: rest.map((n) => n.id),
+    })
+    if (rest.length === 0) return toolText(`Updated the note in ${where(revised)}.`)
+    return toolText(`Merged ${resolved.notes.length} notes into one in ${where(revised)}.`)
   }
 
   const target = stored(scope ?? 'bot')
@@ -154,17 +207,40 @@ function saveNote(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResul
   )
 }
 
+function forgetNotes(ctx: MemoryToolContext, a: Record<string, unknown>): ToolResult {
+  const reason = typeof a.reason === 'string' ? a.reason.replace(/\s+/g, ' ').trim() : ''
+  if (!reason)
+    return toolText('"reason" is required: say in one short sentence why the note no longer holds.', true)
+  const refs = noteRefs(a.notes)
+  if (!refs.length) return toolText('"notes" is required.', true)
+  const resolved = resolveNotes(changeableNotes(ctx), refs, 'notes')
+  if ('problem' in resolved) return toolText(resolved.problem, true)
+  ctx.memory.forgetNotes(resolved.notes.map((n) => n.id))
+  const removed = resolved.notes.map((n) => `- (${where(n)}) ${n.content}`).join('\n')
+  return {
+    ...toolText(
+      `Removed ${resolved.notes.length === 1 ? 'the note' : `${resolved.notes.length} notes`}:\n${removed}`,
+    ),
+    activity: {
+      detail: `${resolved.notes.map(quote).join('; ')} — ${reason}`,
+      result: `${resolved.notes.map((n) => n.content).join('\n\n')}\n\n— ${reason}`,
+    },
+  }
+}
+
 function noteLabel(n: MemoryNote): string {
   const scope = n.scope === 'workspace' ? (n.projectId ? 'project' : 'workspace') : n.pinned ? 'pinned' : null
   return [localStamp(n.createdAt), scope].filter(Boolean).join(', ')
 }
 
-/** Runs `memory_save`, `memory_search` and `history_search` against the memory backend. */
+/** Runs the memory tools against the memory backend. */
 export function executeMemoryTool(ctx: MemoryToolContext, call: ToolCall): ToolResult {
   const a = argsObject(call.arguments)
   switch (call.name as (typeof memoryTools.names)[number]) {
     case 'memory_save':
       return saveNote(ctx, a)
+    case 'memory_forget':
+      return forgetNotes(ctx, a)
     case 'memory_search': {
       const terms = searchTerms(typeof a.query === 'string' ? a.query : '')
       if (terms.length === 0) return toolText('The query has no searchable words.', true)

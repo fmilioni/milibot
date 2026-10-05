@@ -37,6 +37,7 @@ const request: SetAsideRequest = {
   wokenAt: null,
   alertedAt: null,
   attempts: 0,
+  actedAt: null,
 }
 
 function show() {
@@ -76,7 +77,17 @@ describe('BotSetAsideSection', () => {
   it('flags a request the bot could not be woken with', async () => {
     list.mockResolvedValue([{ ...request, attempts: 3 }])
     show()
-    expect(await screen.findByText('not resumed on its own', { exact: false })).toBeTruthy()
+    const warning = await screen.findByText('Not resumed on its own: ask the bot or drop it.')
+    // Its own line, wrapped: never cut by the line above's truncation.
+    expect(warning.className).toContain('break-words')
+    expect(warning.className).not.toContain('truncate')
+  })
+
+  it('flags a request whose wake stopped midway', async () => {
+    list.mockResolvedValue([{ ...request, attempts: 1, actedAt: Date.now() }])
+    show()
+    expect(await screen.findByText('Resuming it stopped midway', { exact: false })).toBeTruthy()
+    expect(screen.queryByText('Not resumed on its own', { exact: false })).toBeNull()
   })
 
   it('shows nothing while nothing is set aside', async () => {

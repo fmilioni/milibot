@@ -228,7 +228,8 @@
       "group": "Grupo",
       "since": "adiada {{when}}",
       "drop": "Descartar pendência",
-      "stuck": "não foi retomada sozinha: peça ao bot ou descarte"
+      "stuck": "Não foi retomada sozinha: peça ao bot ou descarte.",
+      "interrupted": "A retomada parou no meio e não será refeita sozinha: confira o que já foi feito e peça ao bot para terminar, ou descarte."
     },
     "delete": "Excluir bot",
     "deleteLastBot": "O workspace precisa de pelo menos um bot. Crie outro antes de excluir este.",

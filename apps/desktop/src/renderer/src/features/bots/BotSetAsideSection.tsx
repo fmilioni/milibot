@@ -44,6 +44,12 @@ function SetAsideItem({ request, bot, onDrop }: { request: SetAsideRequest; bot:
         ? (conversation.title ?? t('panels.bot.setAside.group'))
         : t('panels.bot.setAside.withUser')
   const since = formatRelative(request.createdAt, i18n.language)
+  const warning =
+    request.actedAt !== null
+      ? t('panels.bot.setAside.interrupted')
+      : request.attempts >= SET_ASIDE_MAX_WAKES
+        ? t('panels.bot.setAside.stuck')
+        : null
   return (
     <li className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-2 py-2.5 pr-2 pl-3">
       <Clock size={15} className="shrink-0 text-warning" />
@@ -65,13 +71,8 @@ function SetAsideItem({ request, bot, onDrop }: { request: SetAsideRequest; bot:
           )}
           {' · '}
           {t('panels.bot.setAside.since', { when: since })}
-          {request.attempts >= SET_ASIDE_MAX_WAKES && (
-            <span className="text-warning">
-              {' · '}
-              {t('panels.bot.setAside.stuck')}
-            </span>
-          )}
         </span>
+        {warning && <span className="text-xs break-words text-warning">{warning}</span>}
       </span>
       <Tooltip content={t('panels.bot.setAside.drop')}>
         <button

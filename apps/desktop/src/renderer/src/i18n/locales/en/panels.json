@@ -228,7 +228,8 @@
       "group": "Group",
       "since": "set aside {{when}}",
       "drop": "Drop this request",
-      "stuck": "not resumed on its own: ask the bot or drop it"
+      "stuck": "Not resumed on its own: ask the bot or drop it.",
+      "interrupted": "Resuming it stopped midway and won't be retried on its own: check what was already done and ask the bot to finish it, or drop it."
     },
     "delete": "Delete bot",
     "deleteLastBot": "The workspace needs at least one bot. Create another one before deleting this one.",

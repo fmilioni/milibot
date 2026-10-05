@@ -85,7 +85,7 @@ export function toolFamily(name: string): ToolFamily | null {
  */
 const LANE_TOOLS: Record<LaneKind, { without: ToolName[]; keep: ToolName[] }> = {
   main: { without: ['session_finish'], keep: [] },
-  internal: { without: ['session_finish', 'after_current_work'], keep: [] },
+  internal: { without: ['session_finish'], keep: [] },
   session: { without: ['session_start', 'project_set_current', 'after_current_work'], keep: ['todo_write'] },
   subagent: {
     without: [

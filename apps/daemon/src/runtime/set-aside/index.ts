@@ -1,0 +1,1 @@
+export { SetAsideService } from './service'

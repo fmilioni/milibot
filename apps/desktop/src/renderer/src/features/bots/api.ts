@@ -1,4 +1,4 @@
-import type { Procedure, Routine, UpdateProcedureBody } from '@milibot/shared'
+import type { Procedure, Routine, SetAsideRequest, UpdateProcedureBody } from '@milibot/shared'
 
 import { api } from '@/api/daemon'
 import { queryKeys } from '@/api/queries'
@@ -36,6 +36,21 @@ export const runRoutine = (workspaceId: string, routineId: string) =>
 
 export const deleteRoutine = (workspaceId: string, routineId: string) =>
   api().call('deleteRoutine', { params: { workspaceId, routineId } })
+
+/** What a bot set aside and has not taken up yet, oldest first; refetched on `set_aside.changed`. */
+export function useBotSetAside(workspaceId: string | null, botId: string) {
+  return useApiQuery(
+    queryKeys.setAside(workspaceId ?? '', botId),
+    () =>
+      api()
+        .call('listSetAsideRequests', { params: { workspaceId: workspaceId ?? '' }, query: { botId } })
+        .catch((): SetAsideRequest[] => []),
+    { enabled: Boolean(workspaceId) },
+  )
+}
+
+export const dropSetAside = (workspaceId: string, requestId: string) =>
+  api().call('dropSetAsideRequest', { params: { workspaceId, requestId } })
 
 /** The procedures a bot can use (empty when they can't be read); refetched on `procedure.*`. */
 export function useBotProcedures(workspaceId: string | null, botId: string) {

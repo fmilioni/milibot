@@ -27,6 +27,7 @@ import { BotMcpSection } from './BotMcpSection'
 import { BotMemorySection } from './BotMemorySection'
 import { BotProceduresSection } from './BotProceduresSection'
 import { BotRoutinesSection } from './BotRoutinesSection'
+import { BotSetAsideSection } from './BotSetAsideSection'
 import { BotSkillsSection } from './BotSkillsSection'
 
 export function BotSettingsPanel() {
@@ -216,6 +217,7 @@ function BotSettingsForm({ bot }: { bot: Bot }) {
           />
         </div>
       </div>
+      <BotSetAsideSection bot={bot} />
       <BotSkillsSection bot={bot} />
       <BotMcpSection bot={bot} />
       <BotProceduresSection bot={bot} />

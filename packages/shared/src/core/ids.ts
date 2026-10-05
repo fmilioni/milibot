@@ -87,6 +87,7 @@ export const ID_PREFIXES = {
   boardLink: 'blk',
   boardUpload: 'bup',
   boardLabel: 'blb',
+  setAside: 'sar',
 } as const
 
 export type IdKind = keyof typeof ID_PREFIXES

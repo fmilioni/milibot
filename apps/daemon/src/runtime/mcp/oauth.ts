@@ -41,6 +41,7 @@ export interface McpOAuthDeps {
   onChange: (serverId: string) => void
   onConnected: (serverId: string) => Promise<void>
   log: LogFn
+  redact: (text: string) => string
 }
 
 // Portuguese on purpose: the browser page after a sign-in is shown in the browser's language.
@@ -192,9 +193,13 @@ export class McpOAuthService {
       }
     } catch (err) {
       listener.close()
-      throw new DaemonError('conflict', `Could not start the sign-in: ${errorMessage(err)}`, {
-        reason: 'oauth_start_failed',
-      })
+      throw new DaemonError(
+        'conflict',
+        `Could not start the sign-in: ${this.deps.redact(errorMessage(err))}`,
+        {
+          reason: 'oauth_start_failed',
+        },
+      )
     }
     let settle: (outcome: McpSignInOutcome) => void = () => undefined
     const outcome = new Promise<McpSignInOutcome>((resolve) => {
@@ -246,13 +251,11 @@ export class McpOAuthService {
       const account = await this.finish(flow.serverId)
       flow.settle({ status: 'connected', account })
     } catch (err) {
-      this.deps.log('warn', 'mcp oauth sign-in failed', {
-        serverId: flow.serverId,
-        err: errorMessage(err),
-      })
-      if (!res.headersSent) page(res, 400, language, false, errorMessage(err))
+      const message = this.deps.redact(errorMessage(err))
+      this.deps.log('warn', 'mcp oauth sign-in failed', { serverId: flow.serverId, err: message })
+      if (!res.headersSent) page(res, 400, language, false, message)
       this.end(state, null)
-      flow.settle({ status: 'failed', error: errorMessage(err) })
+      flow.settle({ status: 'failed', error: message })
       this.deps.onChange(flow.serverId)
     }
   }

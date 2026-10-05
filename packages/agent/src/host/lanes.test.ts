@@ -168,7 +168,7 @@ describe('messages sent while a turn works', () => {
     const hooks: { onInput?: (text: string) => void } = {}
     const { bot, chat, host, say, replies, provider } = await setup(hooks)
     hooks.onInput = (text) => {
-      if (text === 'first') say(chat.id, 'second')
+      if (text.endsWith('\nfirst') || text === 'first') say(chat.id, 'second')
     }
     say(chat.id, 'first')
     await host.idle(bot.id)

@@ -21,6 +21,7 @@ beforeEach(() => {
     attachments: { claim: () => [], bind: () => undefined, settle: async () => undefined },
     userRequests: { answerFromChat: () => false },
     workSessions: { onUserMessage: () => undefined },
+    setAside: { dropConversation: () => undefined },
   }).handlers()
 })
 

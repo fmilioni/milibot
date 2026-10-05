@@ -41,6 +41,8 @@ export function workspaceCacheUpdates(workspaceId: string, event: WorkspaceEvent
         ),
       ]
     }
+    case 'set_aside.changed':
+      return [invalidate(queryKeys.setAside(workspaceId, event.payload.botId))]
     case 'procedure.updated':
     case 'procedure.deleted':
       return [invalidate(workspaceKey(workspaceId, 'procedures'))]

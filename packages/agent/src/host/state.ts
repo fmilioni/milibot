@@ -49,6 +49,8 @@ export interface TurnState {
   incoming: boolean
   /** Hands `incoming` messages to the running CLI process at once (native turns read them per step). */
   deliver: (() => void) | null
+  /** `TurnRequest.onActing`, until the turn's first tool call. */
+  acting?: (() => void) | null
   /** Tools sent to the model this turn (native providers only); a call to any other one is refused. */
   offeredTools?: ReadonlySet<string>
   /** Repository instruction files Milibot's tool results brought in this turn, by path (CLI turns' record). */

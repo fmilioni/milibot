@@ -42,7 +42,8 @@ export interface BotRequest {
   fromBotId: string
   toBotId: string
   originConversationId: string
-  cardMessageId: string
+  /** The card in the sender's conversation (none for a follow-up written in the internal conversation). */
+  cardMessageId: string | null
   card: BotMessageSentPayload
   /** The card in the target's own chat, when it has one. */
   received: { messageId: string; card: BotMessageReceivedPayload } | null
@@ -66,6 +67,8 @@ export class BotMessaging {
   private readonly waitingOn = new Map<LaneKey, string>()
   /** `<internalConversationId>:<askerId>` → where the asker last wrote from, for follow-ups. */
   private readonly internalOrigins = new Map<string, { conversationId: string; chain: string[] }>()
+  /** Bots each turn sent a message to (ask_bot/message_bot). */
+  private readonly messagedBy = new WeakMap<TurnState, Set<string>>()
 
   constructor(private readonly ctx: HostContext) {}
 
@@ -98,7 +101,8 @@ export class BotMessaging {
       ...(reply ? { replyPreview: clipLine(reply, 280) } : {}),
     }
     try {
-      env.updateMessage(request.cardMessageId, { payload: { ...request.card, ...outcome } })
+      if (request.cardMessageId)
+        env.updateMessage(request.cardMessageId, { payload: { ...request.card, ...outcome } })
       if (request.received)
         env.updateMessage(request.received.messageId, { payload: { ...request.received.card, ...outcome } })
     } catch (err) {
@@ -114,6 +118,7 @@ export class BotMessaging {
       conversationId: request.originConversationId,
       trigger: 'bot_reply',
       note: botReplyNote(name, request.card.preview, reply),
+      replyFrom: request.toBotId,
       chain: request.callerChain,
       hops: request.callerHops + 1,
     })
@@ -121,10 +126,18 @@ export class BotMessaging {
 
   /**
    * Text a bot wrote in an internal conversation outside of answering a request (e.g. after a reply it
-   * was waiting on from a third bot) would otherwise never reach the other bot: deliver it like a
-   * message_bot reply, as a new turn in the conversation the other bot last wrote from.
+   * was waiting on from a third bot) would otherwise never reach the other bot. When the other bot wrote to
+   * it from another conversation, it is delivered like a message_bot reply, as a new turn there. Otherwise
+   * (the other bot is stopped, or the runtime restarted since) it is a message to the other bot in this
+   * conversation, answered here like a message_bot; `replyFrom` is the bot whose answer the turn read.
    */
-  followUp(bot: Bot, turn: TurnState, conversation: ConversationSummary, text: string): void {
+  followUp(
+    bot: Bot,
+    turn: TurnState,
+    conversation: ConversationSummary,
+    text: string,
+    replyFrom: string | undefined,
+  ): void {
     const env = this.ctx.env()
     const peerId = conversation.memberBotIds.find((id) => id !== bot.id)
     const peer = peerId ? env.getBot(peerId) : null
@@ -135,16 +148,45 @@ export class BotMessaging {
       return
     }
     const link = this.internalOrigins.get(`${conversation.id}:${peer.id}`)
-    const origin = link?.conversationId ?? env.findDirectConversation(peer.id)?.id
-    if (!origin || origin === conversation.id) return
-    this.ctx.scheduler.enqueue({
-      botId: peer.id,
-      conversationId: origin,
-      trigger: 'bot_reply',
-      note: botFollowUpNote(bot.name, text),
-      chain: link?.chain ?? [],
-      hops,
-    })
+    if (link) {
+      if (link.conversationId === conversation.id) return
+      this.ctx.scheduler.enqueue({
+        botId: peer.id,
+        conversationId: link.conversationId,
+        trigger: 'bot_reply',
+        note: botFollowUpNote(bot.name, text),
+        chain: link.chain,
+        hops,
+      })
+      return
+    }
+    // The turn read the peer's answer or messaged it itself: what it writes here is not a new message to it.
+    if (replyFrom === peer.id || this.messagedBy.get(turn)?.has(peer.id)) return
+    this.dispatch(
+      {
+        id: newId('botRequest'),
+        fromBotId: bot.id,
+        toBotId: peer.id,
+        originConversationId: conversation.id,
+        cardMessageId: null,
+        card: {
+          type: 'bot_message_sent',
+          targetBotId: peer.id,
+          internalConversationId: conversation.id,
+          preview: clipLine(text, 280),
+          awaitReply: false,
+          status: 'waiting',
+        },
+        received: null,
+        callerChain: turn.chain,
+        callerHops: turn.hops,
+        notice: false,
+        waiter: null,
+        abandoned: false,
+      },
+      conversation.id,
+      null,
+    )
   }
 
   findBotRef(ref: string): Bot | null {
@@ -220,6 +262,7 @@ export class BotMessaging {
       turnId: turn?.id ?? null,
       plan: turn ? env.activePlan(bot, turn.laneKey, conversationId) : null,
     })
+    if (turn) this.messagedBy.set(turn, new Set([...(this.messagedBy.get(turn) ?? []), target.id]))
     if (!ask)
       return toolText(notice ? messagingReplies.sentNotice(target.name) : messagingReplies.sent(target.name))
 
@@ -343,24 +386,29 @@ export class BotMessaging {
       waiter: null,
       abandoned: false,
     }
-    this.requests.set(request.id, request)
     const note = [
       input.notice ? botNoticeNote(bot.name) : null,
       input.plan ? planRequestNote(bot.name, input.plan) : null,
     ]
       .filter(Boolean)
       .join('\n\n')
+    this.dispatch(request, internal.id, note || null)
+    return request
+  }
+
+  /** Runs the target's turn on a request, in the pair's internal conversation. */
+  private dispatch(request: BotRequest, internalConversationId: string, note: string | null): void {
+    this.requests.set(request.id, request)
     this.ctx.scheduler.enqueue({
-      botId: target.id,
-      conversationId: internal.id,
+      botId: request.toBotId,
+      conversationId: internalConversationId,
       trigger: 'bot_message',
       botRequests: [request.id],
       // An update leaves nobody waiting: the target may message the sender back.
-      chain: input.notice ? chain : [...chain, bot.id],
-      hops: hops + 1,
+      chain: request.notice ? request.callerChain : [...request.callerChain, request.fromBotId],
+      hops: request.callerHops + 1,
       ...(note ? { note } : {}),
     })
-    return request
   }
 
   /** Shows the message in the target's own chat too, so the user sees what its bot was asked from there. */

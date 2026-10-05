@@ -220,6 +220,17 @@
     "routines": "Rotinas",
     "noRoutines": "Peça no chat para criar uma rotina.",
     "routinesHint": "Peça no chat para criar ou mudar uma rotina.",
+    "setAside": {
+      "title": "Pendências",
+      "hint": "{{name}} retoma cada uma assim que ficar livre. Se descartar, ele não é acordado com ela.",
+      "withUser": "Conversa com você",
+      "withBot": "Conversa com {{name}}",
+      "group": "Grupo",
+      "since": "adiada {{when}}",
+      "drop": "Descartar pendência",
+      "stuck": "Não foi retomada sozinha: peça ao bot ou descarte.",
+      "interrupted": "A retomada parou no meio e não será refeita sozinha: confira o que já foi feito e peça ao bot para terminar, ou descarte."
+    },
     "delete": "Excluir bot",
     "deleteLastBot": "O workspace precisa de pelo menos um bot. Crie outro antes de excluir este.",
     "mcp": {

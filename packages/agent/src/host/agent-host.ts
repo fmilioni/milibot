@@ -48,6 +48,8 @@ export interface AgentHostOptions {
   screenWaitSeconds?: number
   /** Default 20. */
   maxSubagents?: number
+  /** Default one minute. */
+  idleWatchIntervalMs?: number
 }
 
 /** The host's collaborators, wired together; the environment arrives with `start`. */
@@ -127,6 +129,7 @@ export class DefaultAgentHost implements AgentHost {
       compaction: options.compaction ?? true,
       screenWaitSeconds: options.screenWaitSeconds ?? 120,
       maxSubagents: options.maxSubagents ?? 20,
+      idleWatchIntervalMs: options.idleWatchIntervalMs ?? 60_000,
     })
   }
 
@@ -142,11 +145,13 @@ export class DefaultAgentHost implements AgentHost {
       ctx.cli.set(engine, CLI_ENGINE_DRIVERS[engine].createSessions(backend, log))
     }
     ctx.control.restore()
+    ctx.otherWork.start(ctx.options.idleWatchIntervalMs)
   }
 
   async stop(): Promise<void> {
     const ctx = this.ctx
     ctx.stopped = true
+    ctx.otherWork.stop()
     for (const [botId, state] of ctx.lanes.botStates()) {
       for (const lane of state.lanes.values()) ctx.scheduler.abortLane(lane)
       ctx.lanes.wake(botId)
@@ -191,6 +196,7 @@ export class DefaultAgentHost implements AgentHost {
       ctx.screen.release(lane)
       ctx.lanes.removeLane(lane)
     }
+    ctx.otherWork.laneClosed(info.botId)
   }
 
   onMessageCreated(message: Message): void {

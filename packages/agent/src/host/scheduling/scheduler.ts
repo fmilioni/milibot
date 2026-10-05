@@ -41,12 +41,22 @@ export class Scheduler {
         duplicate.botRequests = [...(duplicate.botRequests ?? []), ...request.botRequests]
       if (request.note)
         duplicate.note = duplicate.note ? `${duplicate.note}\n\n${request.note}` : request.note
+      // The merged turn reads answers from more than one bot.
+      if (duplicate.replyFrom !== request.replyFrom) delete duplicate.replyFrom
       if (request.onFinished) {
         const first = duplicate.onFinished
         const second = request.onFinished
-        duplicate.onFinished = (outcome) => {
-          first?.(outcome)
-          second(outcome)
+        duplicate.onFinished = (outcome, failed) => {
+          first?.(outcome, failed)
+          second(outcome, failed)
+        }
+      }
+      if (request.onActing) {
+        const first = duplicate.onActing
+        const second = request.onActing
+        duplicate.onActing = () => {
+          first?.()
+          second()
         }
       }
     } else if (request.trigger === 'user_message') {
@@ -71,7 +81,7 @@ export class Scheduler {
     const turn = lane.current
     if (request.trigger !== 'user_message' || !turn?.joinable) return false
     if (turn.conversationId !== request.conversationId || turn.abort.signal.aborted) return false
-    if (request.note || request.botRequests?.length || request.onFinished) return false
+    if (request.note || request.botRequests?.length || request.onFinished || request.onActing) return false
     turn.incoming = true
     turn.deliver?.()
     return true
@@ -203,7 +213,7 @@ export class Scheduler {
         this.ctx.screen.release(lane)
         this.ctx.lanes.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
         if (lane.info.kind === 'subagent' && lane.queue.length === 0) this.forgetEphemeralLane(lane)
-        if (lane.queue.length === 0) this.ctx.otherWork.laneFreed(lane)
+        this.ctx.otherWork.turnEnded(lane)
         this.pump()
         this.notifyIdle()
       })

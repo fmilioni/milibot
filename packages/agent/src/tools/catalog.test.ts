@@ -147,7 +147,7 @@ describe('toolsForLane main', () => {
     expect(subagent).not.toContain('ask_user')
     expect(chat).toContain('after_current_work')
     for (const other of [session, subagent]) expect(other).not.toContain('after_current_work')
-    expect(names(toolsForLane('internal'))).toEqual(chat.filter((name) => name !== 'after_current_work'))
+    expect(names(toolsForLane('internal'))).toEqual(chat)
   })
 
   it('offers a family of tools only while its skill is on, keeping what a lane relies on', () => {

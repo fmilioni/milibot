@@ -88,6 +88,7 @@ import {
 import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
+import { SetAsideService } from '../set-aside'
 import { GitPolicySync, OfficeService, SettingsService } from '../settings'
 import { SetupRoutes } from '../setup'
 import { defaultBuiltinSkillsDir, SkillService, SkillTools } from '../skills'
@@ -496,6 +497,7 @@ export function createContainer(options: ContainerOptions) {
     now,
     log,
   })
+  const setAside = new SetAsideService({ db, emit, now })
   const userRequests = new UserRequestService({
     store,
     host,
@@ -892,6 +894,7 @@ export function createContainer(options: ContainerOptions) {
     skillContext,
     workSessions,
     planService: plans,
+    setAside,
     attachments,
     routines,
     taskCards,
@@ -924,6 +927,7 @@ export function createContainer(options: ContainerOptions) {
     attachments,
     userRequests,
     workSessions,
+    setAside,
   })
   const handlers = collectHandlers(
     workspaceStatus.handlers(),
@@ -982,6 +986,7 @@ export function createContainer(options: ContainerOptions) {
     attachments.handlers(),
     knowledge.handlers(),
     userRequests.handlers(),
+    setAside.handlers(),
     projects.handlers(),
     plans.handlers(),
     workSessions.handlers(),

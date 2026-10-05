@@ -74,7 +74,7 @@ export class TurnRunner {
       this.errorCard(turn, 'turn_crashed', (err as Error).message)
     } finally {
       const outcome = this.finish(turn, crashed)
-      request.onFinished?.(outcome)
+      request.onFinished?.(outcome, crashed || Boolean(turn.failed))
       // A helper's turn is part of its session's: it is not a turn of the chat, nor a reply to anyone.
       if (!helper) this.turnEnded(bot, request, turn, outcome)
       // A message that joined the turn after its last step waits for the next one.
@@ -108,6 +108,7 @@ export class TurnRunner {
       joinable: lane.info.kind === 'main' || lane.info.kind === 'session',
       incoming: false,
       deliver: null,
+      acting: request.onActing ?? null,
     }
   }
 
@@ -202,7 +203,8 @@ export class TurnRunner {
     const conversation = this.ctx.env().getConversation(turn.conversationId)
     const stopped = turn.abort.signal.aborted || !this.ctx.running()
     if (conversation?.type === 'internal') {
-      if (!request.botRequests?.length && !stopped) messaging.followUp(bot, turn, conversation, reply)
+      if (!request.botRequests?.length && !stopped)
+        messaging.followUp(bot, turn, conversation, reply, request.replyFrom)
       return
     }
     if (conversation?.type === 'group') routing.botSpoke(bot, conversation, texts.at(-1) as Message, stopped)

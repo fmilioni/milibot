@@ -303,6 +303,46 @@ export interface ActivePlan {
   steps: Array<{ id: string; title: string; status: string }>
 }
 
+/** A bot's work that outlives a turn, as every one of its conversations sees it. */
+export interface BotWorkState {
+  /** Work sessions not ended yet. */
+  sessions: Array<{ id: string; conversationId: string; title: string }>
+  /** Plans awaiting approval, approved or being carried out. */
+  plans: Array<{ id: string; title: string; status: string }>
+}
+
+/** A request set aside with `after_current_work`, kept across runtime restarts. */
+export interface SetAsideEntry {
+  id: string
+  botId: string
+  conversationId: string
+  task: string
+  waitingOn: string[]
+  createdAt: number
+  alertedAt: number | null
+  /** Turns queued to wake the bot with it. */
+  attempts: number
+  /** When the turn that woke the bot with it started acting; set on a waiting one = left midway. */
+  actedAt: number | null
+}
+
+/** Where set-aside requests are kept (the daemon's database). */
+export interface SetAsideStore {
+  add(entry: { botId: string; conversationId: string; task: string; waitingOn: string[] }): SetAsideEntry
+  /** Requests not taken up yet, oldest first; every bot's without `botId`. */
+  waiting(botId?: string): SetAsideEntry[]
+  /** A turn to wake the bot with it was queued (it stays waiting until that turn runs). */
+  markAttempt(id: string): void
+  /** The turn that woke the bot with it started acting: from now on it is never woken again. */
+  markActed(id: string): void
+  /** The turn that woke the bot with it ran. */
+  markWoken(id: string): void
+  /** The idle watch reported these. */
+  markAlerted(ids: string[]): void
+  /** Drops the bot's waiting requests: all, one conversation's or one by id. Returns the dropped ones. */
+  drop(botId: string, filter?: { conversationId?: string; id?: string }): SetAsideEntry[]
+}
+
 /** Work sessions and plans as the lanes see them. */
 export interface WorkPort {
   /**
@@ -317,6 +357,9 @@ export interface WorkPort {
   workSessions: WorkSessionDirectory
   /** The approved plan a lane is carrying out, so the bots it asks for help can mark the steps they do. */
   activePlan(bot: Bot, laneKey: string, conversationId: string | null): ActivePlan | null
+  /** The bot's open sessions and plans in progress, whichever conversation they started in. */
+  workState(botId: string): BotWorkState
+  setAside: SetAsideStore
 }
 
 /** A CLAUDE.md or AGENTS.md of a repository in the VM. */
@@ -482,6 +525,8 @@ export interface TurnRequest {
   note?: string
   /** Bot-to-bot requests this turn answers; its reply goes back to the askers. */
   botRequests?: string[]
+  /** Bot whose answer this turn reads (`bot_reply`). */
+  replyFrom?: string
   /** Bots waiting on this turn up the ask_bot/message_bot chain (cycle detection). */
   chain?: string[]
   /** Bot-to-bot hops since a user message (depth limit). */
@@ -492,8 +537,14 @@ export interface TurnRequest {
   laneKey?: string
   /** Model of this turn instead of the lane's (a helper started on a chosen model). */
   model?: ModelChoice | null
-  /** Called once when the turn ends or the request is dropped (routines track their runs with it). */
-  onFinished?: (outcome: TurnOutcome) => void
+  /**
+   * Called once when the turn ends or the request is dropped (routines track their runs with it). `failed`:
+   * the turn could not do its work (the model failed or was unavailable, the turn crashed), unlike an `error`
+   * outcome that only says its last step failed.
+   */
+  onFinished?: (outcome: TurnOutcome, failed?: boolean) => void
+  /** Called once, before the turn's first tool call runs: what follows may have effects. */
+  onActing?: () => void
 }
 
 /** One tool-less completion on behalf of a bot, logged in `llm_calls` (e.g. writing a taught procedure). */

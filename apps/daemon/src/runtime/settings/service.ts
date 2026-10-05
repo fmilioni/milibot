@@ -122,6 +122,7 @@ export class SettingsService {
         }
       },
       updateWorkspacePreferences: ({ body }) => {
+        if (body.idleWatchBotId) store.bots.get(body.idleWatchBotId)
         store.settings.setMany(PREFERENCE_SETTING_KEYS, body)
         if (body.spendWarnUsd !== undefined || body.spendPauseUsd !== undefined) spend.check()
         if (body.commitName !== undefined || body.commitEmail !== undefined)

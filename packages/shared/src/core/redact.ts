@@ -6,7 +6,8 @@ const AUTH_SCHEME = /^([A-Za-z][\w.+-]*)\s+(\S+)$/
 
 /**
  * A secret plus the parts a server may echo on their own: the credentials after an auth scheme and,
- * for `Basic`, the decoded `user:password` and the password.
+ * for `Basic`, the decoded `user:password` and the password, or the user when the password is empty
+ * (`key:` as Stripe does; `:token` as Azure DevOps does already yields the token as the password).
  */
 function secretForms(secret: string): string[] {
   const match = AUTH_SCHEME.exec(secret.trim())
@@ -16,7 +17,11 @@ function secretForms(secret: string): string[] {
   if (scheme.toLowerCase() === 'basic') {
     const decoded = decodeBase64(credentials)
     const colon = decoded?.indexOf(':') ?? -1
-    if (decoded && colon > 0) forms.push(decoded, decoded.slice(colon + 1))
+    if (decoded && colon >= 0) {
+      const user = decoded.slice(0, colon)
+      const password = decoded.slice(colon + 1)
+      forms.push(decoded, password || user)
+    }
   }
   return forms
 }

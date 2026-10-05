@@ -1,4 +1,4 @@
-import type { CloseBehavior, WorkspaceSummary } from '@milibot/shared'
+import { type CloseBehavior, firstBot, type WorkspaceSummary } from '@milibot/shared'
 import { FolderOpen, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -149,6 +149,61 @@ function ComputerCard() {
   )
 }
 
+const IDLE_WATCH_MINUTES = [0, 15, 30, 60, 120, 240]
+
+/** The idle watch: how long a bot may stay stopped with requests set aside before a bot is told, and which. */
+function IdleWatchRows() {
+  const { t } = useTranslation()
+  const workspaceId = useWorkspaceId()
+  const { prefs, loaded, set } = useWorkspacePreferences(workspaceId)
+  const bots = useAppStore((s) => s.bots)
+  const first = firstBot(Object.values(bots))
+  const minutes = IDLE_WATCH_MINUTES.includes(prefs.idleWatchMinutes)
+    ? IDLE_WATCH_MINUTES
+    : [...IDLE_WATCH_MINUTES, prefs.idleWatchMinutes].sort((a, b) => a - b)
+  return (
+    <>
+      <SettingsRow label={t('settings.general.idleWatch')} hint={t('settings.general.idleWatchHint')}>
+        <div className="w-[210px]">
+          <Select
+            label={t('settings.general.idleWatch')}
+            value={String(prefs.idleWatchMinutes)}
+            disabled={!loaded}
+            options={minutes.map((value) => ({
+              value: String(value),
+              label: value
+                ? t('settings.general.idleWatchAfter', { count: value })
+                : t('settings.general.idleWatchOff'),
+            }))}
+            size="sm"
+            tone="surface-2"
+            onChange={(value) => void set({ idleWatchMinutes: Number(value) })}
+          />
+        </div>
+      </SettingsRow>
+      <SettingsRow label={t('settings.general.idleWatchBot')} hint={t('settings.general.idleWatchBotHint')}>
+        <div className="w-[210px]">
+          <Select
+            label={t('settings.general.idleWatchBot')}
+            value={prefs.idleWatchBotId && bots[prefs.idleWatchBotId] ? prefs.idleWatchBotId : ''}
+            disabled={!loaded || prefs.idleWatchMinutes === 0}
+            options={[
+              {
+                value: '',
+                label: t('settings.general.idleWatchBotFirst', { name: first?.name ?? '' }),
+              },
+              ...Object.values(bots).map((bot) => ({ value: bot.id, label: bot.name })),
+            ]}
+            size="sm"
+            tone="surface-2"
+            onChange={(value) => void set({ idleWatchBotId: value || null })}
+          />
+        </div>
+      </SettingsRow>
+    </>
+  )
+}
+
 export function GeneralSettings() {
   const { t } = useTranslation()
   const workspace = useCurrentWorkspace()
@@ -289,6 +344,7 @@ export function GeneralSettings() {
           </div>
         </SettingsRow>
         <AttachmentLimitRow />
+        <IdleWatchRows />
       </SettingsCard>
 
       <ComputerCard />

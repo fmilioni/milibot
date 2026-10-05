@@ -14,6 +14,7 @@ import type { CliMcpConfig } from '../cli/mcp-config'
 import type {
   ActivePlan,
   AgentEnvironment,
+  BotWorkState,
   ConfirmationRequest,
   KnowledgeContext,
   LlmCallRecord,
@@ -37,6 +38,7 @@ import { solidPng } from '../media/png'
 import type { SkillContext } from '../skills/context'
 import { TOOL_FAMILY_NAMES } from '../tools/policy'
 import { InMemoryMemory } from './in-memory'
+import { InMemorySetAside } from './set-aside'
 import { InMemoryWorkSessions } from './work-sessions'
 
 export function makeBot(overrides: Partial<Bot> = {}): Bot {
@@ -133,6 +135,11 @@ export class TestEnv implements AgentEnvironment {
   toolInputDraft: (ctx: ToolInputDraftContext, toolName: string, partialJson: string) => void = () =>
     undefined
   activePlan: (bot: Bot, laneKey: string, conversationId: string | null) => ActivePlan | null = () => null
+  /** Bot id → its open sessions and plans (`workState`). */
+  workStates = new Map<string, BotWorkState>()
+  workState: (botId: string) => BotWorkState = (botId) =>
+    this.workStates.get(botId) ?? { sessions: [], plans: [] }
+  setAside: InMemorySetAside = new InMemorySetAside(() => this.now())
   private time = 1_000
   memory: InMemoryMemory = new InMemoryMemory(
     () => this.messages,

@@ -34,6 +34,8 @@ export const PREFERENCE_SETTING_KEYS = {
   promptUpdates: 'prompts.update_mode',
   legacyOffice: 'office.legacy_formats',
   vmAutostart: 'vm.autostart',
+  idleWatchMinutes: 'bots.idle_watch_minutes',
+  idleWatchBotId: 'bots.idle_watch_bot',
   userLanguage: 'user.language',
 } as const
 

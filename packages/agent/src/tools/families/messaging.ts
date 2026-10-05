@@ -52,9 +52,10 @@ const definitions = {
   after_current_work: {
     name: 'after_current_work',
     description:
-      'Set a request from this conversation aside until your other work in progress (a request from another ' +
-      'bot, a work session) finishes: you are woken here with it then. Use it when the user asks for something ' +
-      'after what you are doing now. Calling it again replaces what was set aside; cancel drops it.',
+      'Set a request from this conversation aside until your work in progress (a work session, a request from ' +
+      'another bot, a chat) finishes: you are woken here with it once you are free. Use it for something that ' +
+      'must wait for what you are doing now, instead of only promising it. Each call adds a request; cancel ' +
+      "drops this conversation's, or with id one set aside in any conversation (done elsewhere, a duplicate).",
     inputSchema: {
       type: 'object',
       properties: {
@@ -63,7 +64,15 @@ const definitions = {
           description:
             'What to do then, self-contained, with every detail the user gave (links, names, choices).',
         },
-        cancel: { type: 'boolean', description: 'true drops what was set aside in this conversation.' },
+        cancel: {
+          type: 'boolean',
+          description:
+            'true drops every request set aside in this conversation (only the one with id, if given).',
+        },
+        id: {
+          type: 'string',
+          description: 'With cancel: the id of the request to drop, from your state note.',
+        },
       },
     },
   },

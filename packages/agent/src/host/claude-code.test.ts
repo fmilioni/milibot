@@ -100,6 +100,46 @@ describe('DefaultAgentHost with Claude Code', () => {
     await host.stop()
   })
 
+  it('tells a turn it is acting at its first visible tool, once, not at internal ones or text', async () => {
+    const backend = new FakeBackend()
+    backend.script = [
+      line({ type: 'system', subtype: 'init', mcp_servers: [{ name: 'milibot', status: 'connected' }] }),
+      reply('m-1', 'Looking.'),
+      toolUse('t1', 'ToolSearch', { query: 'select:mcp__milibot__computer', max_results: 1 }),
+      toolResult('t1', 'found'),
+      toolUse('t2', 'Bash', { command: 'uname -a', description: 'Kernel' }),
+      toolResult('t2', 'Linux'),
+      toolUse('t3', 'Bash', { command: 'uptime', description: 'Uptime' }),
+      toolResult('t3', 'up'),
+      result('Done.'),
+    ]
+    const env = new TestEnv(new FakeProvider({ script: [] }))
+    env.cli = { claude_code: backend }
+    env.resolveModel = async () => ({
+      kind: 'cli',
+      engine: 'claude_code',
+      providerId: 'prv_cc',
+      model: null,
+      env: {},
+      idleTimeoutMs: 60_000,
+    })
+    const bot = makeBot()
+    const conversation = env.addBot(bot)
+    const host = new DefaultAgentHost({ deltaFlushMs: 1 })
+    await host.start(env)
+    const acting: string[] = []
+    host.enqueueTurn({
+      botId: bot.id,
+      conversationId: conversation.id,
+      trigger: 'after_current_work',
+      note: 'Do it now.',
+      onActing: () => acting.push([...env.toolCalls.values()].map((t) => t.toolName).join(',')),
+    })
+    await host.idle(bot.id)
+    expect(acting).toEqual(['ToolSearch,Bash'])
+    await host.stop()
+  })
+
   it('shows a Claude Code error, not a crash, when its process cannot start', async () => {
     const backend = new FakeBackend()
     backend.startProcess = async () => {
@@ -636,7 +676,9 @@ describe('Claude Code memory', () => {
     await host3.start(env)
     host3.onMessageCreated(env.userMessage(conversation.id, 'again'))
     await host3.idle(bot.id)
-    expect(JSON.parse(backend.stdin.filter(Boolean).at(-1) as string).message.content[0].text).toBe('again')
+    const again = JSON.parse(backend.stdin.filter(Boolean).at(-1) as string).message.content[0].text as string
+    expect(again).not.toContain('Your memory changed')
+    expect(again.endsWith('\n\nagain')).toBe(true)
     await host3.stop()
 
     // Removed notes are reported too, so the session stops relying on them.
@@ -760,7 +802,7 @@ describe('routine runs on Claude Code', () => {
       routineId: 'rtn_1',
     })
     await host.idle(bot.id)
-    expect(input(0)).toBe(instructions)
+    expect(input(0).endsWith(`\n\n${instructions}`)).toBe(true)
     await host.stop()
   })
 

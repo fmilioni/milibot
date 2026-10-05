@@ -19,8 +19,8 @@ const PILL_TRACK: Record<Size, string> = {
 
 const PILL_BUTTON: Record<Size, string> = {
   md: 'flex-1 rounded-md px-3 py-1.5 text-base whitespace-nowrap',
-  sm: 'flex h-[25px] items-center gap-1.5 rounded-md px-3 text-sm',
-  xs: 'flex items-center gap-1 rounded-[5px] px-2 py-0.5 text-xs',
+  sm: 'flex h-[25px] items-center gap-1.5 rounded-md px-3 text-sm whitespace-nowrap',
+  xs: 'flex items-center gap-1 rounded-[5px] px-2 py-0.5 text-xs whitespace-nowrap',
 }
 
 /**

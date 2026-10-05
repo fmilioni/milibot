@@ -76,7 +76,7 @@
   "debug": {
     "title": "Debug da conversa",
     "empty": "As chamadas ao modelo, os tokens e os custos desta conversa aparecerão aqui.",
-    "titleNamed": "Debug · {{name}}",
+    "short": "Debug",
     "refresh": "Atualizar",
     "noConversation": "Abra uma conversa para ver o debug dela.",
     "loadFailed": "Não foi possível carregar o debug desta conversa.",

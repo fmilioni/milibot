@@ -41,20 +41,23 @@ export function DebugPanel() {
     <>
       <RightPanelHeader
         variant="bar"
-        title={display ? t('panels.debug.titleNamed', { name: display.title }) : t('panels.debug.title')}
+        title={display ? t('panels.debug.short') : t('panels.debug.title')}
+        {...(display ? { subtitle: display.title } : {})}
+        tabs={
+          <Segmented
+            size="sm"
+            role="tab"
+            label={t('panels.debug.title')}
+            value={tab}
+            onChange={setTab}
+            options={(['calls', 'context', 'costs'] as const).map((key) => ({
+              value: key,
+              label: t(`panels.debug.tabs.${key}`),
+            }))}
+          />
+        }
         actions={
           <>
-            <Segmented
-              size="sm"
-              role="tab"
-              label={t('panels.debug.title')}
-              value={tab}
-              onChange={setTab}
-              options={(['calls', 'context', 'costs'] as const).map((key) => ({
-                value: key,
-                label: t(`panels.debug.tabs.${key}`),
-              }))}
-            />
             <Tooltip content={t('panels.debug.refresh')}>
               <button
                 type="button"

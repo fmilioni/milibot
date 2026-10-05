@@ -76,7 +76,7 @@
   "debug": {
     "title": "Conversation debug",
     "empty": "Model calls, tokens and costs for this conversation will show up here.",
-    "titleNamed": "Debug · {{name}}",
+    "short": "Debug",
     "refresh": "Refresh",
     "noConversation": "Open a conversation to see its debug.",
     "loadFailed": "Could not load this conversation's debug.",

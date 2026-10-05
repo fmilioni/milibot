@@ -119,6 +119,98 @@ describe('McpServerTools', () => {
     expect(update.propose).not.toHaveBeenCalled()
   })
 
+  it('checks the value of a --flag=value for the credential it carries', async () => {
+    const { run, propose } = setup()
+    const literal = 'Zx9-literal-not-saved'
+    const refused: [Record<string, unknown>, RegExp][] = [
+      [
+        { command: 'npx', args: ['mcp-remote', `--header=Authorization: Bearer ${literal}`] },
+        /"Authorization"/,
+      ],
+      [
+        { command: 'npx', args: ['mcp-remote', `--header="Authorization: Bearer ${literal}"`] },
+        /"Authorization"/,
+      ],
+      [{ command: 'npx', args: ['srv', `--url=https://ana:${literal}@x.dev/mcp`] }, /user and password/],
+      [{ command: 'npx', args: ['srv', `--url=https://x.dev/mcp?api_key=${literal}`] }, /"api_key"/],
+      [{ command: 'npx', args: ['srv', `--env=API_KEY=${literal}`] }, /"API_KEY"/],
+      [
+        { command: 'npx', args: ['srv', `-e=DATABASE_URL=postgresql://u:${literal}@db/app`] },
+        /user and password/,
+      ],
+      [{ command: `npx mcp-remote --header=Authorization: Bearer ${literal}` }, /"Authorization"/],
+      [{ command: `npx mcp-remote --header Authorization: Bearer ${literal}` }, /"Authorization"/],
+    ]
+    for (const [args, reason] of refused) {
+      const result = text(await run('mcp_server_add', { name: 'D', ...args }))
+      expect(result, JSON.stringify(args)).toMatch(/"(command|args)" looks like it carries a credential/)
+      expect(result, JSON.stringify(args)).toMatch(reason)
+      expect(result).toMatch(/request_secret.*\{\{secret:NAME\}\}/)
+      expect(result).not.toContain(literal)
+    }
+    expect(propose).not.toHaveBeenCalled()
+  })
+
+  it('recognizes a credential by its value in env and headers, whatever their name', async () => {
+    const { run, propose } = setup()
+    const literal = 'Zx9-literal-not-saved'
+    const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJlLXZhbHVl'
+    const ghp = 'ghp_abcdefghijklmnopqrstuvwxyz0123456789'
+    const stdio = (env: Record<string, string>) => ({ name: 'D', command: 'npx', args: ['srv'], env })
+    const http = (headers: Record<string, string>) => ({ name: 'D', url: 'https://x.dev/mcp', headers })
+    const refused: [Record<string, unknown>, RegExp][] = [
+      [stdio({ DATABASE_URL: `postgresql://app:${literal}@db:5432/app` }), /DATABASE_URL.*user and password/],
+      [stdio({ CACHE: `redis://:${literal}@cache:6379` }), /CACHE.*user and password/],
+      [stdio({ GH: ghp }), /GH.*API key or token/],
+      [stdio({ CONFIG: jwt }), /CONFIG.*API key or token/],
+      [stdio({ OPTIONS: `--verbose --api-key ${literal}` }), /OPTIONS.*flag "--api-key"/],
+      [stdio({ UPSTREAM: `https://x.dev/sse?token=${literal}` }), /UPSTREAM.*"token"/],
+      [http({ 'X-Upstream': `https://ana:${literal}@x.dev` }), /X-Upstream.*user and password/],
+      [http({ 'X-Custom': ghp }), /X-Custom.*API key or token/],
+      [http({ 'X-Custom': `Bearer ${jwt}` }), /X-Custom.*API key or token/],
+      [http({ 'X-Org': `{{secret:API_KEY}} ${ghp}` }), /X-Org.*API key or token/],
+    ]
+    for (const [args, reason] of refused) {
+      const result = text(await run('mcp_server_add', args))
+      expect(result, JSON.stringify(args)).toMatch(/looks like a credential/)
+      expect(result, JSON.stringify(args)).toMatch(reason)
+      expect(result).toMatch(/request_secret.*\{\{secret:NAME\}\}/)
+      for (const value of [literal, jwt, ghp]) expect(result).not.toContain(value)
+    }
+    expect(propose).not.toHaveBeenCalled()
+    const accepted = [
+      stdio({ DATABASE_URL: 'postgresql://app:{{secret:API_KEY}}@db:5432/app' }),
+      stdio({
+        DATABASE_URL: 'postgresql://db:5432/app',
+        MAX_TOKENS: '4096',
+        NODE_OPTIONS: '--max-old-space-size=4096',
+      }),
+      stdio({
+        GOOGLE_APPLICATION_CREDENTIALS: '/workspace/keys/sa.json',
+        GITHUB_TOKEN: '{{secret:API_KEY}}',
+      }),
+      http({ 'X-Keyword': 'mcp', 'X-Author': 'ana', Authorization: 'Bearer {{secret:API_KEY}}' }),
+    ]
+    for (const args of accepted)
+      expect(text(await run('mcp_server_add', args)), JSON.stringify(args)).toBe('proposed')
+  })
+
+  it('does not take a name as a credential for a credential word inside another word', async () => {
+    const { run, propose } = setup()
+    const accepted: Record<string, unknown>[] = [
+      { command: 'npx', args: ['srv', '--max-tokens', '4096', '--max-tokens=8192'] },
+      { command: 'npx', args: ['srv', '--keyword', 'invoices', '--keyword=reports'] },
+      { command: 'npx', args: ['srv', '--author', 'ana', '--author=ana'] },
+      { command: 'npx', args: ['srv', '--keyspace', 'prod', '--keyspace=prod'] },
+      { command: 'npx', args: ['srv', '--token-limit', '4096', 'MAX_TOKENS=4096', 'AUTHOR=ana'] },
+      { command: 'srv --max-tokens 4096 --keyword invoices --author ana --keyspace prod' },
+      { url: 'https://x.dev/mcp?keyword=a&author=b&keyspace=c&max_tokens=4096' },
+    ]
+    for (const args of accepted)
+      expect(text(await run('mcp_server_add', { name: 'D', ...args })), JSON.stringify(args)).toBe('proposed')
+    expect(propose).toHaveBeenCalledTimes(accepted.length)
+  })
+
   it('accepts url, command and args that only name or point to a credential', async () => {
     const { run, propose } = setup()
     const accepted: Record<string, unknown>[] = [

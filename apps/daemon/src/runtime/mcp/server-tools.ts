@@ -14,7 +14,7 @@ import { type Bot, type BotScope, type McpServer, type McpTransport, secretRefRe
 import { DaemonError } from '../../errors'
 import { resolveByRef, type ToolHandlers, ToolSwitch } from '../tools-core'
 import type { McpAdmin, McpCardDetails, ProposedChanges, ProposedKeyValue, ProposedServer } from './admin'
-import { credentialInText, SECRET_NAME } from './credential-text'
+import { credentialInText, credentialName, knownToken, literal } from './credential-text'
 import { McpStore } from './store'
 import { listText } from './texts'
 
@@ -183,13 +183,29 @@ export class McpServerTools extends ToolSwitch {
           `${missing.map((n) => `{{secret:${n}}}`).join(', ')} is not available to you: ask the user for it with ` +
             'request_secret first (check the names with list_secrets).',
         )
-      if (!refs.length && (SECRET_NAME.test(name) || known.some((secret) => value.includes(secret))))
+      const found = this.credentialValue(name, value, refs.length > 0, known)
+      if (found)
         throw new ToolInputError(
-          `${name} looks like a credential: never pass it as text. Get it with request_secret and pass ` +
-            '{{secret:NAME}} as the value (e.g. "Bearer {{secret:NAME}}").',
+          `${name} looks like a credential (${found}): never pass it as text. Get it with request_secret and ` +
+            'pass {{secret:NAME}} as the value (e.g. "Bearer {{secret:NAME}}").',
         )
       return { name, value }
     })
+  }
+
+  /**
+   * What makes a header or variable value a credential written as text: its name, a saved secret, or the value
+   * itself (an address with a password, a well-known key format), whatever the name. With references, only
+   * what is written around them is checked.
+   */
+  private credentialValue(name: string, value: string, hasRefs: boolean, known: string[]): string | null {
+    if (known.some((secret) => value.includes(secret))) return 'a saved secret'
+    if (hasRefs) {
+      const around = value.replace(secretRefRegex(), ' ')
+      return knownToken(around) ? 'a value in the format of an API key or token' : null
+    }
+    if (credentialName(name) && literal(value)) return 'its name'
+    return credentialInText(value.trim().split(/\s+/))
   }
 
   private bots(ctx: ToolExecContext, a: ToolArgs): BotScope | undefined {

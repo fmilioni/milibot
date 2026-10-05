@@ -6,6 +6,10 @@
   "backTo": "Voltar para {{name}}",
   "conversation": "Conversa da sessão",
   "panel": "Plano e alterações",
+  "panelWithCount_one": "Plano e alterações, {{count}} arquivo alterado",
+  "panelWithCount_other": "Plano e alterações, {{count}} arquivos alterados",
+  "panelSteps": "{{done}}/{{total}} passos",
+  "panelClose": "Fechar (Esc)",
   "resize": "Redimensionar o painel",
   "tabs": {
     "plan": "Plano",

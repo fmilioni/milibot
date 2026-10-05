@@ -9,10 +9,11 @@ import {
   GitBranch,
   Layers,
   Monitor,
+  PanelRight,
   Square,
   Trash2,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
@@ -32,17 +33,36 @@ import { Menu } from '@/ui/Menu'
 import { Spinner } from '@/ui/Spinner'
 import { Tooltip } from '@/ui/Tooltip'
 
-import { SessionStatusChip, useLaneLabel } from './SessionParts'
+import { SessionStatusChip, SessionStatusDot, useLaneLabel } from './SessionParts'
 import { useSessionStore } from './store'
+
+/** The header button opening the collapsed plan/changes panel over the conversation. */
+export interface PanelToggle {
+  open: boolean
+  /** The overlay's id. */
+  controls: string
+  onToggle: () => void
+}
+
+/** Meta items cut short when the line runs out of room; the others (cost, diff stat…) stay whole. */
+const TRUNCATED_META = new Set(['doing', 'project', 'where'])
+
+/** Below this header width (content box, as `@max-sm`) the VM button moves into the options menu. */
+const VM_IN_MENU_BELOW = 384
 
 export function SessionHeader({
   session,
   bot,
   bots,
+  panelToggle,
+  panelToggleRef,
 }: {
   session: WorkSessionDetail
   bot: Bot | undefined
   bots: Record<string, Bot>
+  /** Shown while the plan/changes panel is collapsed. */
+  panelToggle?: PanelToggle
+  panelToggleRef?: RefObject<HTMLButtonElement | null>
 }) {
   const { t, i18n } = useTranslation()
   const workspaceId = useWorkspaceId()
@@ -62,11 +82,31 @@ export function SessionHeader({
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
+  const header = useRef<HTMLElement>(null)
+  const title = useRef<HTMLHeadingElement>(null)
+  const [headerWidth, setHeaderWidth] = useState<number | null>(null)
+  const [titleCut, setTitleCut] = useState(false)
+  const vmInMenu = headerWidth !== null && headerWidth < VM_IN_MENU_BELOW
+  const statusLabel = t(`chat.session.status.${session.status}`)
   const finished = isSessionFinished(session.status)
   const doing = useLaneLabel(finished ? undefined : session.lane, laneDetail, bots)
   const originName = origin ? describeConversation(origin, bots, t('sidebar.groupFallback')).title : null
 
   if (finished && stopping) setStopping(false)
+
+  useEffect(() => {
+    const element = header.current
+    if (!element) return
+    const observer = new ResizeObserver((entries) => {
+      const own = entries.find((entry) => entry.target === element)
+      if (own) setHeaderWidth(own.contentRect.width)
+      const h1 = title.current
+      setTitleCut(h1 !== null && h1.scrollWidth > h1.clientWidth)
+    })
+    observer.observe(element)
+    if (title.current) observer.observe(title.current)
+    return () => observer.disconnect()
+  }, [session.title])
 
   const stopSession = () => {
     setStopping(true)
@@ -109,7 +149,11 @@ export function SessionHeader({
             onClick={() => copyWithToast(where)}
             className="no-drag focus-ring flex min-w-0 items-center gap-1 rounded font-mono hover:text-fg"
           >
-            {session.branch ? <GitBranch size={11} aria-hidden /> : <FolderGit2 size={11} aria-hidden />}
+            {session.branch ? (
+              <GitBranch size={11} aria-hidden className="shrink-0" />
+            ) : (
+              <FolderGit2 size={11} aria-hidden className="shrink-0" />
+            )}
             <span className="max-w-[260px] truncate">{where}</span>
           </button>
         </Tooltip>
@@ -129,6 +173,7 @@ export function SessionHeader({
 
   return (
     <header
+      ref={header}
       className={cn(
         'drag-region @container flex h-16 shrink-0 items-center gap-3 border-b border-border px-4 @max-md:gap-2',
         !debugOpen && 'win:pr-caption-4',
@@ -154,11 +199,20 @@ export function SessionHeader({
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-          <h1 className="min-w-12 truncate text-lg leading-[18px] font-semibold text-fg">{session.title}</h1>
-          {/* Below 384px the title keeps the room the status chip would take. */}
-          <span className="flex shrink-0 @max-sm:hidden">
+          <Tooltip
+            content={titleCut ? `${session.title} · ${statusLabel}` : null}
+            side="bottom"
+            maxWidth={360}
+          >
+            <h1 ref={title} className="min-w-12 truncate text-lg leading-[18px] font-semibold text-fg">
+              {session.title}
+            </h1>
+          </Tooltip>
+          {/* Below 448px the status chip shrinks to a dot, leaving its room to the title. */}
+          <span className="flex shrink-0 @max-md:hidden">
             <SessionStatusChip status={session.status} />
           </span>
+          <SessionStatusDot status={session.status} className="hidden @max-md:block" />
           {session.model && (
             <span className="flex shrink-0 @max-lg:hidden">
               <SessionModelBadge model={session.model} />
@@ -170,7 +224,11 @@ export function SessionHeader({
           {meta.map((item, i) => (
             <span
               key={item.key}
-              className={cn('flex min-w-0 items-center', item !== narrowMeta && '@max-lg:hidden')}
+              className={cn(
+                'flex items-center',
+                TRUNCATED_META.has(item.key) ? 'min-w-0' : 'shrink-0',
+                item !== narrowMeta && '@max-lg:hidden',
+              )}
             >
               {(bot || i > 0) && (
                 <span
@@ -185,40 +243,55 @@ export function SessionHeader({
           ))}
         </span>
       </div>
-      {!finished && (
-        <Tooltip content={stopping ? null : t('session.stopHint')} side="bottom">
-          <button
-            type="button"
-            onClick={stopSession}
-            disabled={stopping}
-            className="no-drag focus-ring flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-danger-soft px-3 text-sm font-semibold text-danger transition hover:bg-danger/5 disabled:opacity-60 @max-xl:w-8 @max-xl:px-0"
+      <div className="flex shrink-0 items-center gap-3">
+        {!finished && (
+          <Tooltip content={stopping ? null : t('session.stopHint')} side="bottom">
+            <button
+              type="button"
+              onClick={stopSession}
+              disabled={stopping}
+              className="no-drag focus-ring hit-44 flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-danger-soft px-3 text-sm font-semibold text-danger transition hover:bg-danger/5 disabled:opacity-60 @max-xl:w-8 @max-xl:px-0"
+            >
+              {stopping ? <Spinner size={13} /> : <Square size={11} fill="currentColor" strokeWidth={0} />}
+              <span className="@max-xl:sr-only">{stopping ? t('session.stopping') : t('session.stop')}</span>
+            </button>
+          </Tooltip>
+        )}
+        {panelToggle && <PanelToggleButton ref={panelToggleRef} toggle={panelToggle} session={session} />}
+        {!vmInMenu && (
+          <IconButton
+            label={t('chat.showVm')}
+            active={vmOpen}
+            onClick={() => toggleRightPanel('vm')}
+            className="hit-44"
           >
-            {stopping ? <Spinner size={13} /> : <Square size={11} fill="currentColor" strokeWidth={0} />}
-            <span className="@max-xl:sr-only">{stopping ? t('session.stopping') : t('session.stop')}</span>
+            <Monitor size={15} />
+          </IconButton>
+        )}
+        <IconButton
+          label={t('chat.showDebug')}
+          active={debugOpen}
+          onClick={() => toggleRightPanel('debug')}
+          className="hit-44"
+        >
+          <Bug size={15} />
+        </IconButton>
+        <Tooltip content={t('session.menu')} side="bottom">
+          <button
+            ref={menuButton}
+            type="button"
+            aria-label={t('session.menu')}
+            aria-haspopup="menu"
+            onClick={() => {
+              const rect = menuButton.current?.getBoundingClientRect()
+              if (rect) setMenu({ x: rect.right - 220, y: rect.bottom + 6 })
+            }}
+            className="no-drag focus-ring hit-44 flex size-8 shrink-0 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3"
+          >
+            <Ellipsis size={16} />
           </button>
         </Tooltip>
-      )}
-      <IconButton label={t('chat.showVm')} active={vmOpen} onClick={() => toggleRightPanel('vm')}>
-        <Monitor size={15} />
-      </IconButton>
-      <IconButton label={t('chat.showDebug')} active={debugOpen} onClick={() => toggleRightPanel('debug')}>
-        <Bug size={15} />
-      </IconButton>
-      <Tooltip content={t('session.menu')} side="bottom">
-        <button
-          ref={menuButton}
-          type="button"
-          aria-label={t('session.menu')}
-          aria-haspopup="menu"
-          onClick={() => {
-            const rect = menuButton.current?.getBoundingClientRect()
-            if (rect) setMenu({ x: rect.right - 220, y: rect.bottom + 6 })
-          }}
-          className="no-drag focus-ring flex size-8 shrink-0 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3"
-        >
-          <Ellipsis size={16} />
-        </button>
-      </Tooltip>
+      </div>
       {menu && (
         <Menu
           x={menu.x}
@@ -227,6 +300,16 @@ export function SessionHeader({
           label={t('session.menu')}
           onClose={() => setMenu(null)}
           entries={[
+            ...(vmInMenu
+              ? [
+                  {
+                    key: 'vm',
+                    label: t('chat.showVm'),
+                    icon: <Monitor size={14} />,
+                    onSelect: () => toggleRightPanel('vm'),
+                  },
+                ]
+              : []),
             ...(session.cwd
               ? [
                   {
@@ -269,6 +352,61 @@ export function SessionHeader({
         />
       )}
     </header>
+  )
+}
+
+function PanelToggleButton({
+  ref,
+  toggle,
+  session,
+}: {
+  ref: RefObject<HTMLButtonElement | null> | undefined
+  toggle: PanelToggle
+  session: WorkSessionDetail
+}) {
+  const { t } = useTranslation()
+  const files = session.changes?.files ?? 0
+  const summary = [
+    session.steps.total > 0
+      ? t('session.panelSteps', { done: session.steps.done, total: session.steps.total })
+      : null,
+    files > 0 ? t('session.changes.files', { count: files }) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  return (
+    <Tooltip
+      content={
+        <>
+          <span className="block">{t('session.panel')}</span>
+          {summary && <span className="block">{summary}</span>}
+        </>
+      }
+      side="bottom"
+    >
+      <button
+        ref={ref}
+        type="button"
+        aria-label={files > 0 ? t('session.panelWithCount', { count: files }) : t('session.panel')}
+        aria-expanded={toggle.open}
+        aria-controls={toggle.open ? toggle.controls : undefined}
+        onClick={toggle.onToggle}
+        className={cn(
+          'no-drag hit-44 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+          toggle.open ? 'bg-accent-soft text-accent' : 'text-fg-secondary hover:bg-surface-3',
+        )}
+      >
+        <PanelRight size={16} />
+        {files > 0 && (
+          <span
+            aria-hidden
+            className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-strong px-1 text-2xs leading-4 font-semibold text-on-accent tabular-nums ring-2 ring-bg"
+          >
+            {files > 99 ? '99+' : files}
+          </span>
+        )}
+      </button>
+    </Tooltip>
   )
 }
 

@@ -15,6 +15,8 @@
   --text-muted: #9a9ea6;
   --accent: #3b82f6;
   --accent-soft: #3b82f614;
+  /* Accent fill under small text (counters), dark enough for AA. */
+  --accent-strong: #2563eb;
   --on-accent: #ffffff;
   --success: #1fa971;
   --success-soft: #1fa9711a;
@@ -43,6 +45,7 @@
   --syntax-punctuation: #5e636b;
   --scrollbar-thumb: #0d0e1124;
   --scrollbar-thumb-hover: #0d0e1147;
+  --scrim-panel: #0d0e1147;
 
   --sidebar-width: 280px;
   --right-panel-width: 560px;
@@ -71,6 +74,7 @@
   --text-muted: #6c7380;
   --accent: #8b93ff;
   --accent-soft: #8b93ff22;
+  --accent-strong: #8b93ff;
   --on-accent: #0d0e11;
   --success: #3dd68c;
   --success-soft: #3dd68c1f;
@@ -99,6 +103,7 @@
   --syntax-punctuation: #a0a6b1;
   --scrollbar-thumb: #ffffff1c;
   --scrollbar-thumb-hover: #ffffff38;
+  --scrim-panel: #00000080;
 
   color-scheme: dark;
 }
@@ -114,6 +119,8 @@
   --color-fg-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-scrim-panel: var(--scrim-panel);
   --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -379,6 +386,50 @@
 
 [data-reduced-motion] .tooltip-in {
   animation: none;
+}
+
+/* A 44px pointer target around a 32px control; neighbours need a 12px gap so the targets don't overlap. */
+@utility hit-44 {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+}
+
+/* The session's collapsed plan/changes panel opened over the conversation. */
+@keyframes panel-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.panel-slide-in {
+  animation: panel-slide-in 160ms ease-out;
+}
+
+.scrim-fade-in {
+  animation: fade-in 160ms ease-out;
+}
+
+[data-reduced-motion] .panel-slide-in,
+[data-reduced-motion] .scrim-fade-in {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-slide-in,
+  .scrim-fade-in {
+    animation: none;
+  }
 }
 
 /* Inline separator for meta lines ("$1.20 today • 12k tokens"). */

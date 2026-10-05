@@ -1,6 +1,6 @@
 import type { WorkspacePreferences } from '@milibot/shared'
 
-type BotSettingKind = 'flag' | 'number' | 'text' | 'choice' | 'bots' | 'model' | 'image_model' | 'usd'
+type BotSettingKind = 'flag' | 'number' | 'text' | 'choice' | 'bot' | 'bots' | 'model' | 'image_model' | 'usd'
 
 interface BotSettingField {
   kind: BotSettingKind
@@ -22,6 +22,16 @@ export const BOT_SETTING_FIELDS = {
   },
   mutedBots: { kind: 'bots', confirm: false, about: 'bots whose notifications are off (the whole list)' },
   maxParallelBots: { kind: 'number', confirm: false, about: 'bots working at the same time' },
+  idleWatchMinutes: {
+    kind: 'number',
+    confirm: false,
+    about: 'minutes a stopped bot may hold set-aside requests before idleWatchBotId is told (0 = off)',
+  },
+  idleWatchBotId: {
+    kind: 'bot',
+    confirm: false,
+    about: 'bot told about idle bots (null = the first bot)',
+  },
   perBotLimits: { kind: 'flag', confirm: false, about: "caps on each bot's CPU and memory in the VM" },
   perBotCpuPercent: { kind: 'number', confirm: false, about: 'CPU cap per bot, % of one core' },
   perBotMemoryGb: { kind: 'number', confirm: false, about: 'memory cap per bot, GB' },

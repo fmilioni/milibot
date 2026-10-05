@@ -64,6 +64,7 @@ export class WorkspaceSettingsTools extends ToolSwitch {
       const names = (value as string[]).map((id) => bots.find((b) => b.id === id)?.name ?? id)
       return names.length ? JSON.stringify(names) : '[]'
     }
+    if (kind === 'bot') return JSON.stringify(this.deps.listBots().find((b) => b.id === value)?.name ?? value)
     if (kind === 'model') {
       const choice = value as ModelChoice
       const provider = this.deps.catalog(bot).find((p) => p.provider.id === choice.providerId)
@@ -106,17 +107,17 @@ export class WorkspaceSettingsTools extends ToolSwitch {
   private botIds(value: unknown): string[] {
     if (!Array.isArray(value) || value.some((v) => typeof v !== 'string'))
       throw new ToolInputError('mutedBots: give the list of bot names (an empty list unmutes every bot)')
-    const bots = this.deps.listBots()
-    const ids = (value as string[]).map((ref) => {
-      const match = resolveByRef(bots, ref, {
-        id: (b) => b.id,
-        names: (b) => [b.name, b.slug],
-        ambiguous: { exact: 'first', partial: 'report' },
-      })
-      if ('found' in match) return match.found.id
-      throw new ToolInputError(`mutedBots: no single bot matches "${ref}" (list_bots shows them)`)
+    return [...new Set((value as string[]).map((ref) => this.botId('mutedBots', ref)))]
+  }
+
+  private botId(field: BotSettingName, ref: string): string {
+    const match = resolveByRef(this.deps.listBots(), ref, {
+      id: (b) => b.id,
+      names: (b) => [b.name, b.slug],
+      ambiguous: { exact: 'first', partial: 'report' },
     })
-    return [...new Set(ids)]
+    if ('found' in match) return match.found.id
+    throw new ToolInputError(`${field}: no single bot matches "${ref}" (list_bots shows them)`)
   }
 
   private modelChoice(bot: Bot, field: BotSettingName, value: unknown): ModelChoice | null {
@@ -169,6 +170,10 @@ export class WorkspaceSettingsTools extends ToolSwitch {
     switch (BOT_SETTING_FIELDS[field].kind) {
       case 'bots':
         return this.botIds(value)
+      case 'bot':
+        if (value === null || (typeof value === 'string' && NONE.test(value))) return null
+        if (typeof value !== 'string') throw new ToolInputError(`${field}: give a bot name, or null`)
+        return this.botId(field, value)
       case 'model':
         return this.modelChoice(bot, field, value)
       case 'image_model':

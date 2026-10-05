@@ -105,6 +105,18 @@ describe('workspace settings tools', () => {
     expect(await h.run({ imageModel: 'dall-e' })).toContain('no enabled image model "dall-e"')
   })
 
+  it('picks the idle watch bot by name and clears it with null', async () => {
+    const h = harness()
+    expect(await h.run({ idleWatchBotId: 'ana', idleWatchMinutes: 15 })).toContain(
+      'idleWatchMinutes 30 → 15; idleWatchBotId null → "Ana"',
+    )
+    expect(h.prefs()).toMatchObject({ idleWatchBotId: ana.id, idleWatchMinutes: 15 })
+    expect(await h.run({ idleWatchBotId: 'nobody' })).toContain(
+      'idleWatchBotId: no single bot matches "nobody"',
+    )
+    expect(await h.run({ idleWatchBotId: 'none' })).toContain('idleWatchBotId "Ana" → null')
+  })
+
   it('sends only the fields that need confirmation to the card', async () => {
     const h = harness()
     const result = await h.run({ spendPauseUsd: 'none', spendWarnUsd: 2.5, draftPrs: false })

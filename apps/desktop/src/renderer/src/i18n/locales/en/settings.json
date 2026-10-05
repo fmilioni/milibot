@@ -506,8 +506,8 @@
       "commitEmailHint": "{slug} becomes the bot's identifier",
       "draftPrs": "Open PRs as drafts",
       "draftPrsHint": "You review before marking them ready",
-      "autoMergePrs": "Merge PRs automatically",
-      "autoMergePrsHint": "Off, bots open the PR and you merge it. A plan can allow merging when you approve it.",
+      "autoMergePrs": "Allow bots to merge PRs",
+      "autoMergePrsHint": "On, bots may merge their own PRs once the checks pass. Off, they only open the PR and you merge it; when approving a plan, you can still allow merging for that plan only.",
       "checkFailed": "Could not check this token with GitHub."
     },
     "webSearch": {

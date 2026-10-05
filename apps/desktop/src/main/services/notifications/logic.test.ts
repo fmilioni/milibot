@@ -258,6 +258,40 @@ describe('classifyEvent', () => {
     expect(classifyEvent(spend(false), ctx)).toBeNull()
   })
 
+  it("flags the idle watch's line to the user, not other system lines", () => {
+    const line = (event: 'idle_watch_alert' | 'turn_stopped'): WorkspaceEvent => ({
+      type: 'message.created',
+      payload: {
+        message: {
+          id: 'msg_1',
+          conversationId: 'conv_iris',
+          authorType: 'system',
+          authorBotId: null,
+          kind: 'system_event',
+          content: '',
+          payload: {
+            type: 'system',
+            event,
+            botId: 'bot_iris',
+            params: { minutes: 31, tasks: 'QA of PR #23' },
+          },
+          createdAt: 1,
+        },
+      },
+    })
+    expect(isNotificationCandidate(line('idle_watch_alert'))).toBe(true)
+    expect(classifyEvent(line('idle_watch_alert'), ctx)).toMatchObject({
+      kind: 'attention',
+      reason: 'idle_watch',
+      botId: 'bot_iris',
+      conversationId: 'conv_iris',
+      title: 'Iris',
+      body: 'Está parado há 31 min com pedidos adiados.',
+    })
+    expect(isNotificationCandidate(line('turn_stopped'))).toBe(false)
+    expect(classifyEvent(line('turn_stopped'), ctx)).toBeNull()
+  })
+
   it('writes English when the app is in English', () => {
     expect(classifyEvent(finished({ reply: '' }), { ...ctx, language: 'en' })?.body).toBe(
       'Finished the task.',

@@ -493,7 +493,8 @@
     "project_changed": "{{actorName}} moved the conversation to the project {{projectName}}",
     "project_changed_user": "You moved the conversation to the project {{projectName}}",
     "project_changed_cleared": "{{actorName}} left the conversation without a project",
-    "project_changed_cleared_user": "You left the conversation without a project"
+    "project_changed_cleared_user": "You left the conversation without a project",
+    "idle_watch_alert": "{{name}} has been stopped for {{minutes}} min with requests set aside: {{tasks}}"
   },
   "working": "Working",
   "workingAnnouncement": "{{name}} is working",

@@ -1,4 +1,4 @@
-import { DEFAULT_WORKSPACE_PREFERENCES, PREFERENCE_SETTING_KEYS } from '@milibot/shared'
+import { DEFAULT_WORKSPACE_PREFERENCES, IdleWatchFallback, PREFERENCE_SETTING_KEYS } from '@milibot/shared'
 
 import { cliKeys } from '../cli/keys'
 import type { HostStateStore } from '../environment'
@@ -60,6 +60,12 @@ export function agentSettings(getSetting: GetSetting) {
     idleWatchBotId: () => {
       const value = getSetting<unknown>(PREFERENCE_SETTING_KEYS.idleWatchBotId, null)
       return typeof value === 'string' && value ? value : null
+    },
+    idleWatchFallback: (): IdleWatchFallback => {
+      const parsed = IdleWatchFallback.safeParse(
+        getSetting<unknown>(PREFERENCE_SETTING_KEYS.idleWatchFallback, null),
+      )
+      return parsed.success ? parsed.data : DEFAULT_WORKSPACE_PREFERENCES.idleWatchFallback
     },
   }
 }

@@ -1,4 +1,4 @@
-import { type CloseBehavior, firstBot, type WorkspaceSummary } from '@milibot/shared'
+import { type CloseBehavior, firstBot, type IdleWatchFallback, type WorkspaceSummary } from '@milibot/shared'
 import { FolderOpen, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -197,6 +197,25 @@ function IdleWatchRows() {
             size="sm"
             tone="surface-2"
             onChange={(value) => void set({ idleWatchBotId: value || null })}
+          />
+        </div>
+      </SettingsRow>
+      <SettingsRow
+        label={t('settings.general.idleWatchFallback')}
+        hint={t('settings.general.idleWatchFallbackHint')}
+      >
+        <div className="w-[210px]">
+          <Select
+            label={t('settings.general.idleWatchFallback')}
+            value={prefs.idleWatchFallback}
+            disabled={!loaded || prefs.idleWatchMinutes === 0}
+            options={[
+              { value: 'next_bot', label: t('settings.general.idleWatchFallbackNextBot') },
+              { value: 'user', label: t('settings.general.idleWatchFallbackUser') },
+            ]}
+            size="sm"
+            tone="surface-2"
+            onChange={(value) => void set({ idleWatchFallback: value as IdleWatchFallback })}
           />
         </div>
       </SettingsRow>

@@ -1,4 +1,4 @@
-import { clipLine, firstBot, SET_ASIDE_MAX_WAKES } from '@milibot/shared'
+import { type Bot, clipLine, firstBot, SET_ASIDE_MAX_WAKES } from '@milibot/shared'
 
 import type { SetAsideEntry, ToolResult } from '../../environment'
 import { botStateNote, idleWatchNote, setAsideDoneNote } from '../../prompts/notes'
@@ -296,8 +296,12 @@ export class OtherWork {
     const idleFor = env.now() - idleSince
     if (idleFor < minutes * 60_000) return
     const bot = env.getBot(botId)
+    if (!bot) return
     const watcher = this.watcher(botId)
-    if (!bot || !watcher) return
+    if (watcher === 'user') {
+      this.tellUser(bot, Math.round(idleFor / 60_000), entries, fresh)
+      return
+    }
     env.setAside.markAlerted(fresh.map((e) => e.id))
     // In the watcher's chat with the user, so the bot's answer to its message_bot comes back to it there.
     const conversation = env.findDirectConversation(watcher.id) ?? env.internalConversation(watcher.id, botId)
@@ -314,11 +318,51 @@ export class OtherWork {
     })
   }
 
-  /** Who is told `botId` is stopped: the chosen bot while it exists, else the first bot; never `botId` itself. */
-  private watcher(botId: string) {
+  /**
+   * Who is told `botId` is stopped: the chosen bot while it exists, else the first bot. When that is `botId`
+   * itself, the fallback the user picked: the next bot of the team, or the user (also with no other bot).
+   */
+  private watcher(botId: string): Bot | 'user' {
     const env = this.ctx.env()
+    const bots = env.listBots()
     const chosen = this.ctx.settings.idleWatchBotId()
-    const bot = chosen && chosen !== botId ? env.getBot(chosen) : null
-    return bot ?? firstBot(env.listBots().filter((b) => b.id !== botId)) ?? null
+    const watcher = (chosen ? env.getBot(chosen) : null) ?? firstBot(bots)
+    if (watcher && watcher.id !== botId) return watcher
+    if (this.ctx.settings.idleWatchFallback() === 'user') return 'user'
+    return nextBot(bots, botId) ?? 'user'
   }
+
+  /** A line in the stopped bot's chat with the user, which the app also raises as a notification. */
+  private tellUser(bot: Bot, minutes: number, entries: SetAsideEntry[], fresh: SetAsideEntry[]): void {
+    const env = this.ctx.env()
+    const conversation = env.findDirectConversation(bot.id)
+    if (!conversation) return
+    env.setAside.markAlerted(fresh.map((e) => e.id))
+    const tasks = entries.map((e) => clipLine(e.task, 200))
+    env.appendMessage({
+      conversationId: conversation.id,
+      authorType: 'system',
+      kind: 'system_event',
+      content: `${bot.name} has done nothing for ${minutes} min while it has requests set aside: ${tasks.join('; ')}`,
+      payload: {
+        type: 'system',
+        event: 'idle_watch_alert',
+        botId: bot.id,
+        params: { minutes, tasks: tasks.join('; ') },
+      },
+    })
+  }
+}
+
+/** The bot after `botId` in the team's order (oldest first), wrapping around; never `botId` itself. */
+function nextBot(bots: Bot[], botId: string): Bot | undefined {
+  const order: Bot[] = []
+  const rest = [...bots]
+  for (let bot = firstBot(rest); bot; bot = firstBot(rest)) {
+    order.push(bot)
+    rest.splice(rest.indexOf(bot), 1)
+  }
+  const at = order.findIndex((b) => b.id === botId)
+  const next = order[(at + 1) % order.length]
+  return next && next.id !== botId ? next : undefined
 }

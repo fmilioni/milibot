@@ -32,6 +32,11 @@ export const BOT_SETTING_FIELDS = {
     confirm: false,
     about: 'bot told about idle bots (null = the first bot)',
   },
+  idleWatchFallback: {
+    kind: 'choice',
+    confirm: false,
+    about: 'who is told when the idle bot is idleWatchBotId itself: "next_bot" of the team or the "user"',
+  },
   perBotLimits: { kind: 'flag', confirm: false, about: "caps on each bot's CPU and memory in the VM" },
   perBotCpuPercent: { kind: 'number', confirm: false, about: 'CPU cap per bot, % of one core' },
   perBotMemoryGb: { kind: 'number', confirm: false, about: 'memory cap per bot, GB' },

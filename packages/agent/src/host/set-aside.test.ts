@@ -294,6 +294,83 @@ describe('idle watch', () => {
     expect(systemText(alert as CompletionRequest)).toContain('You are Iris')
   })
 
+  describe('when the stopped bot is the one the watch reports to', () => {
+    const idleAlerts = (env: TestEnv) =>
+      env.messages.filter((m) => m.payload?.type === 'system' && m.payload.event === 'idle_watch_alert')
+
+    async function stopAna(env: TestEnv) {
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 30
+      env.workStates.set(ana.id, {
+        sessions: [{ id: 'wses_1', conversationId: 'cnv_s', title: 'Plan' }],
+        plans: [],
+      })
+      env.setAside.add({
+        botId: ana.id,
+        conversationId: dmOf(env, ana),
+        task: 'Release notes',
+        waitingOn: [],
+      })
+      const host = await startHost(env, 10)
+      env.advance(31 * 60_000)
+      return host
+    }
+
+    it('tells the user in its chat when the user chose so, once', async () => {
+      const { env, provider } = setup({})
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchFallback] = 'user'
+      const host = await stopAna(env)
+      await until(() => idleAlerts(env).length > 0)
+      await new Promise((resolve) => setTimeout(resolve, 40))
+      await host.idle()
+      expect(provider.requests).toHaveLength(0)
+      const alerts = idleAlerts(env)
+      expect(alerts).toHaveLength(1)
+      expect(alerts[0]).toMatchObject({
+        conversationId: dmOf(env, ana),
+        authorType: 'system',
+        kind: 'system_event',
+        payload: { botId: ana.id, params: { minutes: 31, tasks: 'Release notes' } },
+      })
+      expect(env.setAside.waiting(ana.id)[0]?.alertedAt).not.toBeNull()
+    })
+
+    it('tells the user when there is no other bot, even with the next bot chosen', async () => {
+      const provider = new FakeProvider({ script: () => ({ text: 'ok' }) })
+      const env = new TestEnv(provider)
+      env.addBot(ana)
+      const host = await stopAna(env)
+      await until(() => idleAlerts(env).length > 0)
+      await host.idle()
+      expect(provider.requests).toHaveLength(0)
+      expect(idleAlerts(env)[0]?.conversationId).toBe(dmOf(env, ana))
+    })
+
+    it('tells the next bot of the team after the chosen one', async () => {
+      const rui = makeBot({ name: 'Rui', slug: 'rui', label: 'Dev', displayNum: 3, createdAt: 3 })
+      const { env, provider } = setup({})
+      env.addBot(rui)
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 30
+      env.settings[PREFERENCE_SETTING_KEYS.idleWatchBotId] = iris.id
+      env.workStates.set(iris.id, {
+        sessions: [{ id: 'wses_1', conversationId: 'cnv_s', title: 'QA' }],
+        plans: [],
+      })
+      env.setAside.add({
+        botId: iris.id,
+        conversationId: dmOf(env, iris),
+        task: 'QA of PR #23',
+        waitingOn: [],
+      })
+      const host = await startHost(env, 10)
+      env.advance(31 * 60_000)
+      await until(() => provider.requests.length > 0)
+      await host.idle()
+      const alert = provider.requests.find((r) => lastUserText(r).includes('Iris has done nothing for'))
+      expect(systemText(alert as CompletionRequest)).toContain('You are Rui')
+      expect(idleAlerts(env)).toHaveLength(0)
+    })
+  })
+
   it('stays quiet when it is off or the bot is working', async () => {
     const { env, provider } = setup({})
     env.settings[PREFERENCE_SETTING_KEYS.idleWatchMinutes] = 0

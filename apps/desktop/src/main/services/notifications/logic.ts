@@ -1,4 +1,10 @@
-import { CLI_ENGINE_INFO, cliErrorOf, type Language, type WorkspaceEvent } from '@milibot/shared'
+import {
+  CLI_ENGINE_INFO,
+  cliErrorOf,
+  type Language,
+  type MessagePayload,
+  type WorkspaceEvent,
+} from '@milibot/shared'
 
 import { type MainStringKey, mainText } from '../../app/i18n'
 
@@ -84,7 +90,13 @@ const REPLY_TRIGGERS = new Set(['user_message', 'session_finished', 'after_curre
 /** Cheap pre-filter: events `classifyEvent` may turn into a notification (the rest never loads bot names). */
 export function isNotificationCandidate(event: WorkspaceEvent): boolean {
   if (event.type === 'turn.finished') return REPLY_TRIGGERS.has(event.payload.trigger)
-  return event.type === 'message.created' && event.payload.message.kind === 'card'
+  if (event.type !== 'message.created') return false
+  const { message } = event.payload
+  return message.kind === 'card' || idleWatchAlertOf(message.payload) !== null
+}
+
+function idleWatchAlertOf(payload: MessagePayload | null) {
+  return payload?.type === 'system' && payload.event === 'idle_watch_alert' && payload.botId ? payload : null
 }
 
 /** The notification a workspace event may raise (before preferences, focus and grouping). */
@@ -128,6 +140,17 @@ export function classifyEvent(event: WorkspaceEvent, ctx: ClassifyContext): Noti
   if (event.type !== 'message.created') return null
   const { message } = event.payload
   const payload = message.payload
+  const idle = idleWatchAlertOf(payload)
+  if (idle?.botId)
+    return {
+      ...base,
+      kind: 'attention',
+      conversationId: message.conversationId,
+      botId: idle.botId,
+      reason: 'idle_watch',
+      title: ctx.botName(idle.botId) ?? ctx.workspaceName,
+      body: text('notifyIdleWatch', { minutes: String(idle.params.minutes ?? '') }),
+    }
   if (message.kind !== 'card' || !payload) return null
   const botId = message.authorBotId
   const title = (botId && ctx.botName(botId)) || ctx.workspaceName

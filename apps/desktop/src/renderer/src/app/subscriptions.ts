@@ -19,6 +19,7 @@ import { followSkillsScreen, useSkillsStore } from '@/features/skills/store'
 import { applyTeachEvent, followTeachWorkspace } from '@/features/vm/teach-store'
 import { installDevHook } from '@/features/workspace/store/dev-hook'
 import { registerAppEffects } from '@/features/workspace/store/effects'
+import { applyScreenEvent } from '@/features/workspace/store/taken-over'
 
 type WorkspaceEventHandler = (workspaceId: string, event: WorkspaceEvent) => void
 
@@ -40,7 +41,12 @@ const EVENT_STORES: EventStore[] = [
   useSkillsStore,
 ]
 
-const EVENT_HANDLERS: WorkspaceEventHandler[] = [applyAttachmentEvent, applyOfficeEvent, applyTeachEvent]
+const EVENT_HANDLERS: WorkspaceEventHandler[] = [
+  applyAttachmentEvent,
+  applyOfficeEvent,
+  applyScreenEvent,
+  applyTeachEvent,
+]
 
 let registered = false
 

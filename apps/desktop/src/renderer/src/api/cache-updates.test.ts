@@ -49,6 +49,12 @@ describe('workspace cache updates', () => {
     expect(workspaceCacheUpdates('ws1', { type: 'set_aside.changed', payload: { botId: 'bot_1' } })).toEqual([
       { kind: 'invalidate', key: queryKeys.setAside('ws1', 'bot_1') },
     ])
+    expect(
+      workspaceCacheUpdates('ws1', {
+        type: 'bot.screen',
+        payload: { botId: 'bot_1', control: 'idle', paused: false, busy: false },
+      }),
+    ).toEqual([{ kind: 'invalidate', key: queryKeys.botDisplay('ws1', 'bot_1') }])
     expect(workspaceCacheUpdates('ws1', { type: 'bot.deleted', payload: { botId: 'bot_1' } })).toEqual([])
     expect(workspaceCacheUpdates('ws1', { type: 'vm.status', payload: { vm: {} as never } })).toEqual([
       { kind: 'invalidate', key: queryKeys.vmDetails('ws1') },

@@ -44,7 +44,8 @@ export function useBotDisplay(bot: Bot | null, vmRunning: boolean) {
     refresh()
   }, [refresh, status])
 
-  // The VM window can take or give back the screen without changing the bot's status.
+  // `bot.screen` events refetch the display (`api/cache-updates.ts`); focus covers events missed while the
+  // event stream was reconnecting.
   useEffect(() => {
     const onFocus = () => void refresh()
     window.addEventListener('focus', onFocus)

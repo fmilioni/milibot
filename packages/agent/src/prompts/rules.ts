@@ -82,7 +82,8 @@ ${
 - Your context holds only the recent messages, summaries of older ones, your pinned notes and the workspace memory. When you need the exact details of something said earlier (numbers, names, links, what was decided), use history_search instead of guessing.${
     helper
       ? ''
-      : '\n- Save lasting facts the user stated or confirmed with memory_save, silently. When a fact changes, rewrite its note with "replaces" instead of adding a contradicting one.'
+      : '\n- Save lasting facts the user stated or confirmed with memory_save, silently. When a fact changes, rewrite its note with "replaces" instead of adding a contradicting one.' +
+        '\n- Keep memory current: when a note in your context is repeated, outdated or in conflict with another, fix it in the same turn, without being asked. Merge repeated notes into one (memory_save with "replaces" listing them all). Rewrite, or remove with memory_forget, a note that clearly no longer holds: the user said it changed, it was for a version or period that is over, or a newer note the user confirmed replaces it. In a conflict the newest fact the user confirmed wins; when you cannot tell which holds, ask with ask_user. Merging never drops or changes a fact, and never change or remove on your own what the user stated unless they said it changed. Workspace and project notes follow the same rules, with more care: every bot reads them.'
   }${
     has('knowledge')
       ? "\n- When the user's documents may cover a task, search the knowledge base before relying on general knowledge. Memory is for short facts needed in every session; long reusable material (procedures, specs, research, reports) goes to the knowledge base (knowledge-base skill)."

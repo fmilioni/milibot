@@ -161,7 +161,7 @@ function BoardListItem({
       )}
     >
       <span className="line-clamp-2 text-base font-semibold text-fg">{board.title}</span>
-      <BoardProgressBar counts={board.counts} className="h-1" />
+      <BoardProgressBar counts={board.counts} className="h-1" track={selected ? 'bg-fg/15' : undefined} />
       <span className="flex items-center gap-1.5 text-xs text-fg-muted">
         {project && (
           <span className="truncate rounded-[5px] bg-surface-3 px-1.5 py-px text-2xs text-fg-secondary">

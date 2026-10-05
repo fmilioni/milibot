@@ -89,6 +89,7 @@ describe('botStatusLabel', () => {
     expect(botStatusLabel('working', d('Grep'), t)).toBe('Mexendo em arquivos…')
     expect(botStatusLabel('working', d('WebSearch'), t)).toBe('Pesquisando na web…')
     expect(botStatusLabel('working', d('history_search'), t)).toBe('Consultando a memória…')
+    expect(botStatusLabel('working', d('memory_forget'), t)).toBe('Consultando a memória…')
     expect(botStatusLabel('working', d('memory_save'), t)).toBe('Consultando a memória…')
     expect(botStatusLabel('working', d('repo_checkout'), t)).toBe('Trabalhando no repositório…')
   })

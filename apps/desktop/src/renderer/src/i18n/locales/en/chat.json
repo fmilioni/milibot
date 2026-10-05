@@ -140,6 +140,8 @@
       "memory_search_empty": "Searched memory",
       "history_search": "Searched past conversations for “{{detail}}”",
       "history_search_empty": "Searched past conversations",
+      "memory_forget": "Removed from memory: {{detail}}",
+      "memory_forget_empty": "Removed something from memory",
       "knowledge_search": "Searched the knowledge base for “{{detail}}”",
       "knowledge_search_empty": "Searched the knowledge base",
       "knowledge_read": "Read {{detail}}",

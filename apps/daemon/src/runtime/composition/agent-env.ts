@@ -35,6 +35,7 @@ import {
 } from '../providers'
 import type { RoutineService } from '../routines'
 import { languageOf, type WorkSessionService } from '../sessions'
+import type { SetAsideService } from '../set-aside'
 import type { SettingsService } from '../settings'
 import type { TaskCardService } from '../tasks'
 import type { WorkspaceStore } from '../workspace-store'
@@ -82,6 +83,7 @@ export interface AgentEnvDeps {
   skillContext: (bot: Bot) => SkillContext
   workSessions: WorkSessionService
   planService: PlanService
+  setAside: SetAsideService
   attachments: AttachmentService
   routines: RoutineService
   taskCards: TaskCardService
@@ -229,6 +231,11 @@ export function createAgentEnvironment(deps: AgentEnvDeps): AgentEnvironment {
     workSession: (conversationId) => workSessions.forConversation(conversationId),
     workSessions: workSessions.directory(),
     activePlan: (bot, laneKey, conversationId) => deps.planService.activePlan(bot, laneKey, conversationId),
+    workState: (botId) => ({
+      sessions: workSessions.openOf(botId),
+      plans: deps.planService.unfinished(botId),
+    }),
+    setAside: deps.setAside.port(),
   }
 
   return {

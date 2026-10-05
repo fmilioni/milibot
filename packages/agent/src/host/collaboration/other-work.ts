@@ -1,7 +1,7 @@
-import { clipLine } from '@milibot/shared'
+import { clipLine, firstBot, SET_ASIDE_MAX_WAKES } from '@milibot/shared'
 
-import type { ToolResult } from '../../environment'
-import { otherWorkNote, setAsideDoneNote } from '../../prompts/notes'
+import type { SetAsideEntry, ToolResult } from '../../environment'
+import { botStateNote, idleWatchNote, setAsideDoneNote } from '../../prompts/notes'
 import { setAsideReplies } from '../../prompts/tool-replies'
 import { argsObject, trimmedString } from '../../tools/args'
 import { toolError, toolText } from '../../tools/result'
@@ -16,70 +16,66 @@ interface BusyLane {
   line: string
 }
 
-/** A request of a chat set aside (`after_current_work`) until the bot's other lanes busy at the time are free. */
-interface SetAside {
-  botId: string
+/** A work session not ended whose lane has no turn running or queued. */
+interface OpenSession {
   conversationId: string
-  task: string
-  /** Lanes still busy with the work it waits for, and how that work was described when it was set aside. */
-  waitingOn: Map<LaneKey, string>
-  finished: string[]
+  title: string
 }
 
-/** In memory only: a runtime restart loses what was set aside. */
-class SetAsideRequests {
-  private readonly byConversation = new Map<string, SetAside>()
+const sessionLabel = (session: OpenSession) => `your work session "${session.title}"`
 
-  private key(botId: string, conversationId: string): string {
-    return `${botId}:${conversationId}`
-  }
+/** How long a bot whose wake did not run (an error, a usage limit, a stop) waits before the next one. */
+const RETRY_WAKE_MS = 5 * 60_000
 
-  get(botId: string, conversationId: string): SetAside | null {
-    return this.byConversation.get(this.key(botId, conversationId)) ?? null
-  }
-
-  set(entry: SetAside): void {
-    this.byConversation.set(this.key(entry.botId, entry.conversationId), entry)
-  }
-
-  drop(botId: string, conversationId: string): boolean {
-    return this.byConversation.delete(this.key(botId, conversationId))
-  }
-
-  dropBot(botId: string): void {
-    for (const entry of [...this.byConversation.values()])
-      if (entry.botId === botId) this.drop(botId, entry.conversationId)
-  }
-
-  /** `lane` has no running or queued turn left: returns the entries that no longer wait for anything. */
-  laneFreed(botId: string, lane: LaneKey): SetAside[] {
-    const ready: SetAside[] = []
-    for (const entry of [...this.byConversation.values()]) {
-      if (entry.botId !== botId) continue
-      const label = entry.waitingOn.get(lane)
-      if (label === undefined) continue
-      entry.waitingOn.delete(lane)
-      entry.finished.push(label)
-      if (entry.waitingOn.size > 0) continue
-      this.drop(botId, entry.conversationId)
-      ready.push(entry)
-    }
-    return ready
-  }
-}
-
-/** The bot's work in its other lanes, as its chat turns see it, and what the chat set aside until it ends. */
+/**
+ * The bot's work as every chat turn sees it (its lanes, open sessions and plans, whichever conversation they
+ * started in) and the requests it set aside until that work ends (`after_current_work`, kept by
+ * `env.setAside` across restarts). A bot that is free with a request set aside is woken with the oldest one;
+ * the request leaves the waiting list only once that turn ran, and after `SET_ASIDE_MAX_WAKES` wakes that did
+ * not it stays there for the bot (and the idle watch) instead of being retried. A wake turn that started
+ * acting (its first tool call) and then did not end well (an error, a stop, a restart) is never retried
+ * either: part of the work may be done, so the request stays there for the bot to finish or cancel. A bot left stopped with
+ * requests past the idle watch's limit is reported to the bot the watch reports to.
+ */
 export class OtherWork {
-  private readonly setAside = new SetAsideRequests()
+  /** Bot id → when one of its turns last ended (the idle watch's clock; the host's start before any). */
+  private readonly lastTurnEnded = new Map<string, number>()
+  private startedAt = 0
+  /** Bot id → the request whose wake turn is queued or running. */
+  private readonly waking = new Map<string, string>()
+  /** Bot id → when it may be woken again after a wake that did not run. */
+  private readonly retryAt = new Map<string, number>()
+  private timer: ReturnType<typeof setInterval> | null = null
 
   constructor(private readonly ctx: HostContext) {}
 
+  /** Wakes the bots left free with requests set aside before a restart, then checks every `intervalMs`. */
+  start(intervalMs: number): void {
+    this.stop()
+    this.startedAt = this.ctx.env().now()
+    this.lastTurnEnded.clear()
+    this.waking.clear()
+    this.retryAt.clear()
+    this.timer = setInterval(() => this.tick(), intervalMs)
+    this.timer.unref?.()
+    this.tick()
+  }
+
+  stop(): void {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  }
+
+  /** The bot was stopped or deleted: what it set aside goes too. */
   dropBot(botId: string): void {
-    this.setAside.dropBot(botId)
+    this.ctx.env().setAside.drop(botId)
+    this.lastTurnEnded.delete(botId)
+    this.waking.delete(botId)
+    this.retryAt.delete(botId)
   }
 
   /** The bot's lanes other than `laneKey` (helpers aside) with a running or queued turn, described for the bot. */
-  private busyLanes(botId: string, laneKey: LaneKey): BusyLane[] {
+  private busyLanes(botId: string, laneKey: LaneKey | null): BusyLane[] {
     const state = this.ctx.lanes.find(botId)
     if (!state) return []
     const env = this.ctx.env()
@@ -104,8 +100,7 @@ export class OtherWork {
           busy.push({ lane, label, line: `${label} (${since}): "${clipLine(request.card.preview, 160)}"` })
         }
       } else if (lane.info.kind === 'session') {
-        const conversationId = lane.current?.conversationId ?? lane.queue[0]?.conversationId
-        const title = conversationId ? env.getConversation(conversationId)?.title : null
+        const title = env.getConversation(this.sessionConversation(lane) ?? '')?.title
         const label = title ? `your work session "${title}"` : 'one of your work sessions'
         busy.push({ lane, label, line: `${label} (${since})` })
       } else {
@@ -115,47 +110,215 @@ export class OtherWork {
     return busy
   }
 
-  /** Note for the chat and internal lanes while the bot has work running elsewhere; null otherwise. */
+  private sessionConversation(lane: LaneState): string | null {
+    return lane.current?.conversationId ?? lane.queue[0]?.conversationId ?? null
+  }
+
+  /** Sessions of the bot not ended whose lane is not busy (a busy one is among `busyLanes`). */
+  private openSessions(botId: string): OpenSession[] {
+    const state = this.ctx.lanes.find(botId)
+    const working = new Set<string>()
+    for (const lane of state?.lanes.values() ?? []) {
+      if (lane.info.kind !== 'session' || (!lane.running && lane.queue.length === 0)) continue
+      const conversationId = this.sessionConversation(lane)
+      if (conversationId) working.add(conversationId)
+    }
+    return this.ctx
+      .env()
+      .workState(botId)
+      .sessions.filter((s) => !working.has(s.conversationId))
+      .map((s) => ({ conversationId: s.conversationId, title: s.title }))
+  }
+
+  /** Nothing of the bot runs or waits to run and none of its sessions is open. */
+  private isFree(botId: string): boolean {
+    return this.busyLanes(botId, null).length === 0 && this.openSessions(botId).length === 0
+  }
+
+  private whereSetAside(entry: SetAsideEntry, conversationId: string | null): string {
+    if (entry.conversationId === conversationId) return 'this conversation'
+    const env = this.ctx.env()
+    const conversation = env.getConversation(entry.conversationId)
+    if (!conversation) return 'a conversation'
+    if (conversation.type === 'direct') return 'your chat with the user'
+    if (conversation.type === 'internal') {
+      const other = conversation.memberBotIds.find((id) => id !== entry.botId)
+      return `your conversation with ${(other && env.getBot(other)?.name) ?? 'another bot'}`
+    }
+    return conversation.title ? `"${conversation.title}"` : 'a group chat'
+  }
+
+  /** Note for the chat and internal lanes: the bot's state across all its conversations. */
   note(botId: string, laneKey: LaneKey, conversationId: string): string | null {
     const kind = laneInfo(laneKey).kind
     if (kind !== 'main' && kind !== 'internal') return null
-    const busy = this.busyLanes(botId, laneKey)
-    if (busy.length === 0) return null
-    return otherWorkNote(
-      busy.map((b) => b.line),
-      this.setAside.get(botId, conversationId)?.task ?? null,
-      kind === 'main',
-    )
+    const env = this.ctx.env()
+    const now = env.now()
+    return botStateNote({
+      running: this.busyLanes(botId, laneKey).map((b) => b.line),
+      openSessions: this.openSessions(botId).map(sessionLabel),
+      plans: env.workState(botId).plans.map((p) => `"${p.title}" (${p.status.replace('_', ' ')})`),
+      // The request this turn may be the wake of is not set aside anymore as far as the bot is concerned.
+      setAside: env.setAside
+        .waiting(botId)
+        .filter((e) => e.id !== this.waking.get(botId))
+        .map((e) => this.setAsideLine(e, conversationId, now)),
+    })
   }
 
-  /** after_current_work: keeps the task until the lanes busy now are free, then wakes this conversation. */
+  private setAsideLine(entry: SetAsideEntry, conversationId: string | null, now: number): string {
+    const line =
+      `"${clipLine(entry.task, 200)}" (id ${entry.id}, in ${this.whereSetAside(entry, conversationId)}, ` +
+      `${Math.max(0, Math.round((now - entry.createdAt) / 60_000))} min ago)`
+    if (entry.actedAt !== null)
+      return `${line}: the turn that took it up stopped midway (an error, a stop or a restart), so it is no longer woken; check what was already done, then finish it or cancel it`
+    return entry.attempts >= SET_ASIDE_MAX_WAKES
+      ? `${line}: woken ${entry.attempts} times without the turn running, so no longer woken; take it up or cancel it`
+      : line
+  }
+
+  /** after_current_work: keeps the task until the bot is free, then wakes this conversation with it. */
   afterCurrentWork({ bot, lane, conversationId, call }: HostToolCall): ToolResult {
     if (!conversationId) return toolError(setAsideReplies.noConversation)
+    const env = this.ctx.env()
     const a = argsObject(call.arguments)
-    if (a.cancel === true)
-      return this.setAside.drop(bot.id, conversationId)
-        ? toolText(setAsideReplies.dropped)
-        : toolText(setAsideReplies.nothingToDrop)
-    const task = trimmedString(a.task).trim()
+    if (a.cancel === true) {
+      const id = trimmedString(a.id)
+      const dropped = env.setAside.drop(bot.id, id ? { id } : { conversationId })
+      if (dropped.length === 0)
+        return id ? toolError(setAsideReplies.noSuchRequest(id)) : toolText(setAsideReplies.nothingToDrop)
+      return toolText(setAsideReplies.dropped(dropped.map((e) => `"${clipLine(e.task, 200)}"`)))
+    }
+    const task = trimmedString(a.task)
     if (!task) return toolError(setAsideReplies.missingTask)
-    const waitingOn = new Map<LaneKey, string>()
-    for (const busy of this.busyLanes(bot.id, lane.info.key))
-      if (busy.lane.info.kind !== 'main' && !waitingOn.has(busy.lane.info.key))
-        waitingOn.set(busy.lane.info.key, busy.label)
+    const waitingOn = new Set<string>()
+    for (const busy of this.busyLanes(bot.id, lane.info.key)) waitingOn.add(busy.label)
+    for (const session of this.openSessions(bot.id)) waitingOn.add(sessionLabel(session))
     if (waitingOn.size === 0) return toolError(setAsideReplies.nothingRunning)
-    this.setAside.set({ botId: bot.id, conversationId, task, waitingOn, finished: [] })
-    return toolText(setAsideReplies.setAside([...waitingOn.values()]))
+    const now = env.now()
+    const others = env.setAside.waiting(bot.id).map((e) => this.setAsideLine(e, conversationId, now))
+    env.setAside.add({ botId: bot.id, conversationId, task, waitingOn: [...waitingOn] })
+    return toolText(setAsideReplies.setAside([...waitingOn], others))
   }
 
-  /** `lane` has no running or queued turn left: wakes the chats whose set-aside work waited only for it. */
-  laneFreed(lane: LaneState): void {
-    for (const entry of this.setAside.laneFreed(lane.info.botId, lane.info.key))
+  /** A lane of the bot closed (a work session stopped or finished with no turn running): it may be free. */
+  laneClosed(botId: string): void {
+    this.wake(botId)
+  }
+
+  /** A turn of `lane` ended: the bot may be free now. */
+  turnEnded(lane: LaneState): void {
+    if (lane.info.kind === 'subagent') return
+    this.lastTurnEnded.set(lane.info.botId, this.ctx.env().now())
+    this.wake(lane.info.botId)
+  }
+
+  /**
+   * A free bot with requests set aside is woken with the oldest, in the conversation that set it aside. The
+   * request stays waiting until the bot worked on it in that turn (`woke`): a restart before it runs, or a
+   * turn the model could not answer before any tool call, wakes the bot again later. Once the turn acted it
+   * is marked in the store at once, so neither a failure nor a restart after that wakes the bot with it again.
+   */
+  private wake(botId: string): void {
+    if (!this.ctx.running() || this.waking.has(botId)) return
+    const env = this.ctx.env()
+    if (!env.getBot(botId) || this.ctx.lanes.find(botId)?.paused || !this.isFree(botId)) return
+    if ((this.retryAt.get(botId) ?? 0) > env.now()) return
+    for (const entry of env.setAside.waiting(botId)) {
+      if (entry.attempts >= SET_ASIDE_MAX_WAKES || entry.actedAt !== null) continue
+      if (!env.getConversation(entry.conversationId)) {
+        env.setAside.drop(botId, { id: entry.id })
+        continue
+      }
+      env.setAside.markAttempt(entry.id)
+      this.waking.set(botId, entry.id)
+      let acted = false
       this.ctx.scheduler.enqueue({
-        botId: entry.botId,
+        botId,
         conversationId: entry.conversationId,
         trigger: 'after_current_work',
-        laneKey: entry.botId,
-        note: setAsideDoneNote(entry.task, entry.finished),
+        note: setAsideDoneNote(entry.task, entry.waitingOn),
+        onActing: () => {
+          acted = true
+          env.setAside.markActed(entry.id)
+        },
+        onFinished: (outcome, failed) => this.woke(entry, outcome !== 'cancelled' && !failed, acted),
       })
+      return
+    }
+  }
+
+  /**
+   * `ran`: the bot worked on it (even if a tool of that turn failed). A turn that acted and then failed or
+   * was stopped leaves it waiting, marked as acted (never woken again); one that failed before acting is
+   * woken again later.
+   */
+  private woke(entry: SetAsideEntry, ran: boolean, acted: boolean): void {
+    if (this.waking.get(entry.botId) === entry.id) this.waking.delete(entry.botId)
+    const env = this.ctx.env()
+    if (ran) {
+      this.retryAt.delete(entry.botId)
+      env.setAside.markWoken(entry.id)
+    } else if (!acted) {
+      this.retryAt.set(entry.botId, env.now() + RETRY_WAKE_MS)
+    }
+  }
+
+  /** Wakes the free bots with requests set aside and runs the idle watch. */
+  tick(): void {
+    if (!this.ctx.running()) return
+    const env = this.ctx.env()
+    const byBot = new Map<string, SetAsideEntry[]>()
+    for (const entry of env.setAside.waiting())
+      byBot.set(entry.botId, [...(byBot.get(entry.botId) ?? []), entry])
+    for (const [botId, entries] of byBot) {
+      if (!env.getBot(botId)) {
+        env.setAside.drop(botId)
+        continue
+      }
+      this.wake(botId)
+      this.watch(botId, entries)
+    }
+  }
+
+  /**
+   * A bot with nothing running for longer than the limit while it has requests set aside (an open session it
+   * never finished, for one) is reported once per request to the watch's bot, in their private conversation.
+   */
+  private watch(botId: string, entries: SetAsideEntry[]): void {
+    const minutes = this.ctx.settings.idleWatchMinutes()
+    if (minutes <= 0 || this.ctx.lanes.find(botId)?.paused || this.busyLanes(botId, null).length) return
+    const fresh = entries.filter((e) => e.alertedAt === null)
+    const oldest = fresh[0]
+    if (!oldest) return
+    const env = this.ctx.env()
+    const idleSince = Math.max(this.lastTurnEnded.get(botId) ?? this.startedAt, oldest.createdAt)
+    const idleFor = env.now() - idleSince
+    if (idleFor < minutes * 60_000) return
+    const bot = env.getBot(botId)
+    const watcher = this.watcher(botId)
+    if (!bot || !watcher) return
+    env.setAside.markAlerted(fresh.map((e) => e.id))
+    // In the watcher's chat with the user, so the bot's answer to its message_bot comes back to it there.
+    const conversation = env.findDirectConversation(watcher.id) ?? env.internalConversation(watcher.id, botId)
+    this.ctx.scheduler.enqueue({
+      botId: watcher.id,
+      conversationId: conversation.id,
+      trigger: 'idle_watch',
+      note: idleWatchNote(
+        bot.name,
+        Math.round(idleFor / 60_000),
+        entries.map((e) => `"${clipLine(e.task, 200)}"`),
+        this.openSessions(botId).map((s) => `"${s.title}"`),
+      ),
+    })
+  }
+
+  /** Who is told `botId` is stopped: the chosen bot while it exists, else the first bot; never `botId` itself. */
+  private watcher(botId: string) {
+    const env = this.ctx.env()
+    const chosen = this.ctx.settings.idleWatchBotId()
+    const bot = chosen && chosen !== botId ? env.getBot(chosen) : null
+    return bot ?? firstBot(env.listBots().filter((b) => b.id !== botId)) ?? null
   }
 }

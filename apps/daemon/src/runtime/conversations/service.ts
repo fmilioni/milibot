@@ -5,6 +5,7 @@ import { DaemonError } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
 import { type AttachmentService, userMessageContent } from '../attachments'
 import type { WorkSessionService } from '../sessions'
+import type { SetAsideService } from '../set-aside'
 import type { UserRequestService } from '../user-requests'
 import type { WorkspaceStore } from '../workspace-store'
 
@@ -15,6 +16,7 @@ export interface ConversationServiceDeps {
   attachments: Pick<AttachmentService, 'claim' | 'bind' | 'settle'>
   userRequests: Pick<UserRequestService, 'answerFromChat'>
   workSessions: Pick<WorkSessionService, 'onUserMessage'>
+  setAside: Pick<SetAsideService, 'dropConversation'>
 }
 
 /** The user's side of the chat: conversations and the messages they post. */
@@ -78,6 +80,7 @@ export class ConversationService {
         if (conversation.type === 'direct')
           throw new DaemonError('validation_failed', 'Delete the bot to delete a direct conversation')
         store.conversations.softDelete(conversation.id)
+        this.deps.setAside.dropConversation(conversation.id)
         emit({ type: 'conversation.deleted', payload: { conversationId: conversation.id } })
         return { ok: true as const }
       },

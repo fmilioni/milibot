@@ -62,6 +62,7 @@ export class SettingsService {
    */
   update(patch: z.output<typeof UpdateWorkspacePreferencesBody>): WorkspacePreferences {
     const { store, spend, credentials, vm, office, gitPolicy, log } = this.deps
+    if (patch.idleWatchBotId) store.bots.get(patch.idleWatchBotId)
     store.settings.setMany(PREFERENCE_SETTING_KEYS, patch)
     if (patch.spendWarnUsd !== undefined || patch.spendPauseUsd !== undefined) spend.check()
     if (patch.commitName !== undefined || patch.commitEmail !== undefined)

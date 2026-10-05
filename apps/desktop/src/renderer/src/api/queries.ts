@@ -21,6 +21,7 @@ export const queryKeys = {
   cliLogin: (workspaceId: string, engine: string) => workspaceKey(workspaceId, 'providers', 'login', engine),
 
   routines: (workspaceId: string, botId: string) => workspaceKey(workspaceId, 'routines', botId),
+  setAside: (workspaceId: string, botId: string) => workspaceKey(workspaceId, 'set-aside', botId),
   procedures: (workspaceId: string, botId: string) => workspaceKey(workspaceId, 'procedures', botId),
   botMemories: (workspaceId: string, botId: string) => workspaceKey(workspaceId, 'memories', 'bot', botId),
   workspaceMemories: (workspaceId: string) => workspaceKey(workspaceId, 'memories', 'workspace'),

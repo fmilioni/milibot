@@ -203,7 +203,8 @@ export class TurnRunner {
     const conversation = this.ctx.env().getConversation(turn.conversationId)
     const stopped = turn.abort.signal.aborted || !this.ctx.running()
     if (conversation?.type === 'internal') {
-      if (!request.botRequests?.length && !stopped) messaging.followUp(bot, turn, conversation, reply)
+      if (!request.botRequests?.length && !stopped)
+        messaging.followUp(bot, turn, conversation, reply, request.replyFrom)
       return
     }
     if (conversation?.type === 'group') routing.botSpoke(bot, conversation, texts.at(-1) as Message, stopped)

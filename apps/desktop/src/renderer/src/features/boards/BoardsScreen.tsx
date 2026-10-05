@@ -164,7 +164,12 @@ function BoardListItem({
       <BoardProgressBar counts={board.counts} className="h-1" track={selected ? 'bg-fg/15' : undefined} />
       <span className="flex items-center gap-1.5 text-xs text-fg-muted">
         {project && (
-          <span className="truncate rounded-[5px] bg-surface-3 px-1.5 py-px text-2xs text-fg-secondary">
+          <span
+            className={cn(
+              'truncate rounded-[5px] px-1.5 py-px text-2xs text-fg-secondary',
+              selected ? 'bg-fg/15' : 'bg-surface-3',
+            )}
+          >
             {project.name}
           </span>
         )}

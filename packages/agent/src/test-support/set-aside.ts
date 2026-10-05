@@ -15,6 +15,7 @@ export class InMemorySetAside implements SetAsideStore {
       createdAt: this.now(),
       alertedAt: null,
       attempts: 0,
+      actedAt: null,
       status: 'waiting' as const,
     }
     this.entries.push(row)
@@ -29,6 +30,10 @@ export class InMemorySetAside implements SetAsideStore {
 
   markAttempt(id: string): void {
     for (const e of this.entries) if (e.id === id) e.attempts++
+  }
+
+  markActed(id: string): void {
+    for (const e of this.entries) if (e.id === id && e.status === 'waiting') e.actedAt ??= this.now()
   }
 
   markWoken(id: string): void {

@@ -18,6 +18,8 @@ export default {
         woken_at INTEGER,
         -- Turns queued to wake the bot with it (a wake that never ran counts too).
         attempts INTEGER NOT NULL DEFAULT 0,
+        -- When the wake turn started acting (its first tool call); set on a waiting row = left midway.
+        acted_at INTEGER,
         -- When the idle watch reported the bot stopped with it; NULL = never.
         alerted_at INTEGER
       );

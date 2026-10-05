@@ -179,6 +179,7 @@ export class TurnActivity {
     const describe = { mcpServerName: this.mcpServerName }
     const view = describeCliTool(tool, input, describe)
     if (view.hidden) return null
+    this.acting(turn)
     const full = describeCliTool(tool, input, { ...describe, full: true })
     if (!full.hidden) this.fullDetails.set(id, full.detail)
     const step: ActivityStep = {
@@ -197,6 +198,20 @@ export class TurnActivity {
     this.syncActivity(turn, 'running')
     this.emitAction(step, turn, turn.botId, turn.conversationId)
     return step
+  }
+
+  /** The turn runs a tool: `onActing` fires, once. */
+  acting(turn: TurnState): void {
+    const acting = turn.acting
+    if (!acting) return
+    turn.acting = null
+    try {
+      acting()
+    } catch (err) {
+      this.ctx
+        .env()
+        .log('warn', 'turn acting hook failed', { botId: turn.botId, err: (err as Error).message })
+    }
   }
 
   finishStep(step: ActivityStep, status: ActivityStep['status'], error: string | null): void {

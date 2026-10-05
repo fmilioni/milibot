@@ -32,7 +32,9 @@ const RETRY_WAKE_MS = 5 * 60_000
  * started in) and the requests it set aside until that work ends (`after_current_work`, kept by
  * `env.setAside` across restarts). A bot that is free with a request set aside is woken with the oldest one;
  * the request leaves the waiting list only once that turn ran, and after `SET_ASIDE_MAX_WAKES` wakes that did
- * not it stays there for the bot (and the idle watch) instead of being retried. A bot left stopped with
+ * not it stays there for the bot (and the idle watch) instead of being retried. A wake turn that started
+ * acting (its first tool call) and then did not end well (an error, a stop, a restart) is never retried
+ * either: part of the work may be done, so the request stays there for the bot to finish or cancel. A bot left stopped with
  * requests past the idle watch's limit is reported to the bot the watch reports to.
  */
 export class OtherWork {
@@ -168,6 +170,8 @@ export class OtherWork {
     const line =
       `"${clipLine(entry.task, 200)}" (id ${entry.id}, in ${this.whereSetAside(entry, conversationId)}, ` +
       `${Math.max(0, Math.round((now - entry.createdAt) / 60_000))} min ago)`
+    if (entry.actedAt !== null)
+      return `${line}: the turn that took it up stopped midway (an error, a stop or a restart), so it is no longer woken; check what was already done, then finish it or cancel it`
     return entry.attempts >= SET_ASIDE_MAX_WAKES
       ? `${line}: woken ${entry.attempts} times without the turn running, so no longer woken; take it up or cancel it`
       : line
@@ -212,7 +216,8 @@ export class OtherWork {
   /**
    * A free bot with requests set aside is woken with the oldest, in the conversation that set it aside. The
    * request stays waiting until the bot worked on it in that turn (`woke`): a restart before it runs, or a
-   * turn the model could not answer, wakes the bot again later.
+   * turn the model could not answer before any tool call, wakes the bot again later. Once the turn acted it
+   * is marked in the store at once, so neither a failure nor a restart after that wakes the bot with it again.
    */
   private wake(botId: string): void {
     if (!this.ctx.running() || this.waking.has(botId)) return
@@ -220,32 +225,41 @@ export class OtherWork {
     if (!env.getBot(botId) || this.ctx.lanes.find(botId)?.paused || !this.isFree(botId)) return
     if ((this.retryAt.get(botId) ?? 0) > env.now()) return
     for (const entry of env.setAside.waiting(botId)) {
-      if (entry.attempts >= SET_ASIDE_MAX_WAKES) continue
+      if (entry.attempts >= SET_ASIDE_MAX_WAKES || entry.actedAt !== null) continue
       if (!env.getConversation(entry.conversationId)) {
         env.setAside.drop(botId, { id: entry.id })
         continue
       }
       env.setAside.markAttempt(entry.id)
       this.waking.set(botId, entry.id)
+      let acted = false
       this.ctx.scheduler.enqueue({
         botId,
         conversationId: entry.conversationId,
         trigger: 'after_current_work',
         note: setAsideDoneNote(entry.task, entry.waitingOn),
-        onFinished: (outcome, failed) => this.woke(entry, outcome !== 'cancelled' && !failed),
+        onActing: () => {
+          acted = true
+          env.setAside.markActed(entry.id)
+        },
+        onFinished: (outcome, failed) => this.woke(entry, outcome !== 'cancelled' && !failed, acted),
       })
       return
     }
   }
 
-  /** `ran`: the bot worked on it (even if a tool of that turn failed); else it is woken again later. */
-  private woke(entry: SetAsideEntry, ran: boolean): void {
+  /**
+   * `ran`: the bot worked on it (even if a tool of that turn failed). A turn that acted and then failed or
+   * was stopped leaves it waiting, marked as acted (never woken again); one that failed before acting is
+   * woken again later.
+   */
+  private woke(entry: SetAsideEntry, ran: boolean, acted: boolean): void {
     if (this.waking.get(entry.botId) === entry.id) this.waking.delete(entry.botId)
     const env = this.ctx.env()
     if (ran) {
       this.retryAt.delete(entry.botId)
       env.setAside.markWoken(entry.id)
-    } else {
+    } else if (!acted) {
       this.retryAt.set(entry.botId, env.now() + RETRY_WAKE_MS)
     }
   }

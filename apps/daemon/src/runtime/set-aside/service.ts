@@ -39,6 +39,10 @@ export class SetAsideService {
       },
       waiting: (botId) => this.store.waiting(botId).map(toEntry),
       markAttempt: (id) => this.store.markAttempt(id),
+      markActed: (id) => {
+        const request = this.store.markActed(id)
+        if (request) this.changed([request.botId])
+      },
       markWoken: (id) => {
         const request = this.store.markWoken(id)
         if (request) this.changed([request.botId])

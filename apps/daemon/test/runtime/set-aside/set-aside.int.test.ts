@@ -256,6 +256,10 @@ describe('requests set aside, when things go wrong', () => {
   const waiting = () => h.call<SetAsideRequest[]>('listSetAsideRequests', {}, undefined, {})
   const sessionsTitled = async (title: string) => (await sessions()).filter((s) => s.title === title)
   const wakes = () => h.provider.requests.filter((r) => lastInput(r).text.includes('You are free now')).length
+  /** Wake turns started (their first model call). */
+  const wakeTurns = () =>
+    h.provider.requests.map(lastInput).filter((i) => i.text.includes('You are free now') && i.tools === 0)
+      .length
 
   /** Marco has the QA of #22 open (it never finishes) and Theo's #23 is set aside. */
   async function behindOpenSession(marcoScript: BotScript, idleWatchIntervalMs?: number) {
@@ -327,6 +331,73 @@ describe('requests set aside, when things go wrong', () => {
     expect(await waiting()).toMatchObject([{ task: 'QA of PR #23', status: 'waiting', attempts: 3 }])
   })
 
+  /**
+   * Marco's QA sessions finish at once except #22's; the wake turn starts the QA of #23 in a session and its
+   * next model call goes through `afterActing` (the first time only).
+   */
+  function actsThenStops(afterActing: FakeStep): BotScript {
+    const base = marco()
+    let stopped = false
+    return (input) => {
+      if (input.system.includes('# Work session') && input.system.includes('#22'))
+        return { text: 'Waiting for the build.' }
+      const wakeFollowUp =
+        !input.system.includes('# Work session') && input.text.includes('You are free now') && input.tools > 0
+      if (wakeFollowUp && !stopped) {
+        stopped = true
+        return afterActing
+      }
+      return base(input)
+    }
+  }
+
+  const row = () =>
+    h.db
+      .prepare("SELECT status, attempts, acted_at FROM set_aside_requests WHERE task = 'QA of PR #23'")
+      .get() as { status: string; attempts: number; acted_at: number | null }
+
+  it('never wakes the bot again with a request once the wake turn acted, even if that turn then fails', async () => {
+    const ids = await behindOpenSession(actsThenStops({ error: 'usage limit reached' }), 10)
+    await stopSession('QA of PR #22')
+    await until(async () => (await sessionsTitled('QA of PR #23'))[0]?.status === 'done')
+    await h.host.idle()
+    for (let i = 0; i < 4; i++) {
+      clock += 6 * 60_000
+      await new Promise((resolve) => setTimeout(resolve, 60))
+      await h.host.idle()
+    }
+    expect(wakeTurns()).toBe(1)
+    expect(await sessionsTitled('QA of PR #23')).toHaveLength(1)
+    expect(await waiting()).toMatchObject([{ task: 'QA of PR #23', status: 'waiting', attempts: 1 }])
+    expect((await waiting())[0]?.actedAt).toEqual(expect.any(Number))
+
+    // Still pending for the bot, in any conversation, with what happened to it.
+    await h.call('postMessage', { conversationId: ids['Marco:dm'] as string }, { content: 'status?' })
+    await h.host.idle()
+    const status = h.provider.requests.map(lastInput).findLast((i) => i.text.endsWith('status?'))
+    expect(status?.input).toContain('QA of PR #23')
+    expect(status?.input).toContain('the turn that took it up stopped midway')
+  })
+
+  it('never wakes the bot again with a request once the wake turn acted, across a restart in that turn', async () => {
+    await behindOpenSession(actsThenStops({ text: 'Started.', delayMs: 5000 }), 10)
+    await stopSession('QA of PR #22')
+    await until(async () => (await sessionsTitled('QA of PR #23')).length === 1)
+    await until(() => row().acted_at !== null)
+    const db = h.db
+    await h.stop()
+
+    await boot({ Marco: marco() }, db, 10)
+    for (let i = 0; i < 4; i++) {
+      clock += 6 * 60_000
+      await new Promise((resolve) => setTimeout(resolve, 60))
+      await h.host.idle()
+    }
+    expect(wakeTurns()).toBe(0)
+    expect(await sessionsTitled('QA of PR #23')).toHaveLength(1)
+    expect(row()).toMatchObject({ status: 'waiting', attempts: 1, acted_at: expect.any(Number) })
+  })
+
   it('wakes the bot as soon as the user stops its idle session, without waiting for the timer', async () => {
     await behindOpenSession(marco({ finish: false }))
     await stopSession('QA of PR #22')
@@ -357,7 +428,7 @@ describe('requests set aside, when things go wrong', () => {
     await stopSession('QA of PR #22')
     await new Promise((resolve) => setTimeout(resolve, 100))
     await h.host.idle()
-    expect(wakes()).toBe(0)
+    expect(wakeTurns()).toBe(0)
     expect(await sessionsTitled('QA of PR #23')).toHaveLength(1)
   })
 

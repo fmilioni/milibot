@@ -108,6 +108,7 @@ export class TurnRunner {
       joinable: lane.info.kind === 'main' || lane.info.kind === 'session',
       incoming: false,
       deliver: null,
+      acting: request.onActing ?? null,
     }
   }
 

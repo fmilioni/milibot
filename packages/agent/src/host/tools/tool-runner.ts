@@ -84,6 +84,7 @@ export class ToolRunner {
       arguments: call.arguments,
       startedAt: step.startedAt,
     })
+    if (turn) activity.acting(turn)
     const shown = !isNoopToolCall(call.name, call.arguments)
     if (turn && shown) {
       activity.foldNarration(turn)

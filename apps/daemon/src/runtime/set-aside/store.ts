@@ -14,6 +14,7 @@ interface SetAsideRow {
   woken_at: number | null
   alerted_at: number | null
   attempts: number
+  acted_at: number | null
 }
 
 function toRequest(row: SetAsideRow): SetAsideRequest {
@@ -28,6 +29,7 @@ function toRequest(row: SetAsideRow): SetAsideRequest {
     wokenAt: row.woken_at,
     alertedAt: row.alerted_at,
     attempts: row.attempts,
+    actedAt: row.acted_at,
   }
 }
 
@@ -79,6 +81,17 @@ export class SetAsideStore {
       .prepare(
         `UPDATE set_aside_requests SET status = 'woken', woken_at = ?, updated_at = ?
          WHERE id = ? AND status = 'waiting'`,
+      )
+      .run(now, now, id)
+    return this.get(id)
+  }
+
+  markActed(id: string): SetAsideRequest | null {
+    const now = this.now()
+    this.db
+      .prepare(
+        `UPDATE set_aside_requests SET acted_at = ?, updated_at = ?
+         WHERE id = ? AND status = 'waiting' AND acted_at IS NULL`,
       )
       .run(now, now, id)
     return this.get(id)

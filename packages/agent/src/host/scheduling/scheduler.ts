@@ -49,6 +49,14 @@ export class Scheduler {
           second(outcome, failed)
         }
       }
+      if (request.onActing) {
+        const first = duplicate.onActing
+        const second = request.onActing
+        duplicate.onActing = () => {
+          first?.()
+          second()
+        }
+      }
     } else if (request.trigger === 'user_message') {
       // The user goes ahead of work other bots, routines or sessions queued for this lane.
       const firstOther = lane.queue.findIndex((q) => q.trigger !== 'user_message')
@@ -71,7 +79,7 @@ export class Scheduler {
     const turn = lane.current
     if (request.trigger !== 'user_message' || !turn?.joinable) return false
     if (turn.conversationId !== request.conversationId || turn.abort.signal.aborted) return false
-    if (request.note || request.botRequests?.length || request.onFinished) return false
+    if (request.note || request.botRequests?.length || request.onFinished || request.onActing) return false
     turn.incoming = true
     turn.deliver?.()
     return true

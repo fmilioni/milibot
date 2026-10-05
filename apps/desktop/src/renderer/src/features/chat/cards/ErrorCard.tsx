@@ -3,6 +3,7 @@ import { CircleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/ui/Button'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 import { errorTitle, loginEngineOf } from '../lib/error-text'
 import { NoticeCard, NoticeLines } from './NoticeCard'
@@ -26,7 +27,9 @@ export function ErrorCard({ payload, onOpenScreen }: { payload: ErrorPayload; on
     >
       <NoticeLines>
         <span className="text-base font-semibold text-fg">{errorTitle(t, payload)}</span>
-        <span className="text-sm leading-[15px] text-fg-secondary">{payload.detail}</span>
+        <span className="text-sm leading-[15px] text-fg-secondary">
+          <LinkifiedText text={payload.detail} />
+        </span>
       </NoticeLines>
     </NoticeCard>
   )

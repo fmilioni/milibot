@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Select } from '@/ui/Select'
 import { Tooltip } from '@/ui/Tooltip'
 
@@ -139,7 +140,9 @@ function PendingSecret({
           )}
         </div>
         {payload.reason && (
-          <p className="selectable text-sm leading-[17px] text-fg-secondary">{payload.reason}</p>
+          <p className="selectable text-sm leading-[17px] text-fg-secondary">
+            <LinkifiedText text={payload.reason} />
+          </p>
         )}
       </div>
 

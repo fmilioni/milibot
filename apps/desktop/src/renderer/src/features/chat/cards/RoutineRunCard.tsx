@@ -3,6 +3,8 @@ import { CalendarClock } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { LinkifiedText } from '@/ui/LinkifiedText'
+
 /** "Routine: <name>" when a routine runs; the instructions the bot got stay folded until asked for. */
 export function RoutineRunCard({ payload }: { payload: RoutineRunPayload }) {
   const { t } = useTranslation()
@@ -24,7 +26,7 @@ export function RoutineRunCard({ payload }: { payload: RoutineRunPayload }) {
       </div>
       {open && (
         <div className="selectable w-full max-w-[560px] rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 text-sm leading-[1.5] break-words whitespace-pre-wrap text-fg-secondary">
-          {payload.prompt}
+          <LinkifiedText text={payload.prompt} />
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { followedRecommendation } from '@/features/chat/lib/question-card'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 import { PendingQuestions } from './PendingQuestions'
 
@@ -74,11 +75,13 @@ function AnsweredQuestions({ payload, bot }: { payload: QuestionPayload; bot: Bo
         const Icon = other ? PencilLine : Check
         return (
           <div key={index} className="flex flex-col gap-[3px]">
-            <p className="selectable text-sm text-fg-secondary">{question.question}</p>
+            <p className="selectable text-sm text-fg-secondary">
+              <LinkifiedText text={question.question} />
+            </p>
             <p className="flex items-start gap-1.5">
               <Icon size={12} className="mt-[3px] shrink-0 text-accent" aria-hidden />
               <span className="selectable text-base font-semibold break-words text-fg">
-                {text || '—'}
+                {text ? <LinkifiedText text={text} /> : '—'}
                 {recommended && ` · ${t('chat.question.recommendedMark')}`}
               </span>
             </p>

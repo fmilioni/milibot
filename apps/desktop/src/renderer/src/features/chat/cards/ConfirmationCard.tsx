@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Tooltip } from '@/ui/Tooltip'
 
 import { McpChangeDetails } from './McpCards'
@@ -58,7 +59,11 @@ export function ConfirmationCard({
           })}
         </span>
       </div>
-      {reason && <p className="text-sm text-fg-secondary">“{reason}”</p>}
+      {reason && (
+        <p className="text-sm text-fg-secondary">
+          <LinkifiedText text={`“${reason}”`} />
+        </p>
+      )}
       {payload.action === 'update_prompt' && payload.params?.diff && (
         <ProposedPromptDiff
           diff={payload.params.diff}

@@ -7,6 +7,7 @@ import { useBlobSrc } from '@/features/workspace/use-blob-src'
 import { cn } from '@/lib/cn'
 import { formatUsd } from '@/lib/format'
 import { ImagePreview } from '@/ui/ImagePreview'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Tooltip } from '@/ui/Tooltip'
 
 type GeneratedImage = GeneratedImagesPayload['images'][number]
@@ -114,7 +115,7 @@ export function GeneratedImagesCard({ payload }: { payload: GeneratedImagesPaylo
           {payload.prompts.map((prompt, i) => (
             <li key={i} className="whitespace-pre-wrap">
               {payload.prompts.length > 1 ? <span className="mr-1 text-fg-muted">{i + 1}.</span> : null}
-              {prompt}
+              <LinkifiedText text={prompt} />
             </li>
           ))}
         </ol>

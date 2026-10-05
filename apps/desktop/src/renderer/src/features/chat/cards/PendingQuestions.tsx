@@ -159,15 +159,17 @@ export function PendingQuestions({
                 onClick={() => dispatch({ type: 'toggle', question: tab, option: index })}
                 className={cn(
                   'absolute inset-0 rounded-lg border transition-colors outline-none focus-visible:border-accent',
-                  selected ? 'border-accent bg-accent-soft' : 'border-border bg-surface hover:bg-surface-3/50',
+                  selected
+                    ? 'border-accent bg-accent-soft'
+                    : 'border-border bg-surface hover:bg-surface-3/50',
                 )}
               />
-              <div className="pointer-events-none relative flex items-center gap-2.5 border border-transparent px-3 py-2.5 text-left">
+              <div className="pointer-events-none relative flex items-center gap-2.5 border border-transparent px-3 py-2.5 text-left [&_a]:pointer-events-auto">
                 <KeyBadge active={selected}>{index + 1}</KeyBadge>
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
                     <span id={`${id}-label`} className="text-base font-semibold text-fg">
-                      <LinkifiedText text={option.label} linkClassName="pointer-events-auto" />
+                      <LinkifiedText text={option.label} />
                     </span>
                     {option.recommended && (
                       <span
@@ -181,7 +183,7 @@ export function PendingQuestions({
                   </span>
                   {option.description && (
                     <span id={`${id}-description`} className="text-sm leading-[16px] text-fg-secondary">
-                      <LinkifiedText text={option.description} linkClassName="pointer-events-auto" />
+                      <LinkifiedText text={option.description} />
                     </span>
                   )}
                 </span>

@@ -300,7 +300,7 @@ export function CardTile({
       <span
         id={titleId}
         className={cn(
-          'relative line-clamp-3 pr-5 text-base leading-[1.4] font-semibold break-words',
+          'relative line-clamp-3 text-base leading-[1.4] font-semibold break-words',
           faded ? 'text-fg-secondary' : 'text-fg',
         )}
       >

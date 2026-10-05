@@ -193,7 +193,7 @@ export function Links({
                 aria-pressed={kind === value}
                 onClick={() => setKind(value)}
                 className={cn(
-                  'focus-ring hit h-9 flex-1 rounded-md px-2 text-base',
+                  'focus-ring hit h-9 min-w-0 flex-1 rounded-md px-1.5 text-sm whitespace-nowrap',
                   kind === value
                     ? 'bg-surface-2 font-semibold text-fg shadow-sm'
                     : 'text-fg-secondary hover:text-fg',

@@ -18,8 +18,8 @@ const QUIET_ACTION =
 
 function Row({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-11 items-start gap-3">
-      <span className="flex h-11 w-[124px] shrink-0 items-center gap-2 text-base text-fg-secondary">
+    <div className="flex min-h-11 items-start gap-2">
+      <span className="flex h-11 w-[108px] shrink-0 items-center gap-2 text-base text-fg-secondary">
         {icon}
         {label}
       </span>
@@ -54,7 +54,7 @@ export function CardDetails({
   const dueText = card.dueDate
     ? new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' })
         .format(new Date(`${card.dueDate}T12:00:00`))
-        .replace(/\.$/, '')
+        .replaceAll('.', '')
         .replaceAll(' de ', ' ')
     : ''
   const relative =

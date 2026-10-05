@@ -12,7 +12,7 @@ import { Popover } from '@/ui/Popover'
 import { LabelChip, PickerRow, UserAvatar } from './CardPeople'
 
 const CONTROL =
-  'focus-ring hit flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-base whitespace-nowrap'
+  'focus-ring hit flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-base whitespace-nowrap'
 
 /** Narrows the board to cards matching a text, assignees, labels or the user's own. */
 export function BoardFilters({
@@ -38,7 +38,7 @@ export function BoardFilters({
 
   return (
     <div role="search" aria-label={t('boards.filters.label')} className="flex flex-wrap items-center gap-2">
-      <label className="relative flex h-9 w-[200px] items-center">
+      <label className="relative flex h-9 w-40 items-center">
         <Search size={15} className="pointer-events-none absolute left-3 text-fg-secondary" aria-hidden />
         <input
           type="search"

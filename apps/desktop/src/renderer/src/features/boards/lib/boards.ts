@@ -110,7 +110,7 @@ export function filterCards<T extends Pick<BoardCard, 'title' | 'summary' | 'lab
   })
 }
 
-export const PR_STATES = ['open', 'review', 'done', 'failed'] as const
+const PR_STATES = ['open', 'review', 'done', 'failed'] as const
 export type PrState = (typeof PR_STATES)[number]
 
 /** A pull request link's number (`#23`, from its label or URL) and its last known state. */

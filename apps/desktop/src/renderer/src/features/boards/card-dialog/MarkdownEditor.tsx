@@ -157,8 +157,10 @@ export function MarkdownEditor({
         }
       }}
       className={cn(
-        'selectable block w-full resize-y bg-transparent px-4 py-3 text-fg outline-none placeholder:text-fg-secondary',
-        variant === 'full' ? 'font-mono text-code leading-[1.7]' : 'text-base leading-[1.5]',
+        'selectable block w-full bg-transparent px-4 py-3 text-fg outline-none placeholder:text-fg-secondary',
+        variant === 'full'
+          ? 'resize-y font-mono text-code leading-[1.7]'
+          : 'resize-none text-base leading-[1.5]',
       )}
     />
   )

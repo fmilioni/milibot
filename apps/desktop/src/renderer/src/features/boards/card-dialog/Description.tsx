@@ -1,6 +1,6 @@
 import type { Board, BoardCardDetail } from '@milibot/shared'
 import { FilePen, FileText, Pencil } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { renderAsset } from '@/features/boards/BoardParts'
@@ -44,15 +44,21 @@ export function Description({
   const { t } = useTranslation()
   const [draft, setDraft] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  // Leaving the editor removes the focused button: focus goes back to the section so keys (Esc) still reach the dialog.
+  const section = useRef<HTMLElement>(null)
+  const close = () => {
+    setDraft(null)
+    requestAnimationFrame(() => section.current?.focus())
+  }
   const save = () => {
     if (draft === null) return
     setSaving(true)
     void Promise.resolve(onSave(draft))
-      .then(() => setDraft(null))
+      .then(close)
       .finally(() => setSaving(false))
   }
   return (
-    <section className="flex flex-col gap-3">
+    <section ref={section} tabIndex={-1} className="flex flex-col gap-3 outline-none">
       <SectionHeading
         icon={<FileText size={18} aria-hidden />}
         extra={
@@ -100,11 +106,11 @@ export function Description({
             board={board}
             value={draft}
             onChange={setDraft}
-            rows={12}
+            rows={8}
             label={t('boards.card.description')}
           />
           <div className="flex justify-end gap-2">
-            <Button size="lg" variant="outline" onClick={() => setDraft(null)}>
+            <Button size="lg" variant="outline" onClick={close}>
               {t('common.cancel')}
             </Button>
             <Button size="lg" variant="primary" disabled={saving} onClick={save}>

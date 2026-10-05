@@ -120,7 +120,7 @@ interface BoardState {
 const LIST_COLLAPSED_KEY = 'boards.listCollapsed'
 
 /** The boards' order: `position`, newest first on a tie (as the daemon does). */
-export const inOrder = (boards: Board[]) =>
+const inOrder = (boards: Board[]) =>
   [...boards].sort((a, b) => a.position - b.position || b.createdAt - a.createdAt)
 
 export const useBoardStore = create<BoardState>()((set, get) => {

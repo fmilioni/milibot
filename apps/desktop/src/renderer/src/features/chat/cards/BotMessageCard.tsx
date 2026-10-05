@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 import { NoticeCard, NoticeLines } from './NoticeCard'
 
@@ -54,7 +55,9 @@ export function BotMessageCard({
             </span>
           )}
         </span>
-        <span className="line-clamp-2 text-sm leading-[15px] text-fg-secondary">“{payload.preview}”</span>
+        <span className="line-clamp-2 text-sm leading-[15px] text-fg-secondary">
+          <LinkifiedText text={`“${payload.preview}”`} />
+        </span>
       </NoticeLines>
     </NoticeCard>
   )

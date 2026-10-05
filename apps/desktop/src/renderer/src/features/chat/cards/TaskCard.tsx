@@ -2,6 +2,7 @@ import type { TaskPayload } from '@milibot/shared'
 import { ArrowUpRight, GitPullRequest } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Tooltip } from '@/ui/Tooltip'
 
 const TASK_STATUS_CLASS: Record<TaskPayload['status'], string> = {
@@ -24,7 +25,9 @@ export function TaskCard({ payload }: { payload: TaskPayload }) {
   const ref = [payload.prNumber ? `#${payload.prNumber}` : null, payload.branch].filter(Boolean).join(' ')
   return (
     <div className="flex h-[37px] items-center gap-2.5 rounded-[10px] border border-border bg-surface-2 px-3">
-      <span className="max-w-[60%] shrink-0 truncate text-base font-semibold text-fg">{payload.title}</span>
+      <span className="max-w-[60%] shrink-0 truncate text-base font-semibold text-fg">
+        <LinkifiedText text={payload.title} />
+      </span>
       {ref && (
         <>
           <GitPullRequest size={13} className="shrink-0 text-[#8B5CF6]" />

@@ -13,7 +13,9 @@ import { useSessionStore } from '@/features/sessions/store'
 import { toastOnError, useAppStore } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
 import { DiffStat } from '@/ui/diff/DiffStat'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Markdown } from '@/ui/Markdown'
+import { StretchedButton } from '@/ui/StretchedButton'
 
 /**
  * A plan sent for approval: title, summary, status and steps, with the decision while it waits. Approved to
@@ -52,6 +54,8 @@ export function PlanCard({ payload }: { payload: PlanPayload }) {
   const pending = payload.status === 'awaiting_approval'
   const running = payload.status === 'approved' || payload.status === 'executing' || payload.status === 'done'
   const comment = payload.feedback?.trim()
+  const feedbackKey =
+    payload.status === 'rejected' ? 'plans.card.rejectedWith' : 'plans.card.changesRequested'
   return (
     <div
       className={cn(
@@ -60,20 +64,16 @@ export function PlanCard({ payload }: { payload: PlanPayload }) {
       )}
     >
       <PlanHeader payload={payload} chip={<PlanStatusChip status={payload.status} />} />
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="focus-ring group flex flex-col gap-1 rounded text-left"
-      >
+      <StretchedButton onClick={() => setOpen(true)} className="flex flex-col gap-1">
         <PlanTitle title={payload.title} />
-        <span className="line-clamp-3 text-sm leading-[17px] text-fg-secondary">{payload.summary}</span>
-      </button>
+        <span className="line-clamp-3 text-sm leading-[17px] text-fg-secondary">
+          <LinkifiedText text={payload.summary} />
+        </span>
+      </StretchedButton>
       {running && <PlanProgress {...payload.steps} />}
       {comment && !pending && (
         <p className="text-sm text-fg-secondary">
-          {t(payload.status === 'rejected' ? 'plans.card.rejectedWith' : 'plans.card.changesRequested', {
-            comment,
-          })}
+          <LinkifiedText text={t(feedbackKey, { comment })} />
         </p>
       )}
       {pending ? (
@@ -118,7 +118,9 @@ function PlanHeader({ payload, chip }: { payload: PlanPayload; chip: ReactNode }
 function PlanTitle({ title }: { title: string }) {
   return (
     <span className="flex items-center gap-1 text-md font-semibold text-fg">
-      {title}
+      <span>
+        <LinkifiedText text={title} />
+      </span>
       <ChevronRight
         size={14}
         className="shrink-0 text-fg-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -158,16 +160,14 @@ function PlanSessionCard({
       )}
     >
       <PlanHeader payload={payload} chip={<SessionStatusChip status={session.status} />} />
-      <button
-        type="button"
-        onClick={onView}
-        className="focus-ring group flex flex-col gap-1 rounded text-left"
-      >
+      <StretchedButton onClick={onView} className="flex flex-col gap-1">
         <PlanTitle title={payload.title} />
         {!finished && (
-          <span className="line-clamp-2 text-sm leading-[17px] text-fg-secondary">{payload.summary}</span>
+          <span className="line-clamp-2 text-sm leading-[17px] text-fg-secondary">
+            <LinkifiedText text={payload.summary} />
+          </span>
         )}
-      </button>
+      </StretchedButton>
       {worker && (!finished || otherBot) && (
         <div className="flex min-w-0 items-center gap-1.5 text-sm">
           <BotAvatar avatar={worker.avatar} size={18} animated={false} className="shrink-0" />

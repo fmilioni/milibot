@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 interface KeyValue {
   name: string
@@ -119,7 +120,9 @@ export function McpSignInCard({ payload }: { payload: McpSignInPayload }) {
         </p>
       )}
       {payload.status === 'failed' && payload.error && (
-        <p className="text-sm break-words text-danger">{payload.error}</p>
+        <p className="text-sm break-words text-danger">
+          <LinkifiedText text={payload.error} />
+        </p>
       )}
       {pending && url && (
         <div>

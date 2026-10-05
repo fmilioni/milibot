@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { DiffStat } from '@/ui/diff/DiffStat'
 import { DiffView } from '@/ui/diff/DiffView'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 
 /** Title of a prompt change: "Ana updated her own prompt" / "Boss updated Ana's prompt". */
 function promptUpdatedTitle(
@@ -61,7 +62,11 @@ export function PromptUpdatedCard({
           )
         )}
       </div>
-      {payload.reason && <p className="pl-6 text-sm text-fg-secondary">{payload.reason}</p>}
+      {payload.reason && (
+        <p className="pl-6 text-sm text-fg-secondary">
+          <LinkifiedText text={payload.reason} />
+        </p>
+      )}
       {payload.diff && (
         <div className="flex flex-col gap-1.5 pl-6">
           <button

@@ -11,7 +11,9 @@ import { useSessionStore } from '@/features/sessions/store'
 import { useAppStore } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
 import { DiffStat } from '@/ui/diff/DiffStat'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Markdown } from '@/ui/Markdown'
+import { StretchedButton } from '@/ui/StretchedButton'
 
 /**
  * A work session in the chat where it started: status (live while it runs), steps, changed files and, once
@@ -53,13 +55,11 @@ export function WorkSessionCard({ payload, onOpen }: { payload: WorkSessionPaylo
         <span className="flex-1" />
         <SessionStatusChip status={status} />
       </div>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="focus-ring group flex flex-col gap-1 rounded text-left"
-      >
+      <StretchedButton onClick={onOpen} className="flex flex-col gap-1">
         <span className="flex items-center gap-1 text-md font-semibold text-fg">
-          {payload.title}
+          <span>
+            <LinkifiedText text={payload.title} />
+          </span>
           <ChevronRight
             size={14}
             className="shrink-0 text-fg-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -67,9 +67,11 @@ export function WorkSessionCard({ payload, onOpen }: { payload: WorkSessionPaylo
           />
         </span>
         {!finished && (
-          <span className="line-clamp-2 text-sm leading-[17px] text-fg-secondary">{payload.goal}</span>
+          <span className="line-clamp-2 text-sm leading-[17px] text-fg-secondary">
+            <LinkifiedText text={payload.goal} />
+          </span>
         )}
-      </button>
+      </StretchedButton>
       {doing && (
         <span className="flex items-center gap-1.5 text-sm text-accent" aria-live="polite">
           <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-accent motion-reduce:animate-none" />
@@ -121,7 +123,9 @@ export function WorkSessionStartedRow({
       <span className="shrink-0 text-fg-muted" aria-hidden>
         ·
       </span>
-      <span className="min-w-0 flex-1 truncate font-semibold text-fg">{payload.title}</span>
+      <span className="min-w-0 flex-1 truncate font-semibold text-fg">
+        <LinkifiedText text={payload.title} />
+      </span>
       <button
         type="button"
         onClick={onOpen}
@@ -146,8 +150,12 @@ export function SessionBriefCard({ payload, content }: { payload: SessionBriefPa
         <Rocket size={13} className="shrink-0" aria-hidden />
         {t('chat.session.briefLabel')}
       </div>
-      <span className="text-md font-semibold text-fg">{payload.title}</span>
-      <span className="text-base leading-[1.5] whitespace-pre-wrap text-fg-secondary">{payload.goal}</span>
+      <span className="text-md font-semibold text-fg">
+        <LinkifiedText text={payload.title} />
+      </span>
+      <span className="text-base leading-[1.5] whitespace-pre-wrap text-fg-secondary">
+        <LinkifiedText text={payload.goal} />
+      </span>
       {(project || payload.repoName || payload.cwd) && (
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">
           {project && <span>{t('chat.session.briefProject', { name: project.name })}</span>}
@@ -169,7 +177,7 @@ export function SessionBriefCard({ payload, content }: { payload: SessionBriefPa
       </button>
       {open && (
         <div className="selectable max-h-80 overflow-y-auto rounded-lg border border-border bg-surface-2 px-3 py-2.5 font-mono text-sm leading-[1.5] break-words whitespace-pre-wrap text-fg-secondary">
-          {content}
+          <LinkifiedText text={content} />
         </div>
       )}
     </div>

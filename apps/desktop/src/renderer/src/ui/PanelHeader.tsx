@@ -7,16 +7,23 @@ import { Tooltip } from './Tooltip'
 /**
  * `compact` is the VM panel header (title row inside the panel padding); `bar` is the 64px header
  * with a bottom border (settings, debug). The close button shows when `onClose` is given.
+ *
+ * In a `bar`, `subtitle` follows the title and is the part cut short, and `tabs` sit before the actions,
+ * dropping to a full-width second line when the panel is narrower than 420px.
  */
 export function PanelHeader({
   title,
+  subtitle,
   badge,
+  tabs,
   actions,
   variant = 'compact',
   onClose,
 }: {
   title: string
+  subtitle?: string
   badge?: ReactNode
+  tabs?: ReactNode
   actions?: ReactNode
   variant?: 'compact' | 'bar'
   onClose?: () => void
@@ -36,11 +43,30 @@ export function PanelHeader({
   )
   if (variant === 'bar') {
     return (
-      <header className="drag-region flex h-16 shrink-0 items-center justify-between border-b border-border px-4 win:pr-caption-4">
-        <h2 className="truncate text-lg font-semibold text-fg">{title}</h2>
-        <div className="no-drag flex items-center gap-3">
-          {actions}
-          {closeButton}
+      <header className="drag-region @container shrink-0 border-b border-border">
+        <div className="flex min-h-16 items-center gap-3 px-4 win:pr-caption-4 @max-[420px]:flex-wrap @max-[420px]:gap-y-3 @max-[420px]:py-3">
+          <h2 className="flex min-w-0 flex-1 text-lg font-semibold whitespace-nowrap text-fg">
+            {subtitle ? (
+              <>
+                <span className="shrink-0">{title}</span>
+                <span className="min-w-0 truncate @max-[420px]:pl-1.5 @max-[420px]:text-base @max-[420px]:font-normal @max-[420px]:text-fg-secondary">
+                  <span aria-hidden>{'\u00a0·\u00a0'}</span>
+                  {subtitle}
+                </span>
+              </>
+            ) : (
+              <span className="truncate">{title}</span>
+            )}
+          </h2>
+          {tabs && (
+            <div className="no-drag flex @max-[420px]:order-last @max-[420px]:basis-full @max-[420px]:*:flex-1 @max-[420px]:*:*:flex-1 @max-[420px]:*:*:justify-center">
+              {tabs}
+            </div>
+          )}
+          <div className="no-drag flex items-center gap-3">
+            {actions}
+            {closeButton}
+          </div>
         </div>
       </header>
     )

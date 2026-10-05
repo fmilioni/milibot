@@ -174,7 +174,7 @@ function TurnRowView({
           </Tooltip>
           <span className="shrink-0 font-mono text-xs text-fg-muted">{time}</span>
           {bot ? (
-            <span className="flex min-w-0 shrink items-center gap-1.5">
+            <span className="flex min-w-0 shrink items-center gap-1.5 @max-sm:shrink-0">
               <BotAvatar avatar={bot.avatar} state="idle" size={16} className="shrink-0" />
               <span className="truncate font-medium text-fg">{bot.name}</span>
             </span>
@@ -189,7 +189,7 @@ function TurnRowView({
           <span className="flex-1" />
           {model && (
             <Tooltip content={row.models.join(', ')}>
-              <span className="min-w-0 truncate rounded-[4px] bg-accent-soft px-1.5 text-xs leading-[18px] text-accent">
+              <span className="min-w-0 truncate rounded-[4px] bg-accent-soft px-1.5 text-xs leading-[18px] text-accent @max-sm:hidden">
                 {model}
                 {more}
               </span>
@@ -214,8 +214,22 @@ function TurnRowView({
         </span>
         {snippet && (
           <Tooltip content={row.turn?.trigger?.snippet ?? null} maxWidth={420}>
-            <span className="truncate pl-4 text-sm text-fg-secondary">{snippet}</span>
+            <span className="truncate pl-4 text-sm text-fg-secondary @max-sm:hidden">{snippet}</span>
           </Tooltip>
+        )}
+        {/* Narrow rows keep the bot's name whole: the model moves down here, before the snippet or tokens. */}
+        {(model || snippet) && (
+          <span className="hidden w-full min-w-0 items-center gap-2 pl-4 text-sm @max-sm:flex">
+            {model && (
+              <span className="max-w-[60%] shrink-0 truncate rounded-[4px] bg-accent-soft px-1.5 text-xs leading-[18px] text-accent">
+                {model}
+                {more}
+              </span>
+            )}
+            <span className="min-w-0 truncate text-fg-secondary">
+              {snippet || t('panels.debug.tokens.total', { value: compactTokens(row.tokens.total, locale) })}
+            </span>
+          </span>
         )}
         {row.error && (
           <span className="truncate pl-4 font-mono text-xs text-danger">

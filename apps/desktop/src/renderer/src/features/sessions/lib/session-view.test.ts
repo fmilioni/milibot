@@ -6,6 +6,7 @@ import {
   clampPanelWidth,
   filterChangedFiles,
   isSessionFinished,
+  overlayPanelWidth,
   planSession,
   planShowsSession,
   sessionCardIsCompact,
@@ -106,6 +107,15 @@ describe('session view', () => {
     expect(sessionPanelCollapsed(1000, false)).toBe(false)
     expect(sessionPanelCollapsed(340, true)).toBe(false)
     expect(sessionPanelCollapsed(null, false)).toBe(false)
+  })
+
+  it('opens the collapsed panel 400px wide, leaving a strip of conversation, or over the whole column', () => {
+    expect(overlayPanelWidth(779)).toBe(400)
+    expect(overlayPanelWidth(680)).toBe(400)
+    expect(overlayPanelWidth(420)).toBe(364)
+    expect(overlayPanelWidth(376)).toBe(320)
+    expect(overlayPanelWidth(375)).toBeNull()
+    expect(overlayPanelWidth(320)).toBeNull()
   })
 })
 

@@ -6,6 +6,10 @@
   "backTo": "Back to {{name}}",
   "conversation": "Session conversation",
   "panel": "Plan and changes",
+  "panelWithCount_one": "Plan and changes, {{count}} file changed",
+  "panelWithCount_other": "Plan and changes, {{count}} files changed",
+  "panelSteps": "{{done}}/{{total}} steps",
+  "panelClose": "Close (Esc)",
   "resize": "Resize the panel",
   "tabs": {
     "plan": "Plan",

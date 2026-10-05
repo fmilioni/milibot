@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
 
-import { hasLayerAbove } from './floating/layers'
+import { handleDialogKeys } from './dialog-keys'
 import { Tooltip } from './Tooltip'
 
 interface ModalProps {
@@ -56,30 +56,6 @@ export function Modal({
     return () => previous?.focus?.()
   }, [])
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      if (event.defaultPrevented || (ref.current && hasLayerAbove(ref.current))) return
-      event.stopPropagation()
-      onClose()
-      return
-    }
-    if (event.key !== 'Tab' || !ref.current) return
-    const focusable = [
-      ...ref.current.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input, textarea, select, [tabindex="0"]',
-      ),
-    ]
-    const first = focusable[0]
-    const last = focusable.at(-1)
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last?.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first?.focus()
-    }
-  }
-
   return createPortal(
     <div
       className="no-drag fixed inset-0 z-modal flex items-center justify-center bg-scrim p-6"
@@ -92,7 +68,7 @@ export function Modal({
         role="dialog"
         aria-modal
         aria-label={title}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => handleDialogKeys(event, ref.current, onClose)}
         className={cn(
           'flex max-h-full max-w-full flex-col overflow-y-auto rounded-2xl border border-border bg-surface-2 shadow-[0_20px_50px_rgba(0,0,0,0.25)]',
           padded && 'gap-4 p-6',

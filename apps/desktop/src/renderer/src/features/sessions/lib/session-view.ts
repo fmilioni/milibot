@@ -151,6 +151,20 @@ export function sessionPanelCollapsed(available: number | null, openedByUser: bo
   return available < PANEL_MIN_WIDTH + CONVERSATION_MIN_WIDTH
 }
 
+const OVERLAY_MAX_WIDTH = 400
+/** Strip of conversation left visible (dimmed) beside the overlaid panel. */
+const OVERLAY_GUTTER = 56
+const OVERLAY_MIN_WIDTH = 320
+
+/**
+ * Width of the collapsed panel opened over the conversation, or null when it takes the session's whole
+ * column (it would be narrower than `OVERLAY_MIN_WIDTH`).
+ */
+export function overlayPanelWidth(available: number): number | null {
+  const width = Math.min(OVERLAY_MAX_WIDTH, available - OVERLAY_GUTTER)
+  return width < OVERLAY_MIN_WIDTH ? null : Math.round(width)
+}
+
 /** Layout choices of the session screen kept in this window's storage (absent or blocked: defaults). */
 export function readSessionPref(key: string): string | null {
   return readPref(`milibot.session.${key}`)

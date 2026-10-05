@@ -119,10 +119,13 @@ export function messagePreview(message: Message, t: TFunction, bots: Record<stri
           name: author ?? '',
           botName: view.payload.params?.botName ?? '',
           groupName: view.payload.params?.groupName ?? '',
+          serverName: view.payload.params?.serverName ?? '',
           defaultValue: message.content,
         }),
       )
     }
+    case 'mcp_sign_in':
+      return t('chat.mcpSignIn.preview', { serverName: view.payload.serverName })
     case 'text': {
       if (view.text === null) return defaultPreview(message, t)
       const names = view.attachments.map((a) => a.name).join(', ')

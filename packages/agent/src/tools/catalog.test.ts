@@ -124,6 +124,12 @@ describe('toolsForLane main', () => {
       'board_search',
       'generate_image',
       'subagent',
+      'mcp_server_list',
+      'mcp_server_add',
+      'mcp_server_update',
+      'mcp_server_remove',
+      'mcp_server_test',
+      'mcp_server_connect',
     ])
   })
 

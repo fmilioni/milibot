@@ -51,7 +51,7 @@ import { EmbeddingService, fakeEmbeddingFactory, recordEmbeddingCost } from '../
 import { GroupService } from '../groups'
 import { ImageService, ImageTools } from '../images'
 import { knowledgeCorpus, KnowledgeService, KnowledgeStore, KnowledgeTools } from '../knowledge'
-import { McpService, McpTools } from '../mcp'
+import { McpAdmin, McpServerTools, McpService, McpTools } from '../mcp'
 import { McpToolServer } from '../mcp-server'
 import { MemoryRoutes, MemoryStore } from '../memory'
 import { MessageWriter } from '../messages'
@@ -509,6 +509,25 @@ export function createContainer(options: ContainerOptions) {
     log,
   })
 
+  const mcpAdmin = new McpAdmin({
+    mcp: externalMcp,
+    confirmations: {
+      request: (input) => groups.requestConfirmation(input),
+      onConfirmed: (action, handler) => groups.onConfirmed(action, handler),
+      onRejected: (action, handler) => groups.onRejected(action, handler),
+    },
+    host,
+    findBot: (id) => store.bots.find(id),
+    listBots: () => store.bots.list(),
+    cardConversation,
+    resolveSecretRefs: substituteSecrets,
+    appendMessage: append,
+    updateMessage: update,
+    pendingSignInCards: () => store.messages.cardsWith('mcp_sign_in', { status: 'pending' }),
+    timeoutSeconds: () => userRequests.timeoutSeconds(),
+    log,
+  })
+
   const embeddingOptions = overrides.embeddings
   const knowledgeDocs = new KnowledgeStore(db, now)
   const embeddings = new EmbeddingService({
@@ -833,6 +852,13 @@ export function createContainer(options: ContainerOptions) {
     }),
     new TaskCardTools({ cards: taskCards }),
     new McpTools({ mcp: externalMcp }),
+    new McpServerTools({
+      admin: mcpAdmin,
+      store: externalMcp.store,
+      listBots: () => store.bots.list(),
+      secretNames: (bot) => credentials.secretsFor(bot).map((s) => s.name),
+      secretValues: () => credentials.secretValues(),
+    }),
     new SkillTools({
       skills,
       store,
@@ -996,6 +1022,7 @@ export function createContainer(options: ContainerOptions) {
     { name: 'procedures', start: () => procedures.start() },
     { name: 'skills', start: () => skills.start(), stop: () => skills.stop() },
     { name: 'external MCP', start: () => externalMcp.start(), stop: () => externalMcp.stop() },
+    { name: 'MCP admin', start: () => mcpAdmin.start(), stop: () => mcpAdmin.stop() },
     { name: 'credentials', start: () => credentials.start(), stop: () => credentials.stop() },
     { name: 'spend', start: () => spend.start(), stop: () => spend.stop() },
     { name: 'vm admin', stop: () => vmAdmin.close() },

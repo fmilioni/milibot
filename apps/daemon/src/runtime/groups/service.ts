@@ -32,8 +32,12 @@ export interface ConfirmationParams {
   [field: string]: string | undefined
 }
 
-/** Runs an approved action registered by another service; a DaemonError marks the card expired. */
+/**
+ * Runs an approved (or, with `onRejected`, a rejected) action registered by another service; a DaemonError
+ * marks the card expired.
+ */
 export type ConfirmationHandler = (input: {
+  confirmationId: string
   requesterId: string
   conversationId: string
   params: ConfirmationParams
@@ -54,6 +58,7 @@ export interface GroupServiceDeps {
 /** Groups, their members and settings, and the confirmation cards of destructive bot requests. */
 export class GroupService {
   private readonly confirmationHandlers = new Map<ConfirmationAction, ConfirmationHandler>()
+  private readonly rejectionHandlers = new Map<ConfirmationAction, ConfirmationHandler>()
   private readonly confirmations: ConfirmationStore
 
   constructor(private readonly deps: GroupServiceDeps) {
@@ -62,6 +67,10 @@ export class GroupService {
 
   onConfirmed(action: ConfirmationAction, handler: ConfirmationHandler): void {
     this.confirmationHandlers.set(action, handler)
+  }
+
+  onRejected(action: ConfirmationAction, handler: ConfirmationHandler): void {
+    this.rejectionHandlers.set(action, handler)
   }
 
   private get store(): WorkspaceStore {
@@ -237,7 +246,13 @@ export class GroupService {
           ? `${input.bot.name} wants to update the prompt of ${input.params.botName}`
           : input.action === 'continue_bot_exchange'
             ? `${input.bot.name} and ${input.params.botName} have been going back and forth without you`
-            : `${input.bot.name} wants to delete ${input.params.botName}`
+            : input.action === 'mcp_add'
+              ? `${input.bot.name} wants to add the MCP server ${input.params.serverName}`
+              : input.action === 'mcp_update'
+                ? `${input.bot.name} wants to change the MCP server ${input.params.serverName}`
+                : input.action === 'mcp_remove'
+                  ? `${input.bot.name} wants to remove the MCP server ${input.params.serverName}`
+                  : `${input.bot.name} wants to delete ${input.params.botName}`
     const payload: ConfirmationPayload = {
       type: 'confirmation',
       confirmationId: id,
@@ -288,6 +303,14 @@ export class GroupService {
       },
     )
     let status: ConfirmationPayload['status'] = approved ? 'approved' : 'rejected'
+    const handlerInput = {
+      confirmationId: row.id,
+      requesterId: row.bot_id,
+      conversationId: row.conversation_id,
+      params: params as ConfirmationParams,
+      data: data ?? {},
+    }
+    if (!approved) this.rejectionHandlers.get(row.action)?.(handlerInput)
     if (approved) {
       try {
         const requester = this.store.bots.find(row.bot_id)
@@ -297,12 +320,7 @@ export class GroupService {
         } else if (row.action === 'delete_bot') {
           this.deleteBot(actor, params.botId, row.conversation_id)
         } else {
-          this.confirmationHandlers.get(row.action)?.({
-            requesterId: row.bot_id,
-            conversationId: row.conversation_id,
-            params: params as ConfirmationParams,
-            data: data ?? {},
-          })
+          this.confirmationHandlers.get(row.action)?.(handlerInput)
         }
       } catch (err) {
         if (!(err instanceof DaemonError)) throw err

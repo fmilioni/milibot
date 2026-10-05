@@ -195,6 +195,12 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   board_comment: MessageSquarePlus,
   board_link: Link2,
   board_search: Search,
+  mcp_server_list: Plug,
+  mcp_server_add: Plug,
+  mcp_server_update: Plug,
+  mcp_server_remove: Trash2,
+  mcp_server_test: RefreshCw,
+  mcp_server_connect: KeyRound,
 }
 
 /** Steps whose detail is a command or code, shown in monospace. */

@@ -2,7 +2,14 @@ import type { ConfirmationPayload } from '@milibot/shared'
 
 import type { Db } from '../../db/sqlite'
 
-export type ConfirmationAction = 'remove_member' | 'delete_bot' | 'update_prompt' | 'continue_bot_exchange'
+export type ConfirmationAction =
+  | 'remove_member'
+  | 'delete_bot'
+  | 'update_prompt'
+  | 'continue_bot_exchange'
+  | 'mcp_add'
+  | 'mcp_update'
+  | 'mcp_remove'
 
 export interface ConfirmationRow {
   id: string

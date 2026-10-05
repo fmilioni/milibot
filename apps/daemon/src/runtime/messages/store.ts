@@ -149,16 +149,25 @@ export class MessageStore {
    * payload properties named by code, never by input).
    */
   latestCard(type: string, fields: Record<string, string | number>): { id: string; payload: unknown } | null {
+    return this.cardsWith(type, fields, 1)[0] ?? null
+  }
+
+  /** Cards whose payload has `type` and the given field values, newest first (see `latestCard`). */
+  cardsWith(
+    type: string,
+    fields: Record<string, string | number>,
+    limit = 1000,
+  ): Array<{ id: string; payload: unknown }> {
     const keys = Object.keys(fields)
     if (keys.some((key) => !/^\w+$/.test(key))) throw new Error('invalid payload field')
-    const row = this.db
+    const rows = this.db
       .prepare(
         `SELECT id, payload FROM messages WHERE kind = 'card' AND json_extract(payload, '$.type') = ?
          ${keys.map((key) => `AND json_extract(payload, '$.${key}') = ?`).join(' ')}
-         ORDER BY seq DESC LIMIT 1`,
+         ORDER BY seq DESC LIMIT ?`,
       )
-      .get(type, ...keys.map((key) => fields[key])) as { id: string; payload: string } | undefined
-    return row ? { id: row.id, payload: parseJson<unknown>(row.payload, null) } : null
+      .all(type, ...keys.map((key) => fields[key]), limit) as Array<{ id: string; payload: string }>
+    return rows.map((row) => ({ id: row.id, payload: parseJson<unknown>(row.payload, null) }))
   }
 
   /** Cards whose payload has `type`, newest first, leaving out those whose `payload.status` is in `exceptStatus`. */

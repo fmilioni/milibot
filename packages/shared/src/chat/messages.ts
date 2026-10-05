@@ -321,6 +321,8 @@ export const SystemEventName = z.enum([
   'routine_deleted',
   /** params: `projectName` (null = no project), `actor` user|bot, `actorName`. */
   'project_changed',
+  /** params: `minutes`, `tasks` (the requests set aside, joined by "; "). The bot stopped is `botId`. */
+  'idle_watch_alert',
 ])
 export type SystemEventName = z.infer<typeof SystemEventName>
 

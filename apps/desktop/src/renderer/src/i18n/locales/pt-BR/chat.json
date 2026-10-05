@@ -493,7 +493,8 @@
     "project_changed": "{{actorName}} passou a conversa para o projeto {{projectName}}",
     "project_changed_user": "Você passou a conversa para o projeto {{projectName}}",
     "project_changed_cleared": "{{actorName}} deixou a conversa sem projeto",
-    "project_changed_cleared_user": "Você deixou a conversa sem projeto"
+    "project_changed_cleared_user": "Você deixou a conversa sem projeto",
+    "idle_watch_alert": "{{name}} está parado há {{minutes}} min com pedidos adiados: {{tasks}}"
   },
   "working": "Trabalhando",
   "workingAnnouncement": "{{name}} está trabalhando",

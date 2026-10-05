@@ -7,6 +7,9 @@ import { ModelChoice } from '../models/reasoning'
 import { RoutineCatchUp } from '../routines/routines'
 import { Language } from './workspace'
 
+export const IdleWatchFallback = z.enum(['next_bot', 'user'])
+export type IdleWatchFallback = z.infer<typeof IdleWatchFallback>
+
 export const WorkspacePreferences = z.object({
   notifications: z.boolean(),
   /** `attention`: a finished routine notifies only when it failed. */
@@ -57,6 +60,11 @@ export const WorkspacePreferences = z.object({
   idleWatchMinutes: z.number().int().min(0).max(1440),
   /** The bot told about stopped bots (the project manager); null = the first bot. */
   idleWatchBotId: z.string().nullable(),
+  /**
+   * Who is told when the stopped bot is the one the watch reports to: the next bot of the team, or the user
+   * (in the stopped bot's chat). A workspace with no other bot always tells the user.
+   */
+  idleWatchFallback: IdleWatchFallback,
   /** The app's language, kept in sync by the daemon (not a setting of its own). */
   userLanguage: Language,
 })
@@ -90,6 +98,7 @@ export const DEFAULT_WORKSPACE_PREFERENCES: WorkspacePreferences = {
   vmAutostart: true,
   idleWatchMinutes: 30,
   idleWatchBotId: null,
+  idleWatchFallback: 'next_bot',
   userLanguage: 'pt-BR',
 }
 

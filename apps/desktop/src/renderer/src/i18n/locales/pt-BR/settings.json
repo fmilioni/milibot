@@ -82,6 +82,10 @@
     "idleWatchBot": "Quem é avisado",
     "idleWatchBotHint": "O bot que cuida das entregas, como a gerente de projeto.",
     "idleWatchBotFirst": "Primeiro bot ({{name}})",
+    "idleWatchFallback": "Se quem é avisado estiver parado",
+    "idleWatchFallbackHint": "Quem recebe o aviso quando o bot parado é o próprio bot que seria avisado.",
+    "idleWatchFallbackNextBot": "O próximo bot da equipe",
+    "idleWatchFallbackUser": "Você",
     "catchUp": {
       "once": "Rodar uma vez ao voltar",
       "onceHint": "Uma vez só, mesmo que várias tenham passado",

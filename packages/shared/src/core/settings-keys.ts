@@ -36,6 +36,7 @@ export const PREFERENCE_SETTING_KEYS = {
   vmAutostart: 'vm.autostart',
   idleWatchMinutes: 'bots.idle_watch_minutes',
   idleWatchBotId: 'bots.idle_watch_bot',
+  idleWatchFallback: 'bots.idle_watch_fallback',
   userLanguage: 'user.language',
 } as const
 

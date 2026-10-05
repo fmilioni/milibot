@@ -82,6 +82,10 @@
     "idleWatchBot": "Who is told",
     "idleWatchBotHint": "The bot that looks after deliveries, such as the project manager.",
     "idleWatchBotFirst": "First bot ({{name}})",
+    "idleWatchFallback": "If the one told is stopped",
+    "idleWatchFallbackHint": "Who is told when the stopped bot is the very bot that would be told.",
+    "idleWatchFallbackNextBot": "The next bot of the team",
+    "idleWatchFallbackUser": "You",
     "catchUp": {
       "once": "Run once when back",
       "onceHint": "Only once, even if several were missed",

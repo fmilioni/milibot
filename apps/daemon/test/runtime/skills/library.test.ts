@@ -29,6 +29,7 @@ describe('built-in skills', () => {
       'team-management',
       'using-the-screen',
       'web-browsing',
+      'workspace-settings',
     ])
     const families = builtins.flatMap((b) => b.meta?.milibot?.tools ?? [])
     expect([...new Set([...families, ...SETTING_FAMILIES])].sort()).toEqual([...TOOL_FAMILY_NAMES].sort())

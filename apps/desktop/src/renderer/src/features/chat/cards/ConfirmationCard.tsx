@@ -9,6 +9,7 @@ import { Tooltip } from '@/ui/Tooltip'
 
 import { McpChangeDetails } from './McpCards'
 import { ProposedPromptDiff } from './PromptCards'
+import { ProposedSettingChanges } from './SettingsCards'
 
 export function ConfirmationCard({
   payload,
@@ -26,6 +27,7 @@ export function ConfirmationCard({
   const mild =
     payload.action === 'update_prompt' ||
     payload.action === 'continue_bot_exchange' ||
+    payload.action === 'workspace_settings' ||
     payload.action === 'mcp_add' ||
     payload.action === 'mcp_update'
   const action =
@@ -63,6 +65,9 @@ export function ConfirmationCard({
           added={Number(payload.params.added ?? 0)}
           removed={Number(payload.params.removed ?? 0)}
         />
+      )}
+      {payload.action === 'workspace_settings' && payload.params?.changes && (
+        <ProposedSettingChanges changes={payload.params.changes} />
       )}
       {payload.action.startsWith('mcp_') && payload.params?.details && (
         <McpChangeDetails details={payload.params.details} />

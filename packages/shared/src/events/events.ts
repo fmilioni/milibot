@@ -20,6 +20,7 @@ import { Plan } from '../work/plans'
 import { Project } from '../work/projects'
 import { SessionChangeTotals, WorkSession } from '../work/sessions'
 import { BackupJob, BackupRestore } from '../workspace/backup'
+import { WorkspacePreferences } from '../workspace/preferences'
 import { GoldenStatus } from '../workspace/setup'
 import { AppSettings, RuntimeStatus, WorkspaceStatus, WorkspaceSummary } from '../workspace/workspace'
 import { TurnTrigger } from './turn-trigger'
@@ -70,6 +71,8 @@ export const WorkspaceEvent = z.discriminatedUnion('type', [
   event('message.updated', z.object({ message: Message })),
   event('bot.activity', z.object({ botId: z.string(), action: BotActivityAction })),
   event('vm.status', z.object({ vm: VmInfo })),
+  /** The workspace preferences after a change (settings screen, a bot's tool or an approved card). */
+  event('preferences.updated', z.object({ preferences: WorkspacePreferences })),
   event('provider.usage', z.object({ usage: CliUsage })),
   /** Config, tools or connection state. */
   event('mcp.server.updated', z.object({ server: McpServer })),

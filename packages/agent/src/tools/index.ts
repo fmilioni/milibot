@@ -32,6 +32,7 @@ export { sessionTools } from './families/sessions'
 export { skillTools } from './families/skills'
 export { type UserRequestToolName, userRequestTools } from './families/user-requests'
 export { WEB_SEARCH_MAX_RESULTS, WEB_SEARCH_RECENCIES, webTools } from './families/web'
+export { workspaceSettingsTools } from './families/workspace-settings'
 export {
   READ_ONLY_HELPER_TOOLS,
   SETTING_FAMILIES,

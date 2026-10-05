@@ -124,6 +124,8 @@ describe('toolsForLane main', () => {
       'board_search',
       'generate_image',
       'subagent',
+      'workspace_settings_get',
+      'workspace_settings_update',
       'mcp_server_list',
       'mcp_server_add',
       'mcp_server_update',
@@ -210,10 +212,18 @@ describe('toolsForLane main', () => {
       'routine_delete',
       'project_create',
       'project_update',
+      'workspace_settings_update',
     ])
       expect(helper).not.toContain(name)
     expect(helper).toEqual(
-      expect.arrayContaining(['file_write', 'bash', 'routine_list', 'project_list', 'knowledge_write']),
+      expect.arrayContaining([
+        'file_write',
+        'bash',
+        'routine_list',
+        'project_list',
+        'knowledge_write',
+        'workspace_settings_get',
+      ]),
     )
   })
 

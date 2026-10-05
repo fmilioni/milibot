@@ -10,6 +10,7 @@ export type ConfirmationAction =
   | 'mcp_add'
   | 'mcp_update'
   | 'mcp_remove'
+  | 'workspace_settings'
 
 export interface ConfirmationRow {
   id: string

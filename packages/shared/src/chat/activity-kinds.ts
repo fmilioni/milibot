@@ -118,6 +118,8 @@ export const ACTIVITY_STEP_KINDS = [
   'board_comment',
   'board_link',
   'board_search',
+  'workspace_settings_get',
+  'workspace_settings_update',
   'mcp_server_list',
   'mcp_server_add',
   'mcp_server_update',

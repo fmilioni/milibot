@@ -306,6 +306,10 @@
       "board_link_empty": "Vinculou algo a um card",
       "board_search": "Buscou nos quadros: {{detail}}",
       "board_search_empty": "Buscou nos quadros",
+      "workspace_settings_get": "Leu as configurações do workspace",
+      "workspace_settings_get_empty": "Leu as configurações do workspace",
+      "workspace_settings_update": "Mudança nas configurações do workspace: {{detail}}",
+      "workspace_settings_update_empty": "Mudança nas configurações do workspace",
       "list_models": "Listou os modelos “{{detail}}”",
       "list_models_empty": "Listou os modelos disponíveis",
       "mcp_server_list": "Consultou os servidores MCP",
@@ -351,6 +355,7 @@
       "update_prompt": "{{name}} quer atualizar o prompt de {{botName}}",
       "update_prompt_own": "{{name}} quer atualizar o próprio prompt",
       "continue_bot_exchange": "{{name}} e {{botName}} estão conversando há um tempo sem você",
+      "workspace_settings": "{{name}} quer alterar configurações do workspace",
       "mcp_add": "{{name}} quer adicionar o servidor MCP {{serverName}}",
       "mcp_update": "{{name}} quer alterar o servidor MCP {{serverName}}",
       "mcp_remove": "{{name}} quer remover o servidor MCP {{serverName}}"
@@ -366,6 +371,7 @@
       "delete_bot": "Excluir",
       "update_prompt": "Aprovar",
       "continue_bot_exchange": "Continuar",
+      "workspace_settings": "Aplicar",
       "mcp_add": "Adicionar",
       "mcp_update": "Alterar",
       "mcp_remove": "Remover"
@@ -391,6 +397,22 @@
       "mcp_remove": {
         "approved": "Você removeu",
         "rejected": "Você manteve"
+      }
+    },
+    "settings": {
+      "on": "Ligado",
+      "off": "Desligado",
+      "noLimit": "Sem limite",
+      "perDay": "{{value}} por dia",
+      "promptUpdates": {
+        "auto": "Automático, com aviso",
+        "approval": "Pedir minha aprovação"
+      },
+      "fields": {
+        "spendWarnUsd": "Avisar quando o gasto do dia passar de",
+        "spendPauseUsd": "Pausar todos os bots quando o gasto do dia chegar a",
+        "autoMergePrs": "Bots podem fazer merge dos próprios PRs",
+        "promptUpdates": "Mudanças no prompt dos bots"
       }
     },
     "mcp": {

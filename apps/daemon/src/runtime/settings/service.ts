@@ -9,8 +9,11 @@ import {
   type ModelChoice,
   PREFERENCE_SETTING_KEYS,
   type preferenceEndpoints,
+  type UpdateWorkspacePreferencesBody,
+  type WorkspaceEvent,
   type WorkspacePreferences,
 } from '@milibot/shared'
+import type { z } from 'zod'
 
 import { errorMessage } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
@@ -39,6 +42,7 @@ export interface SettingsDeps {
   gitPolicy: Pick<GitPolicySync, 'refresh'>
   /** Latest subscription quota of a CLI provider (Claude Code, Codex). */
   cliUsage: (providerId: string) => CliUsage | null
+  emit: (event: WorkspaceEvent) => void
   now: () => number
   log: LogFn
 }
@@ -50,6 +54,32 @@ export class SettingsService {
   preferences(): WorkspacePreferences {
     const { settings } = this.deps.store
     return readPreferences((key, fallback) => settings.get(key, fallback))
+  }
+
+  /**
+   * Saves a validated patch, applies what depends on it (spend check, commit identity, VM limits, office,
+   * git policy) and tells the app: the settings screen, a bot's tool and an approved card all come here.
+   */
+  update(patch: z.output<typeof UpdateWorkspacePreferencesBody>): WorkspacePreferences {
+    const { store, spend, credentials, vm, office, gitPolicy, log } = this.deps
+    if (patch.idleWatchBotId) store.bots.get(patch.idleWatchBotId)
+    store.settings.setMany(PREFERENCE_SETTING_KEYS, patch)
+    if (patch.spendWarnUsd !== undefined || patch.spendPauseUsd !== undefined) spend.check()
+    if (patch.commitName !== undefined || patch.commitEmail !== undefined)
+      void credentials.github.syncVm({ touchLogin: false }).catch(() => undefined)
+    if (
+      patch.perBotLimits !== undefined ||
+      patch.perBotCpuPercent !== undefined ||
+      patch.perBotMemoryGb !== undefined
+    )
+      void vm
+        .applyBotLimits()
+        .catch((err: unknown) => log('warn', 'bot limits not applied', { err: errorMessage(err) }))
+    if (patch.legacyOffice !== undefined) void office.sync()
+    if (patch.draftPrs !== undefined || patch.autoMergePrs !== undefined) gitPolicy.refresh()
+    const preferences = this.preferences()
+    this.deps.emit({ type: 'preferences.updated', payload: { preferences } })
+    return preferences
   }
 
   /** Adds a bot's variables and commit identity to a CLI engine's process environment. */
@@ -107,7 +137,7 @@ export class SettingsService {
   }
 
   handlers(): EndpointHandlers<keyof typeof preferenceEndpoints> {
-    const { store, catalog, vm, credentials, spend, office, gitPolicy, log } = this.deps
+    const { store, catalog } = this.deps
     const models = createModelPolicy(store, catalog)
     return {
       getWorkspacePreferences: () => this.preferences(),
@@ -121,24 +151,7 @@ export class SettingsService {
           knowledgeSummaryModel: await this.describe(await models.automaticKnowledgeSummary(bot)),
         }
       },
-      updateWorkspacePreferences: ({ body }) => {
-        if (body.idleWatchBotId) store.bots.get(body.idleWatchBotId)
-        store.settings.setMany(PREFERENCE_SETTING_KEYS, body)
-        if (body.spendWarnUsd !== undefined || body.spendPauseUsd !== undefined) spend.check()
-        if (body.commitName !== undefined || body.commitEmail !== undefined)
-          void credentials.github.syncVm({ touchLogin: false }).catch(() => undefined)
-        if (
-          body.perBotLimits !== undefined ||
-          body.perBotCpuPercent !== undefined ||
-          body.perBotMemoryGb !== undefined
-        )
-          void vm
-            .applyBotLimits()
-            .catch((err: unknown) => log('warn', 'bot limits not applied', { err: errorMessage(err) }))
-        if (body.legacyOffice !== undefined) void office.sync()
-        if (body.draftPrs !== undefined || body.autoMergePrs !== undefined) gitPolicy.refresh()
-        return this.preferences()
-      },
+      updateWorkspacePreferences: ({ body }) => this.update(body),
     }
   }
 }

@@ -1,5 +1,5 @@
 export { BotPromptRoutes } from './bot-prompts'
-export { ModelCatalog } from './catalog'
+export { type CatalogProvider, ModelCatalog } from './catalog'
 export { type CliBackend, createCliBackend, createCliPlanTracker } from './cli-backend'
 export { CLI_ENGINE_HOSTS } from './cli-engines'
 export type { CliEngineRuntime, CliImageJob } from './cli-engines/host'

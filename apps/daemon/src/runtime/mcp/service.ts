@@ -281,8 +281,12 @@ export class McpService {
       }))
     const ref = botMcpToolSet(views).index.get(name)
     if (!ref) return { content: [{ type: 'text', text: `Tool not available: ${name}` }], isError: true }
-    const result = await this.manager.callTool(ref.serverId, ref.tool, args, ctx.signal)
-    return mapMcpResult(result, this.deps.blobs)
+    const result = await this.manager
+      .callTool(ref.serverId, ref.tool, args, ctx.signal)
+      .catch((err: unknown) => {
+        throw new Error(this.redact(errorMessage(err)))
+      })
+    return this.redact(await mapMcpResult(result, this.deps.blobs))
   }
 
   private async testConfig(config: McpServerConfig): Promise<McpTestResult> {

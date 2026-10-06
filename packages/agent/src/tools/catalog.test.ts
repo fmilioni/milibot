@@ -133,7 +133,20 @@ describe('toolsForLane main', () => {
       'mcp_server_remove',
       'mcp_server_test',
       'mcp_server_connect',
+      'daemon_logs',
     ])
+  })
+
+  it('offers daemon_logs in every lane, to read-only helpers and whatever skills are off', () => {
+    const names = (tools: Array<{ name: string }>) => tools.map((t) => t.name)
+    for (const lane of ['main', 'internal', 'session', 'subagent'] as const) {
+      expect(names(toolsForLane(lane, { enabledFamilies: new Set() }))).toContain('daemon_logs')
+      expect(names(toolsForLane(lane, { native: claudeCodeNative }))).toContain('daemon_logs')
+    }
+    expect(names(toolsForLane('subagent', { readOnly: true, native: claudeCodeNative }))).toContain(
+      'daemon_logs',
+    )
+    expect(toolFamily('daemon_logs')).toBeNull()
   })
 
   it('gives each lane its own session tools', () => {

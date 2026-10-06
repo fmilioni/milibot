@@ -82,6 +82,7 @@ describe('McpToolServer', () => {
     const names = (list.body?.result.tools as Array<{ name: string }>).map((t) => t.name)
     expect(names).toContain('computer')
     expect(names).toContain('repo_checkout')
+    expect(names).toContain('daemon_logs')
     expect(names).not.toContain('bash')
     expect(names).not.toContain('create_bot')
 
@@ -151,7 +152,7 @@ describe('McpToolServer', () => {
       return (res.body?.result.tools as Array<{ name: string }>).map((t) => t.name)
     }
     const readOnly = await list(`${bot.id}:chat:sub:1`)
-    expect(readOnly.length).toBeGreaterThan(0)
+    expect(readOnly).toContain('daemon_logs')
     expect(readOnly.filter((name) => !(READ_ONLY_HELPER_TOOLS as readonly string[]).includes(name))).toEqual(
       [],
     )

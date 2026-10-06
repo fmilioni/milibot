@@ -108,7 +108,13 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
       pruneScreenshots(conversation)
       const messages: ChatMessage[] = [system, ...conversation]
       const contextComposition = context.compose()
-      ctx.lanes.setStatus(lane, turn.consecutiveErrors >= 2 ? 'effort' : 'thinking')
+      ctx.lanes.setStatus(
+        lane,
+        turn.consecutiveErrors >= 2 ? 'effort' : 'thinking',
+        undefined,
+        undefined,
+        'llm',
+      )
 
       const text = ctx.activity.textStream(bot, turn)
       turn.text = text
@@ -128,7 +134,7 @@ export class NativeLoop implements TurnEngine<NativeResolvedModel> {
         })) {
           if (chunk.type === 'text_delta') {
             text.push(chunk.text)
-            ctx.lanes.setStatus(lane, 'talking')
+            ctx.lanes.setStatus(lane, 'talking', undefined, undefined, 'reply')
           } else if (chunk.type === 'tool_input_delta') {
             draft(chunk.id, chunk.name, chunk.partialJson)
           } else if (chunk.type === 'done') {

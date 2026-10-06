@@ -70,7 +70,7 @@ export class Scheduler {
       lane.queue.push(request)
     }
     // Busy from the moment the request is accepted, even while it waits for a free slot.
-    if (!lane.running) this.ctx.lanes.setStatus(lane, 'thinking')
+    if (!lane.running) this.ctx.lanes.setStatus(lane, 'thinking', undefined, undefined, 'queued')
     this.pump()
   }
 
@@ -213,7 +213,13 @@ export class Scheduler {
         lane.current = null
         this.active--
         this.ctx.screen.release(lane)
-        this.ctx.lanes.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
+        this.ctx.lanes.setStatus(
+          lane,
+          lane.queue.length ? 'thinking' : 'idle',
+          undefined,
+          undefined,
+          'turn_end',
+        )
         if (lane.info.kind === 'subagent' && lane.queue.length === 0) this.forgetEphemeralLane(lane)
         else if (lane.closed && lane.queue.length === 0) this.ctx.lanes.removeLane(lane)
         this.ctx.otherWork.turnEnded(lane)
@@ -244,13 +250,13 @@ export class Scheduler {
       this.active--
       this.pump()
     }
-    if (kind) this.ctx.lanes.setStatus(lane, 'working', kind)
+    if (kind) this.ctx.lanes.setStatus(lane, 'working', kind, undefined, 'wait')
     try {
       return await wait
     } finally {
       if (holdsSlot && --lane.detached === 0) this.active++
       // Outside a turn (or past its end) nothing else takes the lane out of 'working'.
-      if (kind && !(turn && lane.current === turn)) this.ctx.lanes.settle(lane)
+      if (kind && !(turn && lane.current === turn)) this.ctx.lanes.settle(lane, 'wait')
     }
   }
 

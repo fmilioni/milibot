@@ -526,7 +526,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
       text,
       onTextDelta: (delta: string) => {
         text.push(delta)
-        lanes.setStatus(lane, 'talking')
+        lanes.setStatus(lane, 'talking', undefined, undefined, 'reply')
       },
       onTextBoundary: (fullText: string | null) => {
         const full = fullText?.trim() ?? ''
@@ -534,7 +534,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
           // The rest of a text already folded when a Milibot tool call overtook the stream.
           activity.addNote(turn, full)
         } else if (text.started || full) activity.textEnded(turn, text.end(fullText))
-        lanes.setStatus(lane, 'thinking')
+        lanes.setStatus(lane, 'thinking', undefined, undefined, 'llm')
       },
       onAcceptingInput: (send: (text: string) => boolean) => {
         turn.deliver = () => this.deliver(bot, turn, inSession, send)
@@ -545,7 +545,7 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
       startStep: (id: string, name: string, toolInput: unknown) => {
         const step = activity.startExternalStep(turn, id, name, toolInput)
         steps.set(id, step)
-        if (step) lanes.setStatus(lane, 'working', step.kind)
+        if (step) lanes.setStatus(lane, 'working', step.kind, undefined, 'tool')
       },
       /** Only a shown, successful step keeps its diffs. */
       finishStep: (id: string, isError: boolean, output: string, changed: StepFileDiff[]) => {

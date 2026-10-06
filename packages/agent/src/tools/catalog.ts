@@ -3,6 +3,7 @@ import { boardTools } from './families/boards'
 import { browserTools } from './families/browser'
 import { computerTools } from './families/computer'
 import { designTools } from './families/design'
+import { diagnosticTools } from './families/diagnostics'
 import { fileTools } from './families/files'
 import { imageTools } from './families/images'
 import { knowledgeTools } from './families/knowledge'
@@ -51,6 +52,7 @@ export const TOOL_CATALOG = [
   subagentTools,
   workspaceSettingsTools,
   mcpServerTools,
+  diagnosticTools,
 ] as const
 
 export const TOOL_DEFINITIONS = {
@@ -77,6 +79,7 @@ export const TOOL_DEFINITIONS = {
   ...subagentTools.definitions,
   ...workspaceSettingsTools.definitions,
   ...mcpServerTools.definitions,
+  ...diagnosticTools.definitions,
 } satisfies Record<string, ToolDefinition>
 
 export type ToolName = keyof typeof TOOL_DEFINITIONS

@@ -1,4 +1,5 @@
 export { type CachePriceLookup, CostStore } from './cost'
+export { DaemonLogTools } from './daemon-logs'
 export { DebugStore } from './debug'
 export { ObservabilityRoutes } from './handlers'
 export { LlmCallStore } from './llm-calls'

@@ -23,7 +23,7 @@ export function platformDataRoot(host: Host): string {
 }
 
 export function dataPaths(dataRoot: string) {
-  const { daemonInfo, logsDir } = dataLayout(dataRoot, process.platform)
+  const { daemonInfo, daemonLog, logsDir } = dataLayout(dataRoot, process.platform)
   return {
     root: dataRoot,
     appDb: join(dataRoot, 'app.db'),
@@ -31,6 +31,7 @@ export function dataPaths(dataRoot: string) {
     workspacesDir: join(dataRoot, 'workspaces'),
     imagesDir: join(dataRoot, 'images'),
     logsDir,
+    daemonLog,
   }
 }
 

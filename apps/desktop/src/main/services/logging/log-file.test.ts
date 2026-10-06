@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { appendRotating, formatLogEntry, type LogFs } from './log-file'
+import { appendRotating, formatLogEntry, type LogFs, rotateLog } from './log-file'
 
 function memoryFs(sizes: Record<string, number>) {
   const calls: string[] = []
@@ -28,5 +28,19 @@ describe('log file', () => {
     const full = memoryFs({ '/l/r.log': 101 })
     appendRotating('/l/r.log', 'abc', 100, full.fs)
     expect(full.calls).toEqual(['rename /l/r.log /l/r.log.1', 'append /l/r.log 3'])
+  })
+
+  it('rotates a log another process writes only once it passes the limit', () => {
+    const small = memoryFs({ '/l/daemon.log': 100 })
+    rotateLog('/l/daemon.log', 100, small.fs)
+    expect(small.calls).toEqual([])
+
+    const full = memoryFs({ '/l/daemon.log': 101 })
+    rotateLog('/l/daemon.log', 100, full.fs)
+    expect(full.calls).toEqual(['rename /l/daemon.log /l/daemon.log.1'])
+
+    const missing = memoryFs({})
+    rotateLog('/l/daemon.log', 100, missing.fs)
+    expect(missing.calls).toEqual([])
   })
 })

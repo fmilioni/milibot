@@ -58,6 +58,7 @@ import { MessageWriter } from '../messages'
 import {
   BlobReferences,
   CostStore,
+  DaemonLogTools,
   DebugRetention,
   DebugStore,
   LlmCallStore,
@@ -183,6 +184,8 @@ export interface ContainerOptions {
   /** The workspace's "on close" setting; null: no VM to manage. */
   closeBehavior: (() => CloseBehavior) | null
   log: LogFn
+  /** The daemon's log file `daemon_logs` reads; null: the daemon writes none. */
+  daemonLogPath: string | null
   overrides: RuntimeOverrides
 }
 
@@ -912,6 +915,14 @@ export function createContainer(options: ContainerOptions) {
     attachments.tools,
     new ImageTools({ images }),
     settingsTools,
+    new DaemonLogTools({
+      workspaceId,
+      path: options.daemonLogPath,
+      resolveBot: (ref) => store.bots.resolveRef(ref),
+      botName: (id) => store.bots.find(id)?.name ?? null,
+      now,
+      redact,
+    }),
   ]
   const tools = new ToolRegistry(toolProviders, redact)
 

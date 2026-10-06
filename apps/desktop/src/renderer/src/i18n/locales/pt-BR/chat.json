@@ -327,7 +327,9 @@
       "mcp_server_test": "Testou o servidor MCP “{{detail}}”",
       "mcp_server_test_empty": "Testou um servidor MCP",
       "mcp_server_connect": "Pediu login no servidor MCP “{{detail}}”",
-      "mcp_server_connect_empty": "Pediu login em um servidor MCP"
+      "mcp_server_connect_empty": "Pediu login em um servidor MCP",
+      "daemon_logs": "Leu o log do Milibot: {{detail}}",
+      "daemon_logs_empty": "Leu o log do Milibot"
     },
     "showDesign": "Ver design",
     "openDesign": "Abrir o design"

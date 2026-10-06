@@ -32,6 +32,8 @@ export interface WorkspaceRuntimeOptions {
   /** The workspace's "on close" setting; absent: no VM to manage. */
   closeBehavior?: () => CloseBehavior
   log?: LogFn
+  /** The daemon's log file `daemon_logs` reads; absent: none (the daemon runs from a terminal, tests). */
+  daemonLogPath?: string | null
   overrides?: RuntimeOverrides
 }
 
@@ -67,6 +69,7 @@ export function createWorkspaceRuntime(options: WorkspaceRuntimeOptions): Worksp
     enableCliEngines: options.enableCliEngines ?? false,
     closeBehavior: options.closeBehavior ?? null,
     log: options.log ?? (() => {}),
+    daemonLogPath: options.daemonLogPath ?? null,
     overrides: options.overrides ?? {},
   })
   return {

@@ -27,8 +27,13 @@ const nodeFs: LogFs = {
   },
 }
 
-/** Appends to `file`, first moving it to `<file>.1` (replacing the older one) once it passes `maxBytes`. */
-export function appendRotating(file: string, text: string, maxBytes: number, fs: LogFs = nodeFs): void {
+/** Moves `file` to `<file>.1` (replacing the older one) once it passes `maxBytes`. */
+export function rotateLog(file: string, maxBytes: number, fs: Pick<LogFs, 'size' | 'rename'> = nodeFs): void {
   if (fs.size(file) > maxBytes) fs.rename(file, `${file}.1`)
+}
+
+/** Appends to `file`, rotating it first (see `rotateLog`). */
+export function appendRotating(file: string, text: string, maxBytes: number, fs: LogFs = nodeFs): void {
+  rotateLog(file, maxBytes, fs)
   fs.append(file, text)
 }

@@ -35,6 +35,7 @@ export const READ_ONLY_HELPER_TOOLS: readonly ToolName[] = [
   'design_screenshot',
   ...BOARD_READ_TOOLS,
   'browser_snapshot',
+  'daemon_logs',
 ]
 
 /**

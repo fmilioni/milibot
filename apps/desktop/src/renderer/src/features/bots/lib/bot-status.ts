@@ -121,6 +121,7 @@ const ACTIVITY_KEYS = {
   mcp_server_remove: 'external',
   mcp_server_test: 'external',
   mcp_server_connect: 'external',
+  daemon_logs: 'files',
 } as const
 
 export type ActivityKey = (typeof ACTIVITY_KEYS)[keyof typeof ACTIVITY_KEYS]

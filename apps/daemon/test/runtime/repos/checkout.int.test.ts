@@ -86,6 +86,20 @@ describe('repo_checkout script', () => {
     expect(checkoutWarnings(info, 'main')).toEqual([])
   })
 
+  it('makes the worktree again from the remote branch when the local one was deleted', () => {
+    checkout()
+    const worktree = join(root, 'workspace/worktrees/app/ana')
+    const clone = join(root, 'workspace/repos/app')
+    writeFileSync(join(worktree, 'mine.txt'), 'mine')
+    run('git add -A && git commit -qm mine && git push -q origin HEAD', worktree)
+    const mine = head(worktree)
+    run(`git worktree remove ${worktree} && git branch -D bot/ana/work`, clone)
+
+    expect(checkout()).toMatchObject({ STATUS: 'created', BRANCH: 'bot/ana/work' })
+    expect(head(worktree)).toBe(mine)
+    expect(run('git rev-parse --abbrev-ref @{u}', worktree).trim()).toBe('origin/bot/ana/work')
+  })
+
   it('leaves a branch with commits of its own alone and says how far behind it is', () => {
     checkout()
     const worktree = join(root, 'workspace/worktrees/app/ana')

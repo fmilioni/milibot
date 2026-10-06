@@ -43,6 +43,9 @@ else
   git worktree prune
   if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
     git worktree add --quiet "$WT" "$BRANCH"
+  elif git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    # A worktree removed with its branch (its work was pushed) comes back from the remote one.
+    git worktree add --quiet --track -b "$BRANCH" "$WT" "origin/$BRANCH"
   elif git show-ref --verify --quiet "refs/remotes/origin/$BASE"; then
     git worktree add --quiet -b "$BRANCH" "$WT" "origin/$BASE"
   else

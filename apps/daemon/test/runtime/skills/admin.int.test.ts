@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { join } from 'node:path'
@@ -8,6 +8,7 @@ import type { FakeStep } from '@milibot/agent/testing'
 import type { BotMcpServer, BotSkill, McpServer, Message, Skill } from '@milibot/shared'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { ZipWriter } from '../../../src/util/zip'
 import { fakeGuest } from '../../support/fake-guest'
 import { bootRuntime, type RuntimeHarness, stopRuntimes } from '../../support/runtime-harness'
 import { useTempDir } from '../../support/temp'
@@ -207,6 +208,37 @@ describe('skill_import', () => {
     const pack = (await imported())[0] as Skill
     expect(pack).toMatchObject({ slug: 'pack', allowedBots: [h.botId] })
     expect(pack.origin).toMatchObject({ kind: 'zip', vmPath: '/workspace/pack.zip', path: 'pack' })
+  })
+
+  it('drops the scan and its copy when the zip cannot be read in full', async () => {
+    const dir = tempDir()
+    await boot([{ toolCalls: [{ name: 'skill_import', arguments: { source: '/workspace/forged.zip' } }] }], {
+      dir,
+    })
+    const path = join(tempDir(), 'forged.zip')
+    const zip = await ZipWriter.create(path)
+    await zip.addBuffer('pack/SKILL.md', Buffer.from(skillMd('pack')))
+    await zip.addBuffer('pack/data.txt', Buffer.alloc(4 * 1024 * 1024, 'a'), { deflate: true })
+    await zip.finish()
+    // The central directory claims 10 bytes for data.txt, which inflates to 4 MB.
+    const bytes = readFileSync(path)
+    bytes.writeUInt32LE(10, bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02])) + 24)
+    h.guest.state.files.set('/workspace/forged.zip', bytes)
+    h.guest.state.execResult = () => ({
+      code: 0,
+      signal: null,
+      stdout: `/workspace/forged.zip\n${bytes.length}\n`,
+      stderr: '',
+      truncated: {},
+      timedOut: false,
+      durationMs: 1,
+    })
+    await call('postMessage', { conversationId: h.dm }, { content: 'import the forged zip' })
+    await h.host.idle()
+    expect(toolResults()[0]).toMatch(/too large/)
+    expect((await messages()).some((m) => m.payload?.type === 'confirmation')).toBe(false)
+    const imports = join(dir, 'skills', '.imports')
+    expect(existsSync(imports) ? readdirSync(imports) : []).toEqual([])
   })
 })
 

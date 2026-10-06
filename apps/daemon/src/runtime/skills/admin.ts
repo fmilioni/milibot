@@ -127,13 +127,31 @@ export class SkillAdmin {
     this.assertManager(ctx.bot)
     const { importer } = this.deps.skills
     const { scan, pin } = await importer.scanForBot(input.source)
-    let keys: string[]
+    let card: { proposal: SkillProposal; details: SkillImportCardDetails }
     try {
-      keys = this.chosen(scan, input.names)
+      card = await this.importCard(scan, pin, input)
     } catch (err) {
       importer.discard(scan.scanId)
       throw err
     }
+    const source = pin.kind === 'github' ? `${pin.repo}@${pin.sha.slice(0, 7)}` : pin.vmPath
+    return this.propose(
+      ctx,
+      card.proposal,
+      { botId: ctx.bot.id, botName: ctx.bot.name, source },
+      card.details,
+      input.reason,
+    )
+  }
+
+  /** What the import card shows and what its approval installs; throws when the scan can't be offered. */
+  private async importCard(
+    scan: SkillImportScan,
+    pin: ScanPin,
+    input: { names: string[]; allowedBots: BotScope },
+  ): Promise<{ proposal: SkillProposal; details: SkillImportCardDetails }> {
+    const { importer } = this.deps.skills
+    const keys = this.chosen(scan, input.names)
     const all = await importer.digests(scan.scanId)
     const digests = Object.fromEntries(keys.map((k) => [k, all[k] as string]))
     const skillMds = importer.skillMds(scan.scanId)
@@ -164,14 +182,7 @@ export class SkillAdmin {
       digests,
       allowedBots: input.allowedBots,
     }
-    const source = pin.kind === 'github' ? `${pin.repo}@${pin.sha.slice(0, 7)}` : pin.vmPath
-    return this.propose(
-      ctx,
-      proposal,
-      { botId: ctx.bot.id, botName: ctx.bot.name, source },
-      details,
-      input.reason,
-    )
+    return { proposal, details }
   }
 
   /** Asks the user to approve turning skills on or off for a bot. */

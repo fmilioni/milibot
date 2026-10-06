@@ -62,7 +62,6 @@ export function SkillImportDetails({ details }: { details: string }) {
           ref: parsed.source.ref,
         })
       : parsed.source.path
-  const declared = [...new Set(parsed.skills.flatMap((s) => s.declaredTools ?? []))]
   return (
     <div className="flex flex-col gap-2 rounded-lg bg-surface-3 px-3 py-2 text-sm">
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
@@ -94,12 +93,14 @@ export function SkillImportDetails({ details }: { details: string }) {
                 ` · ${t('chat.confirmation.skills.renamed', { name: skill.importAs })}`}
             </span>
             {skill.hasScripts && <Warning text={t('chat.confirmation.skills.scripts')} />}
+            {!!skill.declaredTools?.length && (
+              <Warning
+                text={t('chat.confirmation.skills.declared', { families: skill.declaredTools.join(', ') })}
+              />
+            )}
           </li>
         ))}
       </ul>
-      {declared.length > 0 && (
-        <Warning text={t('chat.confirmation.skills.declared', { families: declared.join(', ') })} />
-      )}
     </div>
   )
 }

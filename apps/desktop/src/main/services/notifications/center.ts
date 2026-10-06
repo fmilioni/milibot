@@ -1,16 +1,8 @@
-import {
-  type ApiClient,
-  createApiClient,
-  WORKSPACE_EVENTS_PATH,
-  type WorkspaceEvent,
-  WorkspaceEventEnvelope,
-  type WorkspaceSummary,
-} from '@milibot/shared'
+import type { ApiClient, WorkspaceEvent } from '@milibot/shared'
 import { Notification } from 'electron'
-import WebSocket from 'ws'
 
-import type { DaemonConnection } from '../../../bridge/contract'
-import { type AppSettingsWatcher, backoff, parseFrame, socketUrl } from '../../app/settings'
+import type { AppSettingsWatcher } from '../../app/settings'
+import type { WorkspaceEventFeed } from '../workspace-events'
 import {
   classifyEvent,
   type GroupedNotification,
@@ -26,17 +18,9 @@ const GROUP_WINDOW_MS = 1_500
 
 export interface NotificationCenterDeps {
   settings: AppSettingsWatcher
+  feed: WorkspaceEventFeed
   focus(workspaceId: string): WorkspaceFocus
   open(workspaceId: string, conversationId: string): void
-}
-
-interface WorkspaceState {
-  name: string
-  socket: WebSocket | null
-  retry: number
-  timer: ReturnType<typeof setTimeout> | null
-  /** Bot names, loaded when the runtime first reports something worth a notification. */
-  bots: Map<string, string> | null
 }
 
 /**
@@ -45,101 +29,46 @@ interface WorkspaceState {
  * that is already running reports, so it never starts one.
  */
 export class NotificationCenter {
-  private client: ApiClient | null = null
-  private connection: DaemonConnection | null = null
-  private readonly workspaces = new Map<string, WorkspaceState>()
+  /** Bot names per workspace, loaded when its runtime first reports something worth a notification. */
+  private readonly botNamesByWorkspace = new Map<string, Map<string, string>>()
   private pending: NotifyCandidate[] = []
   private flushTimer: ReturnType<typeof setTimeout> | null = null
   /** Shown notifications keep their click handlers only while referenced. */
   private readonly shown = new Set<Notification>()
 
   constructor(private readonly deps: NotificationCenterDeps) {
-    deps.settings.onWorkspaces({
-      reset: (workspaces, connection) => this.reset(workspaces, connection),
-      upsert: (workspace) => this.track(workspace.id, workspace.name),
-      remove: (workspaceId) => this.drop(workspaceId),
+    deps.feed.subscribe({
+      event: (workspaceId, event) => void this.handle(workspaceId, event),
+      removed: (workspaceId) => this.botNamesByWorkspace.delete(workspaceId),
     })
   }
 
-  private reset(workspaces: WorkspaceSummary[], connection: DaemonConnection): void {
-    this.connection = connection
-    this.client = createApiClient(connection)
-    const ids = new Set(workspaces.map((w) => w.id))
-    for (const id of [...this.workspaces.keys()]) if (!ids.has(id)) this.drop(id)
-    for (const workspace of workspaces) this.track(workspace.id, workspace.name)
-    for (const [id, state] of this.workspaces) if (!state.socket) this.connectWorkspace(id)
-  }
-
-  private track(workspaceId: string, name: string): void {
-    const current = this.workspaces.get(workspaceId)
-    if (current) {
-      current.name = name
-      return
-    }
-    this.workspaces.set(workspaceId, { name, socket: null, retry: 0, timer: null, bots: null })
-    this.connectWorkspace(workspaceId)
-  }
-
-  private drop(workspaceId: string): void {
-    const state = this.workspaces.get(workspaceId)
-    if (!state) return
-    this.workspaces.delete(workspaceId)
-    if (state.timer) clearTimeout(state.timer)
-    state.socket?.close()
-  }
-
-  private connectWorkspace(workspaceId: string): void {
-    const state = this.workspaces.get(workspaceId)
-    if (!state || !this.connection) return
-    if (state.timer) clearTimeout(state.timer)
-    state.timer = null
-    const previous = state.socket
-    const socket = new WebSocket(
-      socketUrl(this.connection, WORKSPACE_EVENTS_PATH.replace(':workspaceId', workspaceId)),
-    )
-    state.socket = socket
-    previous?.close()
-    socket.on('open', () => {
-      state.retry = 0
-    })
-    socket.on('message', (data) => {
-      const parsed = WorkspaceEventEnvelope.safeParse(parseFrame(data))
-      if (parsed.success) void this.handle(workspaceId, parsed.data.event)
-    })
-    socket.on('error', () => undefined)
-    socket.on('close', (code) => {
-      if (state.socket !== socket) return
-      state.socket = null
-      // 4404: the workspace no longer exists.
-      if (code === 4404 || this.workspaces.get(workspaceId) !== state) return
-      state.timer = setTimeout(() => this.connectWorkspace(workspaceId), backoff(state.retry++))
-    })
-  }
-
-  private async botNames(workspaceId: string, state: WorkspaceState): Promise<Map<string, string>> {
-    if (state.bots) return state.bots
-    const bots = await (this.client as ApiClient).call('listBots', { params: { workspaceId } })
-    state.bots = new Map(bots.map((b) => [b.id, b.name]))
-    return state.bots
+  private async botNames(client: ApiClient, workspaceId: string): Promise<Map<string, string>> {
+    const known = this.botNamesByWorkspace.get(workspaceId)
+    if (known) return known
+    const bots = await client.call('listBots', { params: { workspaceId } })
+    const names = new Map(bots.map((b) => [b.id, b.name]))
+    this.botNamesByWorkspace.set(workspaceId, names)
+    return names
   }
 
   private async handle(workspaceId: string, event: WorkspaceEvent): Promise<void> {
-    const state = this.workspaces.get(workspaceId)
-    if (!state) return
     if (event.type === 'bot.created' || event.type === 'bot.updated')
-      state.bots?.set(event.payload.bot.id, event.payload.bot.name)
-    if (event.type === 'runtime.status' && event.payload.status !== 'running') state.bots = null
-    if (!isNotificationCandidate(event) || !this.client) return
+      this.botNamesByWorkspace.get(workspaceId)?.set(event.payload.bot.id, event.payload.bot.name)
+    if (event.type === 'runtime.status' && event.payload.status !== 'running')
+      this.botNamesByWorkspace.delete(workspaceId)
+    const client = this.deps.feed.client
+    if (!isNotificationCandidate(event) || !client) return
     try {
-      const names = await this.botNames(workspaceId, state)
+      const names = await this.botNames(client, workspaceId)
       const candidate = classifyEvent(event, {
         workspaceId,
         language: this.deps.settings.language,
         botName: (id) => names.get(id) ?? null,
-        workspaceName: state.name,
+        workspaceName: this.deps.feed.workspaceName(workspaceId) ?? '',
       })
       if (!candidate) return
-      const preferences = await this.client.call('getWorkspacePreferences', { params: { workspaceId } })
+      const preferences = await client.call('getWorkspacePreferences', { params: { workspaceId } })
       const decision = shouldNotify(
         candidate,
         {

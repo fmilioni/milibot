@@ -8,6 +8,7 @@ import { DaemonManager } from './daemon/manager'
 import { registerIpc } from './ipc/register'
 import { NotificationCenter } from './services/notifications/center'
 import { VncBridge } from './services/vnc-bridge'
+import { WorkspaceEventFeed } from './services/workspace-events'
 import { applyPermissionPolicy } from './windows/permissions'
 import { workspaceFocus } from './windows/registry'
 import { showConversation } from './windows/workspace'
@@ -32,8 +33,10 @@ function startApp(): void {
       (await (await daemon.client()).call('getBotDisplay', { params: target })).vncPort,
   })
   registerIpc({ daemon, vncBridge, settings })
+  const feed = new WorkspaceEventFeed(settings)
   new NotificationCenter({
     settings,
+    feed,
     focus: workspaceFocus,
     open: (workspaceId, conversationId) =>
       void daemon

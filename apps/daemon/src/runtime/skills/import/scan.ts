@@ -130,7 +130,8 @@ export function zipFiles(
       size: entry.size,
       executable: (entry.mode & 0o111) !== 0,
       read: async () => {
-        const data = await reader.read(entry.name)
+        // The declared size bounds inflation: a forged small size cannot expand into a zip bomb.
+        const data = await reader.read(entry.name, { maxBytes: entry.size })
         if (data.length !== entry.size) throw new Error(`${path} is corrupted`)
         return data
       },

@@ -28,6 +28,33 @@ describe('Modal', () => {
     expect(document.activeElement).toBe(save)
   })
 
+  it('still closes on Escape when the focused control went away and focus fell to the page', () => {
+    const onClose = renderModal()
+    ;(document.activeElement as HTMLElement).blur()
+    expect(document.activeElement).toBe(document.body)
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves Escape on the page to the topmost dialog only', () => {
+    const below = vi.fn()
+    const above = vi.fn()
+    render(
+      <>
+        <Modal title="Below" width={400} onClose={below}>
+          <input aria-label="Below" />
+        </Modal>
+        <Modal title="Above" width={400} onClose={above}>
+          <input aria-label="Above" />
+        </Modal>
+      </>,
+    )
+    ;(document.activeElement as HTMLElement).blur()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(above).toHaveBeenCalledTimes(1)
+    expect(below).not.toHaveBeenCalled()
+  })
+
   it('closes on Escape unless a child already handled it', () => {
     const onClose = renderModal()
     const input = screen.getByRole('textbox', { name: 'Name' })

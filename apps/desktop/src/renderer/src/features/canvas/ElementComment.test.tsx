@@ -110,8 +110,33 @@ describe('useElementComment', () => {
     const key = (init: KeyboardEventInit) =>
       act(() => void window.dispatchEvent(new KeyboardEvent('keydown', init)))
     const tag = () => hook.result.current.picked?.element.tagName
-    return { hook, click, key, tag }
+    return { hook, click, key, tag, doc }
   }
+
+  it('follows the picked element into the page that replaced it', () => {
+    const { click, tag, hook, doc } = setup()
+    click()
+    const next = document.implementation.createHTMLDocument('')
+    next.body.innerHTML = '<nav><ul><li><a>Home 2</a></li></ul></nav>'
+    ;(next.querySelector('a') as Element).getBoundingClientRect = () => new DOMRect(4, 6, 120, 30)
+    pageDoc.current = next
+    expect(doc.querySelector('a')?.isConnected).toBe(true)
+    act(() => hook.result.current.onFrameLoad('frm_1'))
+    expect(tag()).toBe('A')
+    expect(hook.result.current.picked?.element.ownerDocument).toBe(next)
+    expect(hook.result.current.picked?.element.textContent).toBe('Home 2')
+    expect(hook.result.current.picked?.box).toMatchObject({ width: 120, height: 30 })
+  })
+
+  it('lets go when the picked element is gone from the new page', () => {
+    const { click, hook } = setup()
+    click()
+    const next = document.implementation.createHTMLDocument('')
+    next.body.innerHTML = '<main><p>Other</p></main>'
+    pageDoc.current = next
+    act(() => hook.result.current.onFrameLoad('frm_1'))
+    expect(hook.result.current.picked).toBeNull()
+  })
 
   it('picks the deepest element, goes up with Alt+↑ and back with Alt+↓', () => {
     const { click, key, tag } = setup()

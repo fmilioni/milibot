@@ -196,7 +196,11 @@ export function useElementComment({
     if (hover?.frameId === frameId) setHover(null)
     if (picked?.frameId !== frameId) return
     const doc = frameDocument(frameId)
-    const element = picked.element.isConnected ? picked.element : doc && relocate(picked.element, doc)
+    // The old document stays alive after the iframe swaps it, so its elements still read as connected.
+    const element =
+      doc && picked.element.ownerDocument === doc && picked.element.isConnected
+        ? picked.element
+        : doc && relocate(picked.element, doc)
     if (!element) setPicked(null)
     else
       setPicked({

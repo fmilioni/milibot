@@ -17,7 +17,7 @@ export interface PersonaEditScope {
   reread: string
 }
 
-export const OWN_PERSONA: PersonaEditScope = {
+const OWN_PERSONA: PersonaEditScope = {
   fullKey: 'new_persona',
   subject: 'your current role section',
   reread: 'Copy it exactly from your instructions',

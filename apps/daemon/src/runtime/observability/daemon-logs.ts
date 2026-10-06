@@ -17,7 +17,7 @@ const DEFAULT_SINCE_MS = 60 * 60_000
 const DEFAULT_LIMIT = 200
 const MAX_LIMIT = 1000
 /** Bytes read back from the end at most per call: the file of a long-running daemon has many MB. */
-export const MAX_READ_BYTES = 20 * 1024 * 1024
+const MAX_READ_BYTES = 20 * 1024 * 1024
 const CHUNK_BYTES = 256 * 1024
 const MAX_VALUE_CHARS = 300
 
@@ -45,7 +45,7 @@ const SECRET_PATTERNS: Array<[RegExp, string]> = [
   [/\bAIza[0-9A-Za-z_-]{30,}/g, '[REDACTED]'],
 ]
 
-export function redactLogText(text: string): string {
+function redactLogText(text: string): string {
   let out = text
   for (const [pattern, replacement] of SECRET_PATTERNS) out = out.replace(pattern, replacement)
   return out
@@ -69,7 +69,7 @@ interface Query {
   supervisor: boolean
 }
 
-export function parseSince(value: string | undefined, now: number): number {
+function parseSince(value: string | undefined, now: number): number {
   if (!value) return now - DEFAULT_SINCE_MS
   const duration = DURATION.exec(value.trim())
   if (duration) return now - Number(duration[1]) * (UNIT_MS[(duration[2] as string).toLowerCase()] ?? 0)

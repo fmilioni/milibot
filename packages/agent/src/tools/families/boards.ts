@@ -1,4 +1,4 @@
-import { BoardCardLinkKind, BoardCardStatus } from '@milibot/shared'
+import { BOARD_LABEL_COLORS, BoardCardLinkKind, BoardCardStatus } from '@milibot/shared'
 
 import type { ToolDefinition } from '../../llm/provider'
 import { defineTools, namedRef, scalarText } from './kit'
@@ -12,7 +12,7 @@ const DUE = { type: 'string', description: 'YYYY-MM-DD; "" clears it.' } as cons
 const NAMES = { type: 'array', items: STR } as const
 const NEW_CARD = {
   type: 'object',
-  properties: { title: STR, summary: STR, body: STR, due: STR },
+  properties: { title: STR, summary: STR, body: STR, due: STR, labels: NAMES },
   required: ['title'],
 } as const
 
@@ -84,6 +84,20 @@ const definitions = {
       },
     },
   },
+  board_label_write: {
+    name: 'board_label_write',
+    description: "Rename or recolor a board's label, or add one with a color.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        board: STR,
+        label: { type: 'string', description: 'Label name or id; a new name adds the label.' },
+        name: STR,
+        color: { type: 'string', enum: [...BOARD_LABEL_COLORS] },
+      },
+      required: ['board', 'label'],
+    },
+  },
   board_card_get: {
     name: 'board_card_get',
     description: 'A card with its body, links and comments.',
@@ -141,6 +155,8 @@ export const boardTools = defineTools({
           kind: name,
           detail: view.clip(scalarText(a.title), 60) || namedRef(scalarText(a.card), BOARD_ID, view),
         }
+      case 'board_label_write':
+        return { kind: name, detail: view.clip(scalarText(a.name) || scalarText(a.label), 60) }
       case 'board_card_get':
       case 'board_comment':
       case 'board_link':
@@ -156,6 +172,7 @@ export const boardTools = defineTools({
     board_update: 'changed board',
     board_delete: 'deleted board',
     board_card_write: 'wrote card',
+    board_label_write: 'wrote label',
     board_card_get: 'read card',
     board_comment: 'commented on card',
     board_link: 'linked to card',

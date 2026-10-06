@@ -111,6 +111,7 @@ const ACTIVITY_KEYS = {
   board_update: 'plans',
   board_delete: 'plans',
   board_card_write: 'plans',
+  board_label_write: 'plans',
   board_card_get: 'plans',
   board_comment: 'plans',
   board_link: 'plans',

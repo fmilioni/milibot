@@ -302,6 +302,8 @@
       "board_delete_empty": "Deleted a board",
       "board_card_write": "Wrote the card “{{detail}}”",
       "board_card_write_empty": "Wrote a card",
+      "board_label_write": "Changed the label “{{detail}}”",
+      "board_label_write_empty": "Changed a label",
       "board_card_get": "Read the card “{{detail}}”",
       "board_card_get_empty": "Read a card",
       "board_comment": "Commented on the card “{{detail}}”",

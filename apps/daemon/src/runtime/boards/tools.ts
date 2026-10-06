@@ -12,11 +12,14 @@ import {
 } from '@milibot/agent/tools'
 import {
   BOARD_CARD_STATUSES,
+  BOARD_LABEL_COLORS,
   BOARD_LIMITS,
   BOARD_USER,
   type BoardCardLink,
   BoardCardLinkKind,
   BoardCardStatus,
+  type BoardLabel,
+  BoardLabelColor,
   type Bot,
   columnCards,
   DueDate,
@@ -66,6 +69,19 @@ function wholeNumber(value: unknown, name: string): number | null | undefined {
   return n
 }
 
+function labelColor(value: unknown): BoardLabelColor | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+  const color = BoardLabelColor.safeParse(trimmedString(value).toLowerCase())
+  if (!color.success) throw new ToolInputError(`"color" must be one of: ${BOARD_LABEL_COLORS.join(', ')}`)
+  return color.data
+}
+
+function labelName(value: unknown, name: string): string | undefined {
+  const text = clipped(value, BOARD_LIMITS.labelName, name)
+  if (text === '') throw new ToolInputError(`"${name}" cannot be empty`)
+  return text
+}
+
 function nameList(value: unknown, name: string): string[] | undefined {
   if (value === undefined || value === null) return undefined
   const items = typeof value === 'string' ? (value.trim() ? value.split(',') : []) : value
@@ -93,6 +109,7 @@ export class BoardTools extends ToolSwitch {
     board_update: (_ctx, a) => this.update(a),
     board_delete: (_ctx, a) => this.remove(a),
     board_card_write: (ctx, a) => this.writeCard(ctx, a),
+    board_label_write: (_ctx, a) => this.writeLabel(a),
     board_card_get: (_ctx, a) => this.getCard(a),
     board_comment: (ctx, a) => this.comment(ctx, a),
     board_link: (ctx, a) => this.link(ctx, a),
@@ -176,7 +193,7 @@ export class BoardTools extends ToolSwitch {
     } else projectId = this.deps.projects.current(ctx.conversationId)?.id ?? null
     const rawCards = a.cards === undefined || a.cards === null ? [] : a.cards
     if (!Array.isArray(rawCards))
-      throw new ToolInputError('"cards" must be a list of {title, summary?, body?, due?}')
+      throw new ToolInputError('"cards" must be a list of {title, summary?, body?, due?, labels?}')
     if (rawCards.length > MAX_NEW_CARDS) throw new ToolInputError(`at most ${MAX_NEW_CARDS} cards at once`)
     const cards = rawCards.map((raw, i) => {
       const c = (raw && typeof raw === 'object' ? raw : { title: raw }) as ToolArgs
@@ -187,8 +204,12 @@ export class BoardTools extends ToolSwitch {
         summary: clipped(c.summary, BOARD_LIMITS.summary, `cards[${i}].summary`) ?? '',
         body: clipped(c.body, BOARD_LIMITS.body, `cards[${i}].body`) ?? '',
         dueDate: parseDue(c.due) ?? null,
+        labels: nameList(c.labels, `cards[${i}].labels`) ?? [],
       }
     })
+    const labelCount = new Set(cards.flatMap((c) => c.labels.map((l) => l.toLowerCase()))).size
+    if (labelCount > BOARD_LIMITS.labels)
+      throw new ToolInputError(`A board has at most ${BOARD_LIMITS.labels} labels.`)
     const board = this.boards.createBoard({
       title,
       summary,
@@ -200,12 +221,14 @@ export class BoardTools extends ToolSwitch {
     })
     const problems: string[] = []
     const created: CardRow[] = []
-    for (const card of cards) {
+    for (const { labels, ...card } of cards) {
       const imported = await this.boards.images.importMarkdown(board, card.body)
       problems.push(...imported.problems)
+      const labelIds = this.labelIds(board.id, labels)
       created.push(
         this.boards.addCard(board.id, {
           ...card,
+          ...(labelIds?.length ? { labelIds } : {}),
           body: imported.text,
           status: 'todo',
           createdByBotId: ctx.bot.id,
@@ -251,7 +274,9 @@ export class BoardTools extends ToolSwitch {
         `${board.counts.done}/${total - board.counts.dropped} done · project ${this.projectName(row.project_id)}` +
         `${this.dueText(row.due_date, board.status)} · by ${author}`,
       ...(row.summary ? [row.summary] : []),
-      ...(board.labels.length ? [`Labels: ${board.labels.map((l) => l.name).join(', ')}`] : []),
+      ...(board.labels.length
+        ? [`Labels: ${board.labels.map((l) => `${l.name} (${l.color})`).join(', ')}`]
+        : []),
     ]
     for (const status of BOARD_CARD_STATUSES) {
       const column = columnCards(cards, status)
@@ -354,6 +379,49 @@ export class BoardTools extends ToolSwitch {
         throw new ToolInputError(`"labels": "${name}" is longer than ${BOARD_LIMITS.labelName} characters`)
       return (this.store.labelByName(boardId, name) ?? this.boards.addLabel(boardId, name)).id
     })
+  }
+
+  /** A board label by id or name, folded like every other name. */
+  private findLabel(boardId: string, ref: string): BoardLabel | null {
+    const labels = this.store.labels(boardId)
+    const key = foldKey(ref)
+    return labels.find((l) => l.id === ref) ?? labels.find((l) => foldKey(l.name) === key) ?? null
+  }
+
+  private writeLabel(a: ToolArgs): ToolResult {
+    const board = this.boards.resolveBoard(textArg(a, 'board'), true)
+    const ref = labelName(a.label, 'label')
+    if (!ref) throw new ToolInputError('"label" is required (the label\'s name or id)')
+    const name = labelName(a.name, 'name')
+    const color = labelColor(a.color)
+    const existing = this.findLabel(board.id, ref)
+    if (!existing) {
+      if (name !== undefined && foldKey(name) !== foldKey(ref))
+        throw new ToolInputError(
+          `"${board.title}" has no label "${ref}" to rename (its labels: ${
+            this.store
+              .labels(board.id)
+              .map((l) => l.name)
+              .join(', ') || 'none'
+          })`,
+        )
+      const label = this.boards.addLabel(board.id, name ?? ref, color)
+      return toolText(`Added the label "${label.name}" (${label.color}) to "${board.title}".`, false, {
+        detail: label.name,
+      })
+    }
+    if (name === undefined && color === undefined)
+      throw new ToolInputError('pass "name" or "color" to change the label')
+    const label = this.boards.updateLabel(board.id, existing.id, {
+      ...(name !== undefined ? { name } : {}),
+      ...(color !== undefined ? { color } : {}),
+    })
+    const renamed = label.name !== existing.name ? ` renamed to "${label.name}"` : ''
+    return toolText(
+      `Updated the label "${existing.name}"${renamed} (${label.color}) on "${board.title}".`,
+      false,
+      { detail: label.name },
+    )
   }
 
   private assigneeNames(assignees: readonly string[]): string {

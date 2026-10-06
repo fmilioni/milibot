@@ -85,13 +85,19 @@ export function appendToThread(
   }
 }
 
-/** The conversation a bot's message places its "working" row in (null: already there). */
+/**
+ * The conversation a bot's message places its "working" row in (null: already there, or the message
+ * says nothing about the chat it works in). Session messages come from a lane running in parallel with
+ * the chat's, and activity cards update on every action: the lane's own `bot.status` places those.
+ */
 export function noteBotConversation(
   botConversation: Record<string, string | undefined>,
   message: Message,
+  conversation: ConversationSummary | undefined,
 ): Record<string, string | undefined> | null {
   const botId = message.authorBotId
-  if (!botId || botConversation[botId] === message.conversationId) return null
+  if (!botId || message.kind === 'activity' || conversation?.type === 'session') return null
+  if (botConversation[botId] === message.conversationId) return null
   return { ...botConversation, [botId]: message.conversationId }
 }
 

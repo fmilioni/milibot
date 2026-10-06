@@ -208,6 +208,30 @@ describe('applyWorkspaceEvent', () => {
     })
   })
 
+  it('keeps a bot busy in its DM placed there when its parallel session updates its activity', () => {
+    const s = state({
+      bots: { b1: bot('b1', 1, 'working'), b2: bot('b2', 2) },
+      botConversation: { b1: 'dm1' },
+      conversations: { ...state().conversations, ses1: conversation('ses1', 'session', ['b1']) },
+    })
+    const activity = message('a1', { conversationId: 'ses1', kind: 'activity' })
+    const created = apply(s, { type: 'message.created', payload: { message: activity } })
+    const updated = apply(created, { type: 'message.updated', payload: { message: activity } })
+    const text = apply(updated, {
+      type: 'message.created',
+      payload: { message: message('t1', { conversationId: 'ses1' }) },
+    })
+    expect(text.botConversation).toEqual({ b1: 'dm1' })
+  })
+
+  it('does not move a bot on its own activity cards (its lane status places it)', () => {
+    const next = apply(state({ botConversation: { b1: 'dm1' } }), {
+      type: 'message.updated',
+      payload: { message: message('a1', { conversationId: 'group', kind: 'activity' }) },
+    })
+    expect(next.botConversation).toEqual({ b1: 'dm1' })
+  })
+
   it('replaces, streams into and removes messages in threads and previews', () => {
     const m1 = message('m1', { content: 'Hel' })
     const s = state({

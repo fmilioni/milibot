@@ -32,7 +32,7 @@ interface ListedWorktree {
 }
 
 /** `git worktree list --porcelain`: the worktrees that exist, by path; null when the output is not one. */
-export function parseWorktreeList(stdout: string, mainPath: string): Map<string, ListedWorktree> | null {
+function parseWorktreeList(stdout: string, mainPath: string): Map<string, ListedWorktree> | null {
   const out = new Map<string, ListedWorktree>()
   for (const block of stdout.split(/\n\s*\n/)) {
     const lines = block.split('\n').map((l) => l.trim())

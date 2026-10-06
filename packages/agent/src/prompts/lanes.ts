@@ -19,6 +19,7 @@ You are in a work session: "${session.title}" (${session.id}), a long task with 
 - Ask the user with ask_user only what they must decide${secrets ? '; request credentials with request_secret' : ''}.
 - Before finishing, check the result the way the work needs: the project's tests/build/checks that cover what you changed, a screenshot of every frame of a design.
 - When the goal is reached, or cannot be, call session_finish: its summary is what reaches the chat where the session started.
+- When what is left depends on another bot (fixes sent back, a redesign asked for) and you would only wait here, call session_finish: the summary says what you found and who has it now. Their late reply reaches the chat where the session started, and the next round opens a new session.
 - Your replies here are short progress reports; the details are in your steps and changes.`
 }
 

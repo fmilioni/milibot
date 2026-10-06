@@ -151,6 +151,8 @@ function ChangedFiles({
     readSessionPref('diffMode') === 'unified' ? 'unified' : 'split',
   )
   const files = useMemo(() => filterChangedFiles(data.files, query), [data.files, query])
+  // Kept while a filter is typed, even if the list shrinks under the threshold meanwhile.
+  const filterShown = data.files.length > 6 || query !== ''
 
   const toggle = (path: string) => {
     setOpen((current) => {
@@ -213,19 +215,19 @@ function ChangedFiles({
         </Centered>
       ) : (
         <>
-          {/* Kept while a filter is typed, even if the list shrinks under the threshold meanwhile. */}
-          {(data.files.length > 6 || query) && (
+          {filterShown && (
             <SearchInput
               value={query}
               onChange={setQuery}
               placeholder={t('session.changes.filter')}
-              className="shrink-0 px-4 pt-2.5"
+              className="shrink-0 px-4 py-2.5"
             />
           )}
           {/* The scroller has no padding of its own: an open file's sticky header sits flush at its top, with no
               strip where the code scrolling under it shows through. */}
           <div ref={setList} className={embedded ? undefined : 'scroll-slim min-h-0 flex-1 overflow-y-auto'}>
-            <ul className="py-1.5">
+            {/* Under the filter the gap comes from its own padding, so it stays the same once a header sticks. */}
+            <ul className={filterShown ? 'pb-1.5' : 'py-1.5'}>
               {files.map((file) => (
                 <FileRow
                   key={file.path}
@@ -275,8 +277,11 @@ function FileRow({
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          'focus-ring group flex w-full items-center gap-2.5 py-1.5 pr-4 pl-2 text-left hover:bg-surface-3/60',
-          open && 'sticky top-0 z-sticky bg-surface-2',
+          'focus-ring group flex w-full items-center gap-2.5 py-1.5 pr-4 pl-2 text-left',
+          // The sticky header covers the code scrolling under it, so its hover tint is pre-blended to stay opaque.
+          open
+            ? 'sticky top-0 z-sticky bg-surface-2 hover:bg-[color-mix(in_srgb,var(--surface-3)_60%,var(--surface-2))]'
+            : 'hover:bg-surface-3/60',
         )}
       >
         <Chevron size={13} className="shrink-0 text-fg-muted" aria-hidden />

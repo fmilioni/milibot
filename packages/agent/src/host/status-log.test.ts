@@ -70,4 +70,28 @@ describe('status log', () => {
     ])
     expect(env.logs.every((l) => l.level === 'info' || !RECORDS.has(l.message))).toBe(true)
   })
+
+  it('records a tool call outside any turn, and its lane going back to idle, as out_of_turn_call', async () => {
+    const { bot, host, records } = await setup()
+    const base = { botId: bot.id, botName: bot.name }
+    await host.runTool(bot.id, null, { id: 'mcp_1', name: 'bash', arguments: { command: 'true' } })
+    expect(records().filter((r) => r.message === 'bot.status')).toEqual([
+      {
+        message: 'bot.status',
+        ...base,
+        lane: bot.id,
+        from: 'idle',
+        to: 'working',
+        reason: 'out_of_turn_call',
+      },
+      {
+        message: 'bot.status',
+        ...base,
+        lane: bot.id,
+        from: 'working',
+        to: 'idle',
+        reason: 'out_of_turn_call',
+      },
+    ])
+  })
 })

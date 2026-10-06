@@ -307,8 +307,8 @@ export interface ActivePlan {
 
 /** A bot's work that outlives a turn, as every one of its conversations sees it. */
 export interface BotWorkState {
-  /** Work sessions not ended yet. */
-  sessions: Array<{ id: string; conversationId: string; title: string }>
+  /** Work sessions not ended yet, with when their conversation last had a message (their last turn). */
+  sessions: Array<{ id: string; conversationId: string; title: string; idleSince?: number }>
   /** Plans awaiting approval, approved or being carried out. */
   plans: Array<{ id: string; title: string; status: string }>
 }

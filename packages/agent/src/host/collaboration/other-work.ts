@@ -1,6 +1,7 @@
 import { type Bot, clipLine, firstBot, SET_ASIDE_MAX_WAKES } from '@milibot/shared'
 
 import type { SetAsideEntry, ToolResult } from '../../environment'
+import { localStamp } from '../../memory/compaction'
 import { botStateNote, idleWatchNote, setAsideDoneNote } from '../../prompts/notes'
 import { setAsideReplies } from '../../prompts/tool-replies'
 import { argsObject, trimmedString } from '../../tools/args'
@@ -20,9 +21,18 @@ interface BusyLane {
 interface OpenSession {
   conversationId: string
   title: string
+  idleSince: number | null
 }
 
 const sessionLabel = (session: OpenSession) => `your work session "${session.title}"`
+
+/** The label with how long the session has waited: a forgotten one stands out. */
+function idleSessionLine(session: OpenSession, now: number): string {
+  if (session.idleSince === null) return `${sessionLabel(session)} (no turn running)`
+  const stamp = localStamp(session.idleSince)
+  const since = stamp.slice(0, 10) === localStamp(now).slice(0, 10) ? stamp.slice(11) : stamp
+  return `${sessionLabel(session)} (idle since ${since}, no turn running)`
+}
 
 /** How long a bot whose wake did not run (an error, a usage limit, a stop) waits before the next one. */
 const RETRY_WAKE_MS = 5 * 60_000
@@ -139,7 +149,7 @@ export class OtherWork {
       .env()
       .workState(botId)
       .sessions.filter((s) => !working.has(s.conversationId))
-      .map((s) => ({ conversationId: s.conversationId, title: s.title }))
+      .map((s) => ({ conversationId: s.conversationId, title: s.title, idleSince: s.idleSince ?? null }))
   }
 
   /** Nothing of the bot runs or waits to run and none of its sessions is open. */
@@ -168,7 +178,7 @@ export class OtherWork {
     const now = env.now()
     return botStateNote({
       running: this.busyLanes(botId, laneKey).map((b) => b.line),
-      openSessions: this.openSessions(botId).map(sessionLabel),
+      openSessions: this.openSessions(botId).map((s) => idleSessionLine(s, now)),
       plans: env.workState(botId).plans.map((p) => `"${p.title}" (${p.status.replace('_', ' ')})`),
       // The request this turn may be the wake of is not set aside anymore as far as the bot is concerned.
       setAside: env.setAside

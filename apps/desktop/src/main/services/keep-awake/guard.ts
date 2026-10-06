@@ -10,7 +10,7 @@ export const RESYNC_INTERVAL_MS = 60_000
 export const SYNC_TIMEOUT_MS = 10_000
 
 /** Electron's `powerSaveBlocker`, narrowed to what the guard uses. */
-export interface PowerBlocker {
+interface PowerBlocker {
   start(type: 'prevent-app-suspension'): number
   stop(id: number): void
 }

@@ -56,6 +56,7 @@ const ACTIVITY_KEYS = {
   report_task: 'repo',
   share_file: 'files',
   list_bots: 'team',
+  get_bot: 'team',
   create_bot: 'team',
   update_bot: 'team',
   set_model: 'team',

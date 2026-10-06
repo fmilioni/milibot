@@ -252,6 +252,8 @@
       "browser_tab_close": "Fechou a aba “{{detail}}”",
       "browser_tab_close_empty": "Fechou uma aba",
       "list_bots": "Consultou a equipe",
+      "get_bot": "Leu o papel de {{detail}}",
+      "get_bot_empty": "Leu o papel de um bot",
       "update_bot": "Atualizou o bot {{detail}}",
       "update_bot_empty": "Atualizou um bot",
       "repo_checkout": "Preparou o repositório {{detail}}",

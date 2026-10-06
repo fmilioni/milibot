@@ -79,8 +79,11 @@ export function AppUpdateCard() {
         onClick={() => void requestInstall()}
         className="focus-ring flex min-w-0 flex-1 flex-col items-start rounded text-left disabled:cursor-default"
       >
-        <span className="truncate text-sm font-semibold text-fg">{t('footer.appUpdate.title')}</span>
-        <span className="truncate text-sm text-accent">
+        <span className="max-w-full truncate text-sm font-semibold text-fg">
+          {t('footer.appUpdate.title')}
+        </span>
+        {/* Wraps instead of truncating: the version is the point of the line. */}
+        <span className="max-w-full text-sm text-accent">
           {installing ? t('footer.appUpdate.installing') : t('footer.appUpdate.link', { version })}
         </span>
       </button>

@@ -228,10 +228,10 @@ export function buildConfig({
       icon: join(desktop, 'build/icon.icns'),
       minimumSystemVersion: '13.0',
       darkModeSupport: true,
+      // The zip's name (the dmg has its own): the updater installs macOS updates from it.
+      artifactName: 'Milibot-${version}-${arch}-mac.${ext}',
       ...signingConfig(ctx),
     },
-    // The updater installs macOS updates from the zip (the dmg is for the first install).
-    zip: { artifactName: 'Milibot-${version}-${arch}-mac.${ext}' },
     dmg: {
       artifactName: 'Milibot-${version}-${arch}.${ext}',
       title: 'Milibot ${version}',

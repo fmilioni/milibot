@@ -16,7 +16,7 @@ interface PackageConfigModule {
   ): { version: string; milibot: { autoUpdate: boolean } }
   buildConfig(input: Record<string, unknown>): {
     publish: unknown
-    zip: { artifactName: string }
+    mac: { artifactName: string }
     dmg: { artifactName: string }
   }
 }
@@ -50,9 +50,9 @@ describe('update feed of the package', () => {
   })
 
   it('names the macOS zip apart from the dmg', () => {
-    const { zip, dmg } = build('darwin')
-    expect(zip.artifactName).toBe('Milibot-${version}-${arch}-mac.${ext}')
-    expect(zip.artifactName).not.toBe(dmg.artifactName)
+    const { mac, dmg } = build('darwin')
+    expect(mac.artifactName).toBe('Milibot-${version}-${arch}-mac.${ext}')
+    expect(dmg.artifactName).toBe('Milibot-${version}-${arch}.${ext}')
   })
 
   it('turns the updater on for Windows and Linux, and on macOS only with a Developer ID', () => {

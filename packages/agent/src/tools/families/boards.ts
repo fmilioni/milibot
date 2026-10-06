@@ -44,10 +44,18 @@ const definitions = {
   },
   board_update: {
     name: 'board_update',
-    description: 'Change a board; archived true hides it.',
+    description: 'Change a board; archived true hides it; position reorders the list of boards.',
     inputSchema: {
       type: 'object',
-      properties: { board: STR, title: STR, summary: STR, due: DUE, archived: BOOL },
+      properties: {
+        board: STR,
+        title: STR,
+        summary: STR,
+        due: DUE,
+        archived: BOOL,
+        position: { type: 'integer', minimum: 0, description: '0 = top of the list of boards.' },
+        doing_limit: { type: 'integer', minimum: 0, maximum: 50, description: '0 removes it.' },
+      },
       required: ['board'],
     },
   },
@@ -58,7 +66,8 @@ const definitions = {
   },
   board_card_write: {
     name: 'board_card_write',
-    description: 'Add a card (board) or change one (card): text, status, due date, place, assignees, labels.',
+    description:
+      'Add a card (board) or change one (card): text, status, due date, place, assignees, labels; card + another board moves it there.',
     inputSchema: {
       type: 'object',
       properties: {

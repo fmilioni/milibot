@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 
 import { handleDialogKeys } from './dialog-keys'
+import { hasLayerAbove } from './floating/layers'
 import { Tooltip } from './Tooltip'
 
 interface ModalProps {
@@ -55,6 +56,24 @@ export function Modal({
     first?.focus()
     return () => previous?.focus?.()
   }, [])
+
+  // A focused control that unmounts (a closed editor) drops focus to the page, out of the dialog's own keydown.
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      const root = ref.current
+      if (event.key !== 'Escape' || event.defaultPrevented || !root) return
+      if (document.activeElement && document.activeElement !== document.body) return
+      if (
+        [...document.querySelectorAll('[role="dialog"][aria-modal]')].at(-1) !== root ||
+        hasLayerAbove(root)
+      )
+        return
+      event.stopPropagation()
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   return createPortal(
     <div

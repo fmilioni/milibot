@@ -10,11 +10,11 @@ export function toastOnError<T>(promise: Promise<T>, key: ToastKey = 'error'): P
   })
 }
 
-/** Copies `text` and confirms with the "Copied" toast (the error toast when the clipboard refuses). */
-export function copyWithToast(text: string): void {
+/** Copies `text` and confirms with the `key` toast ("Copied"; the error toast when the clipboard refuses). */
+export function copyWithToast(text: string, key: ToastKey = 'copied'): void {
   const { showToast } = useAppStore.getState()
   void navigator.clipboard.writeText(text).then(
-    () => showToast('copied'),
+    () => showToast(key),
     () => showToast('error'),
   )
 }

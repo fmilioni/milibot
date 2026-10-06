@@ -15,13 +15,14 @@ import { bootRuntime, type RuntimeHarness, stopRuntimes } from '../../support/ru
 import { useTempDir } from '../../support/temp'
 import { until } from '../../support/wait'
 
+// Portuguese on purpose: the move comment follows a pt-BR workspace.
 let h: RuntimeHarness
 
 const dir = useTempDir('boards')
 afterEach(stopRuntimes)
 
-async function boot() {
-  h = await bootRuntime({ dir: dir(), fallback: { text: 'ok' }, host: { compaction: false } })
+async function boot(options: { language?: 'pt-BR' } = {}) {
+  h = await bootRuntime({ dir: dir(), fallback: { text: 'ok' }, host: { compaction: false }, ...options })
   await until(() => h.vm?.status().state === 'running', 8000)
 }
 
@@ -336,5 +337,198 @@ describe('boards', () => {
     })
     expect(image.markdown).toMatch(/^!\[shot\.png\]\(asset:[0-9a-f]{64}\)$/)
     await until(() => h.guest.state.files.has(image.path), 4000)
+  })
+})
+
+describe('board order', () => {
+  const titles = (boards: Board[]) => boards.map((b) => b.title)
+
+  it('keeps the list order through changes, puts new boards on top and reorders on request', async () => {
+    await boot()
+    for (const title of ['First', 'Second', 'Third']) await tool('board_create', { title, summary: 'S.' })
+    expect(titles(await h.call<Board[]>('listBoards', {}, undefined, {}))).toEqual([
+      'Third',
+      'Second',
+      'First',
+    ])
+    await tool('board_card_write', { board: 'First', title: 'A card' })
+    await tool('board_comment', { card: 'A card', text: 'A decision.' })
+    await tool('board_link', { card: 'A card', kind: 'pr', ref: 'https://github.com/acme/app/pull/3' })
+    h.runtime.services.boards.applyPullRequestStates(
+      new Map([['https://github.com/acme/app/pull/3', 'review']]),
+    )
+    await tool('board_update', { board: 'First', summary: 'Changed.' })
+    let boards = await h.call<Board[]>('listBoards', {}, undefined, {})
+    expect(titles(boards)).toEqual(['Third', 'Second', 'First'])
+    expect(boards.map((b) => b.position)).toEqual([0, 1, 2])
+
+    const first = boards.find((b) => b.title === 'First') as Board
+    expect(titles(await h.call<Board[]>('reorderBoard', { boardId: first.id }, { index: 0 }))).toEqual([
+      'First',
+      'Third',
+      'Second',
+    ])
+    expect(h.events.some((e) => e.type === 'board.updated' && e.payload.board.id === first.id)).toBe(true)
+    expect(await tool('board_update', { board: 'Third', position: 5 })).toMatch(/Updated the board "Third"/)
+    expect(await tool('board_list', {})).toMatch(/^- First [^\n]*\n- Second [^\n]*\n- Third /)
+
+    await tool('board_create', { title: 'Fourth', summary: 'S.' })
+    await tool('board_update', { board: 'Second', archived: true })
+    boards = await h.call<Board[]>('listBoards', {}, undefined, {})
+    expect(titles(boards)).toEqual(['Fourth', 'First', 'Second', 'Third'])
+    expect(titles(await h.call<Board[]>('listBoards', {}, undefined, { filter: 'active' }))).toEqual([
+      'Fourth',
+      'First',
+      'Third',
+    ])
+  })
+
+  it('warns, without refusing, when Doing goes past the board limit', async () => {
+    await boot()
+    await tool('board_create', {
+      title: 'Sprint',
+      summary: 'S.',
+      cards: [{ title: 'One' }, { title: 'Two' }, { title: 'Three' }],
+    })
+    expect(await tool('board_update', { board: 'Sprint', doing_limit: 2 })).toMatch(/Updated the board/)
+    const [board] = await h.call<Board[]>('listBoards', {}, undefined, {})
+    expect(board?.doingLimit).toBe(2)
+    expect(await tool('board_card_write', { card: 'One', status: 'doing' })).not.toMatch(/limit/)
+    expect(await tool('board_card_write', { card: 'Two', status: 'doing' })).not.toMatch(/limit/)
+    expect(await tool('board_card_write', { card: 'Three', status: 'doing' })).toMatch(
+      /Doing now has 3 cards, over the board's limit of 2/,
+    )
+    expect(await tool('board_get', { board: 'Sprint' })).toContain('## Doing (3/2 limit)')
+    await expect(h.call('updateBoard', { boardId: board!.id }, { doingLimit: 51 })).rejects.toMatchObject({
+      code: 'validation_failed',
+    })
+    expect(await h.call<Board>('updateBoard', { boardId: board!.id }, { doingLimit: null })).toMatchObject({
+      doingLimit: null,
+    })
+    expect(await tool('board_update', { board: 'Sprint', doing_limit: 0 })).not.toMatch(/limit/)
+  })
+})
+
+describe('moving a card to another board', () => {
+  it('keeps its id, comments, links, people and images, carries labels by name and records the move', async () => {
+    await boot()
+    h.guest.state.files.set('/workspace/shots/a.png', solidPng(3, 3, [200, 10, 10]))
+    await tool('board_create', { title: 'Release 0.3', summary: 'S.', cards: [{ title: 'Done one' }] })
+    await tool('board_create', { title: 'Release 0.4', summary: 'S.', cards: [{ title: 'Planned' }] })
+    await tool('board_card_write', {
+      board: 'Release 0.3',
+      title: 'Live canvas',
+      body: 'Shot:\n\n![shot](/workspace/shots/a.png)',
+      labels: ['Front', 'Bug'],
+      due: '2026-11-01',
+    })
+    await tool('board_card_write', { card: 'Done one', status: 'done' })
+    await tool('board_comment', { card: 'Live canvas', text: 'Keep the old renderer.' })
+    await tool('plan_write', {
+      title: 'Canvas plan',
+      summary: 'S.',
+      body: 'B.',
+      steps: [{ title: 'Do it' }],
+      card: 'Live canvas',
+    })
+    const boards = await h.call<Board[]>('listBoards', {}, undefined, {})
+    const from = boards.find((b) => b.title === 'Release 0.3') as Board
+    const to = boards.find((b) => b.title === 'Release 0.4') as Board
+    await h.call('createBoardLabel', { boardId: to.id }, { name: 'bug', color: 'violet' })
+    const card = byTitle((await h.call<BoardDetail>('getBoard', { boardId: from.id })).cards, 'Live canvas')
+    expect(from.status).toBe('active')
+
+    const result = await tool('board_card_write', { card: card.id, board: 'Release 0.4', before: 'Planned' })
+    expect(result).toMatch(/Moved from "Release 0.3" to To do of "Release 0.4"/)
+    expect(result).toMatch(/Every card of "Release 0.3" is now done or dropped/)
+
+    const source = await h.call<BoardDetail>('getBoard', { boardId: from.id })
+    expect(source.cards.map((c) => c.title)).toEqual(['Done one'])
+    expect(source).toMatchObject({ status: 'done', counts: { todo: 0, done: 1 } })
+    expect(source.completedAt).not.toBeNull()
+    const target = await h.call<BoardDetail>('getBoard', { boardId: to.id })
+    expect(target.cards.map((c) => [c.title, c.position])).toEqual([
+      ['Live canvas', 0],
+      ['Planned', 1],
+    ])
+    expect(target.labels.map((l) => [l.name, l.color])).toEqual([
+      ['bug', 'violet'],
+      ['Front', 'red'],
+    ])
+    const moved = await h.call<BoardCardDetail>('getBoardCard', { boardId: to.id, cardId: card.id })
+    expect(moved).toMatchObject({
+      id: card.id,
+      boardId: to.id,
+      status: 'todo',
+      dueDate: '2026-11-01',
+      imageCount: 1,
+      links: [{ kind: 'plan', label: 'Canvas plan' }],
+    })
+    expect(moved.labelIds.map((id) => target.labels.find((l) => l.id === id)?.name)).toEqual(['bug', 'Front'])
+    expect(moved.comments.map((c) => c.body)).toEqual([
+      'Keep the old renderer.',
+      'Moved from "Release 0.3" to "Release 0.4".',
+    ])
+    expect(moved.comments[1]).toMatchObject({ authorType: 'bot', authorBotId: h.botId })
+    const plan = (await tool('board_card_get', { card: card.id })).match(
+      /plan "Canvas plan" \((plan_\w+)\)/,
+    )?.[1]
+    expect(h.runtime.services.boards.cardOfPlan(plan as string)).toBe(card.id)
+
+    const read = await tool('board_card_get', { card: card.id })
+    const path = /!\[shot\]\((\/workspace\/boards\/release-0-4-\w+\/[0-9a-f]{8}-shot\.png)\)/.exec(read)?.[1]
+    expect(path).toBeDefined()
+    await until(() => h.guest.state.files.has(path as string), 4000)
+    expect(h.events.filter((e) => e.type === 'board.cards.updated').map((e) => e.payload.boardId)).toEqual(
+      expect.arrayContaining([from.id, to.id]),
+    )
+  })
+
+  it("records the move in the user's language", async () => {
+    await boot({ language: 'pt-BR' })
+    const a = await h.call<BoardDetail>('createBoard', {}, { title: 'A' })
+    const b = await h.call<BoardDetail>('createBoard', {}, { title: 'B' })
+    const card = await h.call<BoardCard>('createBoardCard', { boardId: a.id }, { title: 'Card' })
+    await h.call('moveBoardCardToBoard', { boardId: a.id, cardId: card.id }, { toBoardId: b.id })
+    const detail = await h.call<BoardCardDetail>('getBoardCard', { boardId: b.id, cardId: card.id })
+    expect(detail.comments.map((c) => c.body)).toEqual(['Movido de "A" para "B".'])
+  })
+
+  it('moves with new labels without creating the old ones on the target', async () => {
+    await boot()
+    await tool('board_create', { title: 'From', summary: 'S.', cards: [{ title: 'Card' }] })
+    await tool('board_create', { title: 'To', summary: 'S.' })
+    await tool('board_card_write', { card: 'Card', labels: ['Old'] })
+    await tool('board_card_write', { card: 'Card', board: 'To', labels: ['New'] })
+    const to = (await h.call<Board[]>('listBoards', {}, undefined, {})).find((b) => b.title === 'To') as Board
+    const target = await h.call<BoardDetail>('getBoard', { boardId: to.id })
+    expect(target.labels.map((l) => l.name)).toEqual(['New'])
+    expect(target.cards[0]?.labelIds).toEqual([target.labels[0]?.id])
+  })
+
+  it('moves for the user to a chosen column and refuses archived boards', async () => {
+    await boot()
+    const a = await h.call<BoardDetail>('createBoard', {}, { title: 'A' })
+    const b = await h.call<BoardDetail>('createBoard', {}, { title: 'B' })
+    const c = await h.call<BoardDetail>('createBoard', {}, { title: 'C' })
+    const card = await h.call<BoardCard>('createBoardCard', { boardId: a.id }, { title: 'Card' })
+    await h.call('createBoardCard', { boardId: b.id }, { title: 'Other', status: 'doing' })
+    const moved = await h.call<BoardCard>(
+      'moveBoardCardToBoard',
+      { boardId: a.id, cardId: card.id },
+      { toBoardId: b.id, status: 'doing', index: 0 },
+    )
+    expect(moved).toMatchObject({ id: card.id, boardId: b.id, status: 'doing', position: 0 })
+    const detail = await h.call<BoardCardDetail>('getBoardCard', { boardId: b.id, cardId: card.id })
+    expect(detail.comments).toMatchObject([{ authorType: 'user', body: 'Moved from "A" to "B".' }])
+    await expect(h.call('getBoardCard', { boardId: a.id, cardId: card.id })).rejects.toMatchObject({
+      code: 'not_found',
+    })
+
+    await h.call('updateBoard', { boardId: c.id }, { archived: true })
+    await expect(
+      h.call('moveBoardCardToBoard', { boardId: b.id, cardId: card.id }, { toBoardId: c.id }),
+    ).rejects.toMatchObject({ code: 'conflict' })
+    expect(await tool('board_card_write', { card: card.id, board: c.id })).toMatch(/archived/)
   })
 })

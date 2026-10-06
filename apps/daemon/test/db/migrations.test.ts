@@ -210,6 +210,23 @@ describe('migrations', () => {
     expect(() => worktree('wses_1', 'wt_session_2')).toThrow(/UNIQUE/)
   })
 
+  it('orders existing boards by their last change when board positions arrive', () => {
+    const db = openDatabase(':memory:')
+    migrate(db, workspaceMigrations.slice(0, 3))
+    const insert = db.prepare('INSERT INTO boards (id, title, created_at, updated_at) VALUES (?, ?, 1, ?)')
+    insert.run('brd_a', 'Old', 10)
+    insert.run('brd_b', 'Newest', 30)
+    insert.run('brd_c', 'Middle', 20)
+    insert.run('brd_d', 'Tie, made later', 20)
+    migrate(db, workspaceMigrations.slice(0, 4))
+    expect(db.prepare('SELECT id, position, doing_limit FROM boards ORDER BY position').all()).toEqual([
+      { id: 'brd_b', position: 0, doing_limit: null },
+      { id: 'brd_d', position: 1, doing_limit: null },
+      { id: 'brd_c', position: 2, doing_limit: null },
+      { id: 'brd_a', position: 3, doing_limit: null },
+    ])
+  })
+
   it('rolls back a failing migration and keeps the previous version', () => {
     const db = openDatabase(':memory:')
     const broken: Migration[] = [

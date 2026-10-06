@@ -34,4 +34,19 @@ describe('design tokens', () => {
     }
     expect(found).toEqual([])
   })
+
+  // `hit` grows the pointer target with an absolute ::after: on a wrapper it lies over the control inside
+  // and takes its clicks, so it belongs on the control itself.
+  it('puts the hit area on the control, never on a wrapper around it', () => {
+    const found: string[] = []
+    for (const file of sources(ROOT)) {
+      const text = readFileSync(file, 'utf8')
+      for (const match of text.matchAll(
+        /<(span|div|li|p)\b[^>]*?className=[^>]*?(?<![\w-])hit(?![\w-])[^>]*>/g,
+      )) {
+        found.push(`${relative(ROOT, file)}: ${match[0].slice(0, 60)}`)
+      }
+    }
+    expect(found).toEqual([])
+  })
 })

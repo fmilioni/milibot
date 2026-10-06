@@ -1,14 +1,17 @@
 import type { BoardLabelColor } from '@milibot/shared'
 
-/** Classes of a label color: the chip (soft background, readable text) and a solid dot. */
+/**
+ * Classes of a label color: the chip (tint with text that keeps AA in both themes, from the `--label-*` tokens)
+ * and a solid dot.
+ */
 export const LABEL_COLOR_CLASSES: Record<BoardLabelColor, { chip: string; dot: string }> = {
-  gray: { chip: 'bg-zinc-500/15 text-zinc-700 dark:text-zinc-300', dot: 'bg-zinc-500' },
-  red: { chip: 'bg-red-500/15 text-red-700 dark:text-red-300', dot: 'bg-red-500' },
-  orange: { chip: 'bg-orange-500/15 text-orange-700 dark:text-orange-300', dot: 'bg-orange-500' },
-  yellow: { chip: 'bg-yellow-500/20 text-yellow-800 dark:text-yellow-200', dot: 'bg-yellow-500' },
-  green: { chip: 'bg-green-500/15 text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-  teal: { chip: 'bg-teal-500/15 text-teal-700 dark:text-teal-300', dot: 'bg-teal-500' },
-  blue: { chip: 'bg-blue-500/15 text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
-  violet: { chip: 'bg-violet-500/15 text-violet-700 dark:text-violet-300', dot: 'bg-violet-500' },
-  pink: { chip: 'bg-pink-500/15 text-pink-700 dark:text-pink-300', dot: 'bg-pink-500' },
+  gray: { chip: 'bg-label-gray-bg text-label-gray', dot: 'bg-label-gray-dot' },
+  red: { chip: 'bg-label-red-bg text-label-red', dot: 'bg-label-red-dot' },
+  orange: { chip: 'bg-label-orange-bg text-label-orange', dot: 'bg-label-orange-dot' },
+  yellow: { chip: 'bg-label-yellow-bg text-label-yellow', dot: 'bg-label-yellow-dot' },
+  green: { chip: 'bg-label-green-bg text-label-green', dot: 'bg-label-green-dot' },
+  teal: { chip: 'bg-label-teal-bg text-label-teal', dot: 'bg-label-teal-dot' },
+  blue: { chip: 'bg-label-blue-bg text-label-blue', dot: 'bg-label-blue-dot' },
+  violet: { chip: 'bg-label-violet-bg text-label-violet', dot: 'bg-label-violet-dot' },
+  pink: { chip: 'bg-label-pink-bg text-label-pink', dot: 'bg-label-pink-dot' },
 }

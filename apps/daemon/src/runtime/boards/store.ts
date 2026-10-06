@@ -1,4 +1,5 @@
 import {
+  applyCardMove,
   type Board,
   type BoardCard,
   type BoardCardLink,
@@ -39,6 +40,8 @@ export interface BoardRow {
   due_date: string | null
   completed_at: number | null
   archived_at: number | null
+  position: number
+  doing_limit: number | null
   created_at: number
   updated_at: number
 }
@@ -147,13 +150,34 @@ export class BoardStore {
     return (this.db.prepare('SELECT * FROM boards WHERE id = ?').get(id) as BoardRow | undefined) ?? null
   }
 
-  /** Newest first; archived ones only with `archived`. */
+  /** In the boards' order (`position`, never the last change); archived ones only with `archived`. */
   boards(filter: { archived?: boolean } = {}): BoardRow[] {
     return this.db
       .prepare(
-        `SELECT * FROM boards ${filter.archived ? '' : 'WHERE archived_at IS NULL'} ORDER BY updated_at DESC, seq DESC`,
+        `SELECT * FROM boards ${filter.archived ? '' : 'WHERE archived_at IS NULL'} ORDER BY position, seq DESC`,
       )
       .all() as BoardRow[]
+  }
+
+  /** Puts a board at `index` (clamped) among every board, renumbering them from 0; the ids that moved. */
+  reorderBoard(id: string, index: number): string[] {
+    const ids = this.boards({ archived: true }).map((b) => b.id)
+    if (!ids.includes(id)) return []
+    const rest = ids.filter((b) => b !== id)
+    rest.splice(Math.max(0, Math.min(index, rest.length)), 0, id)
+    return this.renumberBoards(rest)
+  }
+
+  private renumberBoards(ordered: readonly string[]): string[] {
+    const current = new Map(this.boards({ archived: true }).map((b) => [b.id, b.position]))
+    const update = this.db.prepare('UPDATE boards SET position = ? WHERE id = ?')
+    const changed = ordered.filter((id, i) => current.get(id) !== i)
+    this.db.transaction(() => {
+      ordered.forEach((id, i) => {
+        if (current.get(id) !== i) update.run(i, id)
+      })
+    })()
+    return changed
   }
 
   insertBoard(input: {
@@ -166,22 +190,26 @@ export class BoardStore {
   }): BoardRow {
     const id = newId('board')
     const now = this.now()
-    this.db
-      .prepare(
-        `INSERT INTO boards (id, title, summary, project_id, bot_id, conversation_id, due_date, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        id,
-        input.title,
-        input.summary,
-        input.projectId,
-        input.botId,
-        input.conversationId,
-        input.dueDate,
-        now,
-        now,
-      )
+    // A new board goes on top.
+    this.db.transaction(() => {
+      this.db.prepare('UPDATE boards SET position = position + 1').run()
+      this.db
+        .prepare(
+          `INSERT INTO boards (id, title, summary, project_id, bot_id, conversation_id, due_date, position,
+            created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        )
+        .run(
+          id,
+          input.title,
+          input.summary,
+          input.projectId,
+          input.botId,
+          input.conversationId,
+          input.dueDate,
+          now,
+          now,
+        )
+    })()
     return this.board(id) as BoardRow
   }
 
@@ -227,6 +255,8 @@ export class BoardStore {
       counts,
       dueDate: row.due_date,
       labels: this.labels(row.id),
+      position: row.position,
+      doingLimit: row.doing_limit,
       completedAt: row.completed_at,
       archivedAt: row.archived_at,
       createdAt: row.created_at,
@@ -318,6 +348,47 @@ export class BoardStore {
           card.id,
         )
       }
+    })()
+  }
+
+  /**
+   * Moves a card to another board, keeping its id, comments, links and assignees: its labels are matched by
+   * name on the target (missing ones created with the same color), `images` are the target's rows for the
+   * images its texts show, and both columns get dense positions. Without `keepLabels` it lands with none.
+   */
+  moveCardToBoard(
+    cardId: string,
+    toBoardId: string,
+    status: BoardCardStatus,
+    index: number,
+    images: ReadonlyArray<{ sha256: string; name: string; path: string }>,
+    keepLabels = true,
+  ): void {
+    const card = this.card(cardId)
+    if (!card) return
+    const labels = keepLabels ? this.cardLabelIds(cardId).flatMap((id) => this.label(id) ?? []) : []
+    const now = this.now()
+    this.db.transaction(() => {
+      const labelIds = labels.map(
+        (l) => (this.labelByName(toBoardId, l.name) ?? this.insertLabel(toBoardId, l.name, l.color)).id,
+      )
+      this.setCardLabels(cardId, labelIds)
+      const end = columnCards(this.cards(toBoardId), status).length
+      this.db
+        .prepare(
+          `UPDATE board_cards SET board_id = ?, status = ?, position = ?, status_changed_at = ?, updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(toBoardId, status, end, status === card.status ? card.status_changed_at : now, now, cardId)
+      const source = this.cards(card.board_id)
+      const column = columnCards(source, card.status)
+      this.savePlaces(
+        source,
+        source.map((c) => (c.status === card.status ? { ...c, position: column.indexOf(c) } : c)),
+      )
+      const target = this.cards(toBoardId)
+      this.savePlaces(target, applyCardMove(target, cardId, status, index))
+      for (const image of images) this.putImage(toBoardId, image.sha256, image.name, image.path)
     })()
   }
 

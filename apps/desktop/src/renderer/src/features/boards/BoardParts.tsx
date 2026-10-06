@@ -33,12 +33,12 @@ export function DueChip({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-px text-xs font-semibold',
+        'inline-flex h-[18px] shrink-0 items-center gap-1 rounded-[5px] px-[5px] text-xs font-semibold',
         late ? 'bg-danger-tint text-danger' : 'bg-surface-3 text-fg-secondary',
       )}
       title={late ? t('boards.overdue') : undefined}
     >
-      <CalendarDays size={11} aria-hidden />
+      <CalendarDays size={12} aria-hidden />
       {prefix ? t('boards.due', { date: text }) : text}
     </span>
   )
@@ -49,15 +49,20 @@ export function BoardProgressBar({
   counts,
   className = '',
   track = 'bg-surface-3',
+  thin = false,
 }: {
   counts: BoardCounts
   className?: string
   track?: string
+  thin?: boolean
 }) {
   const { total } = boardProgress(counts)
   const width = (n: number) => `${total ? (n / total) * 100 : 0}%`
   return (
-    <div className={`flex h-1.5 overflow-hidden rounded-full ${track} ${className}`} aria-hidden>
+    <div
+      className={cn('flex overflow-hidden rounded-full', thin ? 'h-1' : 'h-1.5', track, className)}
+      aria-hidden
+    >
       <div className="h-full bg-success" style={{ width: width(counts.done) }} />
       <div className="h-full bg-accent" style={{ width: width(counts.doing) }} />
     </div>

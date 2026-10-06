@@ -19,6 +19,9 @@ CREATE UNIQUE INDEX board_labels_by_name ON board_labels (board_id, name COLLATE
 -- index boards_by_update on boards
 CREATE INDEX boards_by_update ON boards (updated_at);
 
+-- index boards_position on boards
+CREATE INDEX boards_position ON boards (position, seq);
+
 -- index bot_prompt_versions_by_bot on bot_prompt_versions
 CREATE INDEX bot_prompt_versions_by_bot ON bot_prompt_versions (bot_id, created_at);
 
@@ -279,7 +282,7 @@ completed_at INTEGER,
 archived_at INTEGER,
 created_at INTEGER NOT NULL,
 updated_at INTEGER NOT NULL
-);
+, position INTEGER NOT NULL DEFAULT 0, doing_limit INTEGER);
 
 -- table boards_fts
 CREATE VIRTUAL TABLE boards_fts USING fts5 (

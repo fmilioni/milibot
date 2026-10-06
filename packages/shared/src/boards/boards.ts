@@ -24,6 +24,7 @@ export const BOARD_LIMITS = {
   labels: 30,
   labelName: 40,
   assignees: 10,
+  doingLimit: 50,
 } as const
 
 /** Assignee that stands for the user (every other assignee is a bot id). */
@@ -83,6 +84,10 @@ export const Board = z.object({
   counts: BoardCounts,
   dueDate: DueDate.nullable(),
   labels: z.array(BoardLabel),
+  /** Place in the list of boards, from 0 (top); the same order for every tab. */
+  position: z.number().int(),
+  /** Soft cap of the Doing column (null: none); going past it only warns. */
+  doingLimit: z.number().int().nullable(),
   completedAt: z.number().int().nullable(),
   archivedAt: z.number().int().nullable(),
   createdAt: z.number().int(),
@@ -179,7 +184,10 @@ const UpdateBoardBody = z.object({
   projectId: z.string().nullable().optional(),
   dueDate: DueDate.nullable().optional(),
   archived: z.boolean().optional(),
+  doingLimit: z.number().int().min(1).max(BOARD_LIMITS.doingLimit).nullable().optional(),
 })
+
+const ReorderBoardBody = z.object({ index: z.number().int().min(0) })
 
 const CreateBoardCardBody = z.object({
   title: Title,
@@ -210,6 +218,14 @@ const UpdateBoardLabelBody = z.object({
 
 const MoveBoardCardBody = z.object({ status: BoardCardStatus, index: z.number().int().min(0) })
 
+const MoveBoardCardToBoardBody = z.object({
+  toBoardId: z.string().min(1),
+  /** Default: the column it is in. */
+  status: BoardCardStatus.optional(),
+  /** Default: the end of the column. */
+  index: z.number().int().min(0).optional(),
+})
+
 const AddBoardCommentBody = z.object({
   body: z.string().trim().min(1).max(BOARD_LIMITS.userComment),
 })
@@ -238,7 +254,7 @@ const BOARD = '/w/:workspaceId/boards/:boardId'
 const CARD = `${BOARD}/cards/:cardId`
 
 export const boardEndpoints = {
-  /** Newest first. */
+  /** In the boards' order (`position`). */
   listBoards: endpoint({
     method: 'GET',
     path: '/w/:workspaceId/boards',
@@ -254,6 +270,13 @@ export const boardEndpoints = {
   getBoard: endpoint({ method: 'GET', path: BOARD, response: BoardDetail }),
   updateBoard: endpoint({ method: 'PATCH', path: BOARD, body: UpdateBoardBody, response: Board }),
   deleteBoard: endpoint({ method: 'DELETE', path: BOARD, response: Ok }),
+  /** Puts the board at `index` among every board (archived included); returns them all in order. */
+  reorderBoard: endpoint({
+    method: 'POST',
+    path: `${BOARD}/reorder`,
+    body: ReorderBoardBody,
+    response: z.array(Board),
+  }),
   createBoardCard: endpoint({
     method: 'POST',
     path: `${BOARD}/cards`,
@@ -268,6 +291,13 @@ export const boardEndpoints = {
     path: `${CARD}/move`,
     body: MoveBoardCardBody,
     response: z.array(BoardCard),
+  }),
+  /** Moves the card to another board with its comments, links and images; labels follow by name. */
+  moveBoardCardToBoard: endpoint({
+    method: 'POST',
+    path: `${CARD}/move-to-board`,
+    body: MoveBoardCardToBoardBody,
+    response: BoardCard,
   }),
   deleteBoardCard: endpoint({ method: 'DELETE', path: CARD, response: Ok }),
   addBoardComment: endpoint({

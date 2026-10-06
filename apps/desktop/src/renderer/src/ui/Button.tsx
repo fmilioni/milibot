@@ -19,13 +19,17 @@ export function Button({
   className = '',
   children,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: 'sm' | 'md' }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: 'sm' | 'md' | 'lg' }) {
   return (
     <button
       type="button"
       className={cn(
         'focus-ring inline-flex shrink-0 items-center justify-center gap-1.5 font-semibold transition disabled:opacity-50',
-        size === 'sm' ? 'h-[27px] rounded-[7px] px-3 text-sm' : 'h-8 rounded-lg px-3.5 text-base',
+        size === 'sm'
+          ? 'h-[27px] rounded-[7px] px-3 text-sm'
+          : size === 'lg'
+            ? 'h-11 rounded-lg px-4 text-base'
+            : 'h-8 rounded-lg px-3.5 text-base',
         BUTTON_VARIANTS[variant],
         className,
       )}

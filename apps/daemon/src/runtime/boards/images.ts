@@ -5,7 +5,7 @@ import { DaemonError, errorMessage } from '../../errors'
 import { resolveWorkspacePath } from '../code'
 import { imageMediaType, isThumbnailable } from '../files'
 import { type VmController, VmCopyQueue } from '../vm'
-import { ASSET_IMAGE, assetShas, type BoardRow, type BoardStore } from './store'
+import { ASSET_IMAGE, assetShas, type BoardRow, type BoardStore, type ImageRow } from './store'
 
 const BOARDS_DIR = '/workspace/boards'
 const MAX_IMAGE_BYTES = BOARD_LIMITS.imageBytes
@@ -56,6 +56,16 @@ export class BoardImages {
     const row = this.deps.store.putImage(board.id, sha, fileName, imagePath(board, sha, fileName))
     void this.copies.kick()
     return { sha256: sha, name: row.name, path: row.path, markdown: `![${row.name}](asset:${sha})` }
+  }
+
+  /** The row an image of another board gets on `board` (a card moving there brings its images). */
+  placeIn(board: BoardRow, image: ImageRow): { sha256: string; name: string; path: string } {
+    return { sha256: image.sha256, name: image.name, path: imagePath(board, image.sha256, image.name) }
+  }
+
+  /** Copies the images not in the VM yet (when it runs). */
+  kick(): void {
+    void this.copies.kick()
   }
 
   /** Text as a bot reads it: images as the VM paths it can open. */

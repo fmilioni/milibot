@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { BoardCardStatus } from './boards'
-import { applyCardMove, columnCards, isOpenCard, isOverdue } from './cards'
+import { applyCardMove, columnCards, fullListIndex, isOpenCard, isOverdue } from './cards'
 
 const card = (id: string, status: BoardCardStatus, position: number) => ({ id, status, position })
 
@@ -42,5 +42,37 @@ describe('boards', () => {
   it('counts todo and doing cards as open', () => {
     expect((['todo', 'doing', 'done', 'dropped'] as const).filter(isOpenCard)).toEqual(['todo', 'doing'])
     expect(isOverdue({ dueDate: '2026-09-01', status: 'dropped' }, '2026-09-29')).toBe(false)
+  })
+})
+
+describe('fullListIndex', () => {
+  const full = ['a', 'b', 'c', 'd', 'e']
+
+  it('puts the item before the one it lands on in the filtered list', () => {
+    expect(fullListIndex(full, ['b', 'd', 'e'], 'a', 1)).toBe(2)
+    expect(fullListIndex(full, ['a', 'c', 'e'], 'e', 0)).toBe(0)
+    expect(fullListIndex(full, ['a', 'c', 'e'], 'a', 1)).toBe(3)
+  })
+
+  it('goes right after the last visible item when dropped at the end', () => {
+    expect(fullListIndex(full, ['a', 'c'], 'e', 2)).toBe(3)
+    expect(fullListIndex(full, ['b', 'd'], 'a', 2)).toBe(3)
+  })
+
+  it('goes to the end of an empty filtered list', () => {
+    expect(fullListIndex(full, [], 'x', 0)).toBe(5)
+    expect(fullListIndex([], [], 'x', 0)).toBe(0)
+  })
+
+  it('matches applyCardMove on a filtered column', () => {
+    const column = full.map((id, i) => card(id, 'todo', i))
+    const index = fullListIndex(full, ['b', 'd'], 'e', 1)
+    expect(columnCards(applyCardMove(column, 'e', 'todo', index), 'todo').map((c) => c.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'e',
+      'd',
+    ])
   })
 })

@@ -58,7 +58,8 @@ export class SessionTools extends ToolSwitch {
     const plan = trimmedString(a.plan) ? this.deps.plans.resolve(ctx.bot, trimmedString(a.plan)) : null
     if (plan && plan.status !== 'approved' && plan.status !== 'executing')
       return toolError(`The plan "${plan.title}" is not approved: submit it with plan_submit first.`)
-    if (plan?.sessionId && this.deps.sessions.find(plan.sessionId))
+    const planSession = plan?.sessionId ? this.deps.sessions.find(plan.sessionId) : null
+    if (plan && planSession && planSession.status !== 'idle')
       return toolError(`The plan "${plan.title}" already runs in the work session ${plan.sessionId}.`)
     let projectId: string | null
     if (trimmedString(a.project)) {
@@ -96,11 +97,14 @@ export class SessionTools extends ToolSwitch {
       cardId,
     })
     repo = session.repoName
+    const replaced = session.replaced.length
+      ? ` It replaces ${session.replaced.map((r) => `"${r.title}" (${r.id})`).join(', ')}, which was waiting on the same work: that session is closed.`
+      : ''
     return toolText(
       `Work session "${session.title}" started (${session.id}): it runs in parallel in its own conversation` +
         `${repo ? `, on its own worktree of ${repo}` : folder ? `, in ${session.cwd}` : ''}, and the user follows it from its card here. ` +
         `${model?.ok ? `${modelRequestNote(model)} ` : ''}Its ` +
-        'result comes back to this conversation when it ends. Do not do its work here: tell the user it started.',
+        `result comes back to this conversation when it ends.${replaced} Do not do its work here: tell the user it started.`,
       false,
       { detail: session.title },
     )

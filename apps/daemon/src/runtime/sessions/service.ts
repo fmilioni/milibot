@@ -329,9 +329,11 @@ export class WorkSessionService {
     model?: ModelChoice | null
     /** Board card it works on (default: the card of its plan). */
     cardId?: string | null
-  }): WorkSession {
+  }): WorkSession & { replaced: Array<{ id: string; title: string }> } {
     const { bot } = input
-    const active = this.store.countOpen(bot.id)
+    const cardId = input.cardId ?? (input.plan ? (this.deps.cards?.cardOfPlan(input.plan.id) ?? null) : null)
+    const stale = this.staleFor(bot.id, input.plan?.id ?? null, cardId)
+    const active = this.store.countOpen(bot.id) - stale.length
     const max = this.maxActive()
     if (active >= max)
       throw new DaemonError(
@@ -342,7 +344,12 @@ export class WorkSessionService {
     const short = id.slice(-8).toLowerCase()
     const repoName = input.repo ? sanitizeRepoName(input.repo) : null
     const folder = !repoName && input.folder ? sessionFolder(input.folder) : null
-    if (folder) assertFolderFree(folder, this.store.openFolders())
+    if (folder)
+      assertFolderFree(
+        folder,
+        this.store.openFolders().filter((f) => !stale.some((row) => row.cwd === f.cwd)),
+      )
+    for (const old of stale) this.replace(old, input.title)
     const cwd = repoName
       ? `${WORKSPACE_DIR}/worktrees/${repoName}/${bot.slug}-${short}`
       : (folder ?? `${SESSIONS_DIR}/${bot.slug}-${short}`)
@@ -367,7 +374,6 @@ export class WorkSessionService {
     })
     if (input.model) this.deps.modelLanesChanged?.()
     this.deps.emit({ type: 'conversation.created', payload: { conversation } })
-    const cardId = input.cardId ?? (input.plan ? (this.deps.cards?.cardOfPlan(input.plan.id) ?? null) : null)
     if (cardId) this.linkCard(cardId, row)
     this.cards.postBrief(row)
     row = this.store.update(id, { origin_message_id: this.cards.postOrigin(row, input.turnId) })
@@ -382,7 +388,33 @@ export class WorkSessionService {
       note: '[Milibot] The work session starts now: work towards its goal (see the session brief).',
     })
     this.emitNow(id)
-    return this.toSession(row)
+    return { ...this.toSession(row), replaced: stale.map((old) => ({ id: old.id, title: old.title })) }
+  }
+
+  /**
+   * The bot's sessions on the same plan or card left waiting with no turn running: a new session for that
+   * work replaces them (e.g. a review reopened after the fixes came back). One with a turn running stays.
+   */
+  private staleFor(botId: string, planId: string | null, cardId: string | null): SessionRow[] {
+    if (!planId && !cardId) return []
+    return this.store
+      .open(botId)
+      .filter((row) => row.status === 'idle' && this.lanes.lane(row.id).status === 'idle')
+      .filter(
+        (row) =>
+          (planId !== null && row.plan_id === planId) ||
+          (cardId !== null && this.deps.cards?.cardOfSession(row.id) === cardId),
+      )
+  }
+
+  private replace(row: SessionRow, title: string): void {
+    const next = this.finish(row, 'cancelled', `Replaced by the work session "${title}".`)
+    void this.closeLane(next).catch((err: unknown) =>
+      this.deps.log?.('warn', 'work session lane close failed', {
+        sessionId: row.id,
+        err: errorMessage(err),
+      }),
+    )
   }
 
   private linkCard(cardId: string, row: SessionRow): void {
@@ -637,12 +669,25 @@ export class WorkSessionService {
     }
   }
 
-  /** The bot's sessions that have not ended, oldest first. */
-  openOf(botId: string): Array<{ id: string; conversationId: string; title: string }> {
+  /** The bot's sessions that have not ended, oldest first, with when each last had a message. */
+  openOf(botId: string): Array<{ id: string; conversationId: string; title: string; idleSince: number }> {
     return this.store
       .open(botId)
       .sort((a, b) => a.created_at - b.created_at)
-      .map((row) => ({ id: row.id, conversationId: row.conversation_id, title: row.title }))
+      .map((row) => ({
+        id: row.id,
+        conversationId: row.conversation_id,
+        title: row.title,
+        idleSince: this.lastMessageAt(row.conversation_id) ?? row.updated_at,
+      }))
+  }
+
+  private lastMessageAt(conversationId: string): number | null {
+    try {
+      return this.deps.store.conversations.get(conversationId).lastMessageAt
+    } catch {
+      return null
+    }
   }
 
   /** What the agent host reads and writes about sessions. */

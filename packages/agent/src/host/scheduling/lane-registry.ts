@@ -160,14 +160,19 @@ export class LaneRegistry {
     const shown = this.shownLane(state, botId)
     const own = shown === changed
     const effective = state.userPaused || (state.paused && shown.status !== 'idle') ? 'paused' : shown.status
+    const conversationId = shown.current?.conversationId
+    // A lane queued before its turn starts already shows, without a conversation: the turn's start must
+    // still report it, since the app places the "Working…" row from it.
     if (
       state.status === effective &&
       state.statusLane === shown.info.key &&
+      state.statusConversationId === conversationId &&
       (!own || shown.detail === undefined)
     )
       return
     state.status = effective
     state.statusLane = shown.info.key
+    state.statusConversationId = conversationId
     this.log.botStatus(botId, effective, shown.info.key, reason)
     this.ctx
       .env()
@@ -177,7 +182,7 @@ export class LaneRegistry {
         shown.detail,
         shown.targetBotId,
         shown.info.sessionId ?? undefined,
-        shown.current?.conversationId,
+        conversationId,
       )
   }
 

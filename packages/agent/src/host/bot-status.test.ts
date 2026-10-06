@@ -201,3 +201,25 @@ describe('bot status with lanes in parallel', () => {
     expect(lastStatus()).toEqual({ botId: bot.id, status: 'idle' })
   })
 })
+
+describe('bot status of a queued internal request while a session runs', () => {
+  it('names the internal conversation from the start of a turn that only answers', async () => {
+    const { env, bot, session, host, gates, say, lastStatus } = await setup()
+    const asker = makeBot({ name: 'Maestro', slug: 'maestro' })
+    env.addBot(asker)
+    const internal = env.internalConversation(asker.id, bot.id)
+    const sessionTool = newGate()
+    gates.set('in turn', sessionTool)
+    say(session.id, 'tool:bash')
+    await until(() => sessionTool.started)
+
+    const from = env.statuses.length
+    host.enqueueTurn({ botId: bot.id, conversationId: internal.id, trigger: 'bot_reply', note: 'answer' })
+    await until(() => lastStatus()?.sessionId === SESSION && env.statuses.length > from + 1)
+    const internalStatuses = env.statuses.slice(from).filter((s) => s.conversationId === internal.id)
+    expect(internalStatuses[0]).toMatchObject({ status: 'thinking' })
+
+    sessionTool.release()
+    await host.idle(bot.id)
+  })
+})

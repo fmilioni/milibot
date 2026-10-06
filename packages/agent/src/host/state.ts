@@ -85,9 +85,10 @@ export interface BotState {
   needsScreenshot: boolean
   pendingNote: boolean
   waiters: Array<() => void>
-  /** Status last reported for the bot (the aggregate of its lanes) and the lane it came from. */
+  /** Status last reported for the bot (the aggregate of its lanes), the lane and conversation it came from. */
   status: BotStatus
   statusLane: LaneKey
+  statusConversationId?: string
   /** Lane whose turn uses the display and Chrome (computer/browser tools), and lanes waiting for it. */
   screen: { holder: LaneKey | null; waiters: Array<() => void> }
 }

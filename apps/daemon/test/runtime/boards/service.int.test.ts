@@ -581,4 +581,40 @@ describe('board labels', () => {
     detail = await h.call<BoardDetail>('getBoard', { boardId: board.id })
     expect(detail.labels.find((l) => l.id === front.id)).toMatchObject({ name: 'Front', color: front.color })
   })
+
+  it('matches label names ignoring the case of accented letters and the accents, like the label lookup', async () => {
+    await boot()
+    await tool('board_create', {
+      title: 'Menu',
+      summary: 'S.',
+      cards: [
+        { title: 'Espresso', labels: ['Café'] },
+        { title: 'Latte', labels: ['CAFÉ', 'Front'] },
+      ],
+    })
+    await tool('board_card_write', { board: 'Menu', title: 'Mocha', labels: ['café', 'cafe'] })
+    const [board] = (await h.call<Board[]>('listBoards', {}, undefined, {})) as [Board]
+    let detail = await h.call<BoardDetail>('getBoard', { boardId: board.id })
+    expect(detail.labels.map((l) => l.name)).toEqual(['Café', 'Front'])
+    const cafe = detail.labels[0]!.id
+    for (const title of ['Espresso', 'Latte', 'Mocha'])
+      expect(byTitle(detail.cards, title).labelIds[0]).toBe(cafe)
+
+    expect(await tool('board_label_write', { board: 'Menu', label: 'Front', name: 'CAFÉ' })).toMatch(
+      /already has a label "CAFÉ"/,
+    )
+    await expect(h.call('createBoardLabel', { boardId: board.id }, { name: 'CAFÉ' })).rejects.toThrow(
+      /already has a label/,
+    )
+    expect(await tool('board_label_write', { board: 'Menu', label: 'Café', name: 'CAFÉ' })).toMatch(
+      /renamed to "CAFÉ"/,
+    )
+
+    await tool('board_create', { title: 'Bar', summary: 'S.', cards: [{ title: 'Tonic', labels: ['café'] }] })
+    await tool('board_card_write', { card: 'Mocha', board: 'Bar' })
+    const bar = (await h.call<Board[]>('listBoards', {}, undefined, {})).find((b) => b.title === 'Bar')!
+    detail = await h.call<BoardDetail>('getBoard', { boardId: bar.id })
+    expect(detail.labels.map((l) => l.name)).toEqual(['café'])
+    expect(byTitle(detail.cards, 'Mocha').labelIds).toEqual([detail.labels[0]!.id])
+  })
 })

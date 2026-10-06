@@ -11,6 +11,7 @@ import {
   type BoardLabelColor,
   type BoardStatus,
   columnCards,
+  foldText,
   newId,
 } from '@milibot/shared'
 
@@ -523,11 +524,13 @@ export class BoardStore {
     return row ? toLabel(row) : null
   }
 
+  /**
+   * Names are folded like the app's label picker and the tools' lookup (any letter's case, accents):
+   * SQLite's NOCASE only folds A-Z, so "Café" and "CAFÉ" would be two labels.
+   */
   labelByName(boardId: string, name: string): BoardLabel | null {
-    const row = this.db
-      .prepare('SELECT * FROM board_labels WHERE board_id = ? AND name = ? COLLATE NOCASE')
-      .get(boardId, name) as LabelRow | undefined
-    return row ? toLabel(row) : null
+    const key = foldText(name, { trim: true })
+    return this.labels(boardId).find((l) => foldText(l.name, { trim: true }) === key) ?? null
   }
 
   insertLabel(boardId: string, name: string, color: BoardLabelColor): BoardLabel {

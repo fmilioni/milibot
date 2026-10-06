@@ -1,5 +1,6 @@
 import { app, shell } from 'electron'
 
+import { isWebUrl } from '../../bridge/web-url'
 import { isAppUrl, rendererLocation } from './trust'
 
 /**
@@ -10,7 +11,7 @@ import { isAppUrl, rendererLocation } from './trust'
 export function hardenWebContents(): void {
   app.on('web-contents-created', (_event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
-      if (url.startsWith('https://') || url.startsWith('http://')) void shell.openExternal(url)
+      if (isWebUrl(url)) void shell.openExternal(url)
       return { action: 'deny' }
     })
     const stayOnApp = (event: Electron.Event, url: string) => {

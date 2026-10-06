@@ -24,7 +24,7 @@ async function setup() {
     env.logs
       .filter((l) => RECORDS.has(l.message))
       .map(({ message, extra }) => {
-        const { durationMs, turnId, ...rest } = extra ?? {}
+        const { durationMs: _durationMs, turnId, ...rest } = extra ?? {}
         return { message, ...rest, ...(turnId ? { turnId: 'turn' } : {}) }
       })
   return { env, bot, conversation, host, records }

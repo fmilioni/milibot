@@ -5,7 +5,7 @@ import { fakeGenerateImages } from '@milibot/agent/images'
 import { type CloseBehavior, DEFAULT_VM_CONFIG, type LogFn, type WorkspaceEvent } from '@milibot/shared'
 
 import type { RuntimeConfig } from '../config/env'
-import { dataPaths, DAEMON_VERSION, workspacePaths } from '../config/paths'
+import { DAEMON_VERSION, dataPaths, workspacePaths } from '../config/paths'
 import type { Db } from '../db/sqlite'
 import { errorMessage } from '../errors'
 import { resolveGoldenImage } from '../golden/resolve'

@@ -1,6 +1,6 @@
 export { type CachePriceLookup, CostStore } from './cost'
-export { DebugStore } from './debug'
 export { DaemonLogTools } from './daemon-logs'
+export { DebugStore } from './debug'
 export { ObservabilityRoutes } from './handlers'
 export { LlmCallStore } from './llm-calls'
 export { BlobReferences, DebugRetention } from './retention'

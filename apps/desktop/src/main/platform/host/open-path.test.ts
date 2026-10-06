@@ -73,6 +73,7 @@ describe('isExportedFile', () => {
   it('accepts files the daemon exported for download', () => {
     expect(isExportedFile('/tmp/x/milibot-knowledge/kdoc_1/Contract.pdf', isFile)).toBe(true)
     expect(isExportedFile('/var/t/milibot-attachments/att_1/photo.png', isFile)).toBe(true)
+    expect(isExportedFile('/var/t/milibot-vm-files/0a1b2c/NOTES.md', isFile)).toBe(true)
   })
 
   it('refuses other paths, relative or with dot segments, and folders', () => {

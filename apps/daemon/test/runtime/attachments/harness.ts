@@ -132,6 +132,7 @@ export function attachmentsHarness(dir: string) {
     blobs: new FileBlobStore(join(dir, 'blobs')),
     stagingDir: join(dir, 'uploads'),
     exportDir: join(dir, 'exports'),
+    vmFilesDir: join(dir, 'vm-files'),
     emit: (event) => events.push(event),
     getMessage: (id) => store.messages.get(id),
     appendMessage: (message) => store.messages.create(message),

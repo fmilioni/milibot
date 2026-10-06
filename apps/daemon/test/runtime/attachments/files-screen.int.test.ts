@@ -1,6 +1,7 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { ATTACHMENT_SETTING_KEYS } from '@milibot/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { useTempDir } from '../../support/temp'
@@ -131,5 +132,43 @@ describe('the Files screen', () => {
       details: { code: 'FILE_REMOVED' },
     })
     expect(service.get(file.attachment.id).status).toBe('removed')
+  })
+})
+
+describe('opening a /workspace file from a link', () => {
+  const code = async (promise: Promise<unknown>) =>
+    promise.then(
+      () => null,
+      (err: { details?: { code?: string } }) => err.details?.code,
+    )
+
+  it('copies the file to the host, fresh on every call', async () => {
+    vm.set('running')
+    vmFs.files.set('/workspace/milibot/NOTES.md', Buffer.from('v1'))
+    const first = await service.files.exportPath('/workspace/milibot/NOTES.md')
+    expect(first.path.startsWith(join(dir(), 'vm-files'))).toBe(true)
+    expect(first.path.endsWith('/NOTES.md')).toBe(true)
+    expect(readFileSync(first.path, 'utf8')).toBe('v1')
+    vmFs.files.set('/workspace/milibot/NOTES.md', Buffer.from('version 2'))
+    const second = await service.files.exportPath('/workspace/milibot/NOTES.md')
+    expect(second.path).toBe(first.path)
+    expect(readFileSync(second.path, 'utf8')).toBe('version 2')
+  })
+
+  it('refuses paths outside /workspace, folders, missing files and a stopped VM', async () => {
+    expect(await code(service.files.exportPath('/workspace/a.md'))).toBe('VM_NOT_RUNNING')
+    vm.set('running')
+    expect(await code(service.files.exportPath('/etc/passwd'))).toBe('NOT_A_FILE')
+    expect(await code(service.files.exportPath('/workspace/../etc/passwd'))).toBe('NOT_A_FILE')
+    expect(await code(service.files.exportPath('/workspace/gone.md'))).toBe('FILE_REMOVED')
+    vmFs.folders.add('/workspace/milibot')
+    expect(await code(service.files.exportPath('/workspace/milibot'))).toBe('NOT_A_FILE')
+  })
+
+  it('refuses a file above the chats size limit', async () => {
+    vm.set('running')
+    store.settings.set(ATTACHMENT_SETTING_KEYS.maxFileMb, 1)
+    vmFs.files.set('/workspace/big.bin', Buffer.alloc(1024 * 1024 + 1))
+    expect(await code(service.files.exportPath('/workspace/big.bin'))).toBe('FILE_TOO_LARGE')
   })
 })

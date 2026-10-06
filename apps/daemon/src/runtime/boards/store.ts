@@ -14,7 +14,7 @@ import {
   newId,
 } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
+import { type Db, sqlList } from '../../db/sqlite'
 
 export function countCards(cards: readonly { status: BoardCardStatus }[]): BoardCounts {
   const counts: BoardCounts = { todo: 0, doing: 0, done: 0, dropped: 0 }
@@ -145,6 +145,22 @@ export class BoardStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Titles of the boards among `ids` (archived ones too). */
+  boardNames(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, title AS name FROM boards WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
+
+  /** Titles of the cards among `ids`, with their boards. */
+  cardNames(ids: readonly string[]): Array<{ id: string; name: string; boardId: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, title AS name, board_id AS boardId FROM board_cards WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string; boardId: string }>
+  }
 
   board(id: string): BoardRow | null {
     return (this.db.prepare('SELECT * FROM boards WHERE id = ?').get(id) as BoardRow | undefined) ?? null

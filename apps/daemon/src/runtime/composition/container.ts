@@ -89,6 +89,7 @@ import {
   resolveBotModelRequest,
 } from '../providers'
 import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
+import { RefService } from '../refs'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
 import { SetAsideService } from '../set-aside'
@@ -1047,6 +1048,23 @@ export function createContainer(options: ContainerOptions) {
     workSessions.handlers(),
     designs.handlers(),
     new BoardRoutes({ boards, now }).handlers(),
+    new RefService({
+      lookups: {
+        card: (ids) => boards.store.cardNames(ids),
+        board: (ids) => boards.store.boardNames(ids),
+        design: (ids) => designs.store.designNames(ids),
+        frame: (ids) => designs.store.frameNames(ids),
+        plan: (ids) => plans.names(ids),
+        session: (ids) => workSessions.names(ids),
+        doc: (ids) => knowledgeDocs.names(ids),
+        project: (ids) => projects.names(ids),
+        skill: (ids) => skills.names(ids),
+        routine: (ids) => routines.names(ids),
+        bot: (ids) => store.bots.names(ids),
+        conversation: (ids) => store.conversations.refs(ids),
+        sessionsOfConversations: (ids) => workSessions.sessionsOfConversations(ids),
+      },
+    }).handlers(),
   )
 
   let vmShutdown: VmShutdownMode = 'keep'

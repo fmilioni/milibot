@@ -1,7 +1,7 @@
 import { ftsMatchExpression, searchTerms } from '@milibot/agent'
 import type { ListPlansQuery, PlanExecution, PlanRevision, PlanStatus } from '@milibot/shared'
 
-import { type Db, parseJson } from '../../db/sqlite'
+import { type Db, parseJson, sqlList } from '../../db/sqlite'
 import { notFound } from '../../errors'
 
 export interface PlanRow {
@@ -64,6 +64,14 @@ export class PlanStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Titles of the plans among `ids`, deleted ones left out. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, title AS name FROM plans WHERE id IN (${sqlList(ids)}) AND deleted_at IS NULL`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
 
   row(id: string): PlanRow | null {
     return (

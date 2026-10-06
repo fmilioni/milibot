@@ -11,7 +11,7 @@ import {
   VNC_DISPLAYS,
 } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
+import { type Db, sqlList } from '../../db/sqlite'
 import { DaemonError, notFound } from '../../errors'
 
 const FIRST_DISPLAY = 1
@@ -83,6 +83,14 @@ export class BotStore {
     private readonly db: Db,
     private readonly now: () => number = Date.now,
   ) {}
+
+  /** Names of the bots among `ids`, deleted ones left out. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, name FROM bots WHERE id IN (${sqlList(ids)}) AND deleted_at IS NULL`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
 
   list(): Bot[] {
     const rows = this.db

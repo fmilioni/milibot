@@ -330,6 +330,11 @@ export class RoutineService {
     return this.get(id)
   }
 
+  /** Names of the routines among `ids` with their bots, for links in text. */
+  names(ids: readonly string[]): Array<{ id: string; name: string; botId: string }> {
+    return this.rows.names(ids)
+  }
+
   handlers(): EndpointHandlers<keyof typeof routineEndpoints> {
     return {
       listRoutines: ({ query }) => this.list(query.botId),

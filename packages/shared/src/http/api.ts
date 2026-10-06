@@ -31,6 +31,7 @@ import { backupEndpoints } from '../workspace/backup'
 import { preferenceEndpoints } from '../workspace/preferences'
 import { setupEndpoints } from '../workspace/setup'
 import { workspaceEndpoints } from '../workspace/workspace'
+import { refEndpoints } from '../core/refs'
 import { daemonEndpoints } from './daemon-info'
 import { defineApi } from './endpoint'
 import type { PathParams } from './path'
@@ -69,6 +70,7 @@ export const api = defineApi(
   vmEndpoints,
   costEndpoints,
   debugEndpoints,
+  refEndpoints,
 )
 
 export type Api = typeof api

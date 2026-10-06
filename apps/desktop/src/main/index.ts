@@ -5,13 +5,14 @@ import { AppLifecycle, prepareApp } from './app/lifecycle'
 import { launchMode, runDaemonMode } from './app/modes'
 import { AppSettingsWatcher } from './app/settings'
 import { DaemonManager } from './daemon/manager'
+import { emit } from './ipc/handle'
 import { registerIpc } from './ipc/register'
 import { KeepAwakeGuard } from './services/keep-awake/guard'
 import { NotificationCenter } from './services/notifications/center'
 import { VncBridge } from './services/vnc-bridge'
 import { WorkspaceEventFeed } from './services/workspace-events'
 import { applyPermissionPolicy } from './windows/permissions'
-import { workspaceFocus } from './windows/registry'
+import { windowsOf, workspaceFocus } from './windows/registry'
 import { showConversation } from './windows/workspace'
 
 prepareApp()
@@ -33,9 +34,12 @@ function startApp(): void {
     resolvePort: async (target) =>
       (await (await daemon.client()).call('getBotDisplay', { params: target })).vncPort,
   })
-  registerIpc({ daemon, vncBridge, settings })
   const feed = new WorkspaceEventFeed(settings)
-  new KeepAwakeGuard({ feed, settings, blocker: powerSaveBlocker })
+  const keepAwake = new KeepAwakeGuard({ feed, settings, blocker: powerSaveBlocker })
+  keepAwake.onChange((state) => {
+    for (const window of windowsOf('workspace')) emit(window.webContents, 'keepAwakeChanged', state)
+  })
+  registerIpc({ daemon, vncBridge, settings, keepAwake })
   new NotificationCenter({
     settings,
     feed,

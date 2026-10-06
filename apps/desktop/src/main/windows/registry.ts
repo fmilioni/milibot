@@ -66,6 +66,11 @@ export function workspaceIds(kinds?: readonly WindowKind[]): string[] {
   return [...new Set(entries.map((entry) => entry.workspaceId))]
 }
 
+/** Every open window of this kind. */
+export function windowsOf(kind: WindowKind): BrowserWindow[] {
+  return [...windows.values()].filter((entry) => entry.kind === kind).map((entry) => entry.window)
+}
+
 export function windowCount(kind: WindowKind): number {
   return [...windows.values()].filter((entry) => entry.kind === kind).length
 }

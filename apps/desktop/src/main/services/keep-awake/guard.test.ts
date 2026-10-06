@@ -1,8 +1,9 @@
 import type { ApiClient, BotStatus, WorkspaceEvent } from '@milibot/shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { KeepAwakeState } from '../../../bridge/contract'
 import type { WorkspaceEventSubscriber } from '../workspace-events'
-import { KeepAwakeGuard, type KeepAwakeState, RESYNC_INTERVAL_MS, SYNC_TIMEOUT_MS } from './guard'
+import { KeepAwakeGuard, RESYNC_INTERVAL_MS, SYNC_TIMEOUT_MS } from './guard'
 
 type ListBots = (
   workspaceId: string,

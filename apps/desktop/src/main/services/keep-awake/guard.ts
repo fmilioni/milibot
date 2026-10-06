@@ -1,5 +1,6 @@
 import type { ApiClient, WorkspaceEvent } from '@milibot/shared'
 
+import type { KeepAwakeState } from '../../../bridge/contract'
 import type { WorkspaceEventSubscriber } from '../workspace-events'
 import { BusyBots } from './busy-bots'
 
@@ -7,13 +8,6 @@ import { BusyBots } from './busy-bots'
 export const RESYNC_INTERVAL_MS = 60_000
 /** A snapshot that takes longer counts as failed: the workspace is forgotten rather than kept busy. */
 export const SYNC_TIMEOUT_MS = 10_000
-
-export interface KeepAwakeState {
-  /** The computer is kept from sleeping. */
-  active: boolean
-  /** Bots working now, in every workspace (counted even with the option off). */
-  busyBots: number
-}
 
 /** Electron's `powerSaveBlocker`, narrowed to what the guard uses. */
 export interface PowerBlocker {

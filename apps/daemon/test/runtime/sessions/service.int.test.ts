@@ -342,6 +342,96 @@ describe('work sessions', () => {
     )
   })
 
+  it('makes the worktree again, on the branch it ended on, when a session reopens after the cleanup', async () => {
+    await boot((request) => {
+      const { text, tools } = lastInput(request)
+      if (inSession(request)) {
+        if (text.includes('one more thing')) return { text: 'Done again.' }
+        if (tools === 0)
+          return { toolCalls: [{ name: 'session_finish', arguments: { summary: 'Done.', status: 'done' } }] }
+        return { text: 'Closed.' }
+      }
+      if (text.includes('fix the bug') && tools === 0)
+        return {
+          toolCalls: [
+            { name: 'session_start', arguments: { title: 'Fix bug', goal: 'Fix it.', repo: 'app' } },
+          ],
+        }
+      return { text: 'ok' }
+    })
+    await call('postMessage', { conversationId: chiefDm }, { content: 'fix the bug' })
+    const session = await onlySession()
+    await host.idle()
+    const sessions = runtime.services.workSessions
+    const row = () =>
+      db.prepare('SELECT id, status, branch FROM repo_worktrees').get() as {
+        id: string
+        status: string
+        branch: string
+      }
+    expect(row().status).toBe('active')
+    expect(sessions.worktreeDone(session.id)).toBe(false)
+    db.prepare('UPDATE work_sessions SET patches_at = 1 WHERE id = ?').run(session.id)
+    expect(sessions.worktreeDone(session.id)).toBe(true)
+
+    // What the janitor does once it removed the worktree of a renamed branch.
+    db.prepare("UPDATE repo_worktrees SET status = 'released', branch = 'bot/chief/fix-bug'").run()
+    sessions.worktreeRemoved(session.id)
+    const checkouts = () => guest.state.execs.filter((e) => String(e.cmd).includes('git worktree add'))
+    expect(checkouts()).toHaveLength(1)
+    await call('postMessage', { conversationId: session.conversationId }, { content: 'one more thing' })
+    await host.idle()
+
+    expect(messagesOf(session.conversationId).at(-1)?.content).toBe('Done again.')
+    expect(checkouts()).toHaveLength(2)
+    expect(checkouts()[1]?.env).toMatchObject({ BRANCH: 'bot/chief/fix-bug', WT_PATH: session.cwd })
+    expect(row()).toMatchObject({ status: 'active', branch: 'bot/chief/fix-bug' })
+    expect(db.prepare('SELECT COUNT(*) AS n FROM repo_worktrees').get()).toEqual({ n: 1 })
+  })
+
+  it('reads the images of a session whose worktree was cleaned up from its saved tree, else says they are gone', async () => {
+    await boot((request) => {
+      const { text, tools } = lastInput(request)
+      if (inSession(request))
+        return tools === 0
+          ? { toolCalls: [{ name: 'session_finish', arguments: { summary: 'Done.', status: 'done' } }] }
+          : { text: 'Closed.' }
+      if (text.includes('draw it') && tools === 0)
+        return {
+          toolCalls: [{ name: 'session_start', arguments: { title: 'Shots', goal: 'Draw.', repo: 'app' } }],
+        }
+      return { text: 'ok' }
+    })
+    await call('postMessage', { conversationId: chiefDm }, { content: 'draw it' })
+    const session = await onlySession()
+    await host.idle()
+    const shot = { path: 'shot.png', status: 'modified', additions: 0, deletions: 0, binary: true }
+    const tree = { tree: 'a'.repeat(40), gitDir: '/workspace/repos/app/.git', prefix: '' }
+    db.prepare(
+      "UPDATE work_sessions SET status = 'done', base_commit = ?, patches_at = 1, patches_tree = ?, changes_json = ? WHERE id = ?",
+    ).run(
+      'b'.repeat(40),
+      JSON.stringify(tree),
+      JSON.stringify({ totals: { files: 1, additions: 0, deletions: 0 }, files: [shot], computedAt: 1 }),
+      session.id,
+    )
+    let answer = 'GONE\n'
+    guest.state.execResult = () => ({ code: 0, signal: null, stdout: answer, stderr: '' })
+    const images = () =>
+      call('getWorkSessionFileImages', { sessionId: session.id }, undefined, { path: 'shot.png' })
+
+    expect(await images()).toEqual({ before: null, after: null, unavailable: true })
+    expect(guest.state.execs.at(-1)?.env).toMatchObject({
+      SAVED_TREE: tree.tree,
+      SAVED_GIT_DIR: tree.gitDir,
+      SAVED_PREFIX: '',
+      BEFORE_PATH: 'shot.png',
+      AFTER_PATH: 'shot.png',
+    })
+    answer = `BEFORE 3 ${Buffer.from('one').toString('base64')}\nAFTER 99999999 -\n`
+    expect(await images()).toEqual({ before: null, after: { bytes: 99999999 } })
+  })
+
   it('leaves sessions idle after a restart, until the user writes in them', async () => {
     await boot((request) => {
       const { text, tools } = lastInput(request)

@@ -71,6 +71,7 @@
     "imageMeta": "{{width}}×{{height}} · {{size}}",
     "imageTooLarge": "Imagem grande demais para pré-visualizar ({{size}}).",
     "imageLoadFailed": "Não foi possível abrir a imagem.",
+    "imageUnavailable": "A imagem não está mais disponível: a pasta da sessão foi removida.",
     "imageBackdropLight": "Ver sobre fundo claro",
     "imageBackdropDark": "Ver sobre fundo escuro",
     "loadFailed": "Não foi possível abrir as diferenças deste arquivo.",

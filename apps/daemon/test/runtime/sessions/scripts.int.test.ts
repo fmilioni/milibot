@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -7,8 +7,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   DIFF_SCRIPT_ENV,
   DIFF_SCRIPTS,
+  parseAllPatches,
   parseBaseline,
   parseChanges,
+  parseImageSides,
+  parseSavedTree,
 } from '../../../src/runtime/sessions/diff'
 import { removeDir, tempDir } from '../../support/temp'
 
@@ -138,5 +141,53 @@ describe('session baseline', () => {
     )
     expect(existsSync(join(folder, '.git', 'HEAD'))).toBe(true)
     expect(changes(result)).toEqual(['modified a.txt', 'added b.txt'])
+  })
+})
+
+describe('session images', () => {
+  it('reads both sides from the tree saved with the patches once the worktree is gone', () => {
+    const repo = join(root, 'workspace', 'repos', 'app')
+    const worktree = join(root, 'workspace', 'worktrees', 'app', 'ana-1')
+    mkdirSync(join(repo, 'web'), { recursive: true })
+    writeFileSync(join(repo, 'web', 'shot.png'), 'one')
+    run(`cd "${repo}" && git init -q -b main && git add -A && git commit -qm init`)
+    run(`cd "${repo}" && git worktree add -q -b bot/ana/shots "${worktree}"`)
+    folder = join(worktree, 'web')
+    const result = baseline()
+    if ('error' in result) throw new Error(result.error)
+    write('shot.png', 'two')
+    write('new.png', 'three')
+
+    const env = { MODE: 'git', BASE: result.base, FILE_PATH: '', OLD_PATH: '', MAX_PATCH: '100000' }
+    const saved = run(DIFF_SCRIPTS.changes, { ...env, ALL_PATCHES: '1', MAX_TOTAL: '1000000' })
+    expect(parseAllPatches(saved, 1_000_000).map((p) => [p.path, p.truncated])).toEqual([
+      ['new.png', false],
+      ['shot.png', false],
+    ])
+    const tree = parseSavedTree(saved)
+    expect(tree).toMatchObject({ gitDir: realpathSync(join(repo, '.git')), prefix: 'web/' })
+    const image = (path: string, before: boolean, extra: Record<string, string> = {}) => {
+      const out = run(DIFF_SCRIPTS.image, {
+        ...env,
+        BEFORE_PATH: before ? path : '',
+        AFTER_PATH: path,
+        MAX_IMAGE: '1000',
+        ...extra,
+      })
+      if (out.trim() === 'GONE') return 'GONE'
+      const sides = parseImageSides(out)
+      return [sides.before?.data?.toString(), sides.after?.data?.toString()]
+    }
+    const savedEnv = { SAVED_TREE: tree?.tree ?? '', SAVED_GIT_DIR: tree?.gitDir ?? '', SAVED_PREFIX: 'web/' }
+    expect(image('shot.png', true, savedEnv)).toEqual(['one', 'two'])
+
+    run(`cd "${repo}" && git worktree remove --force "${worktree}"`)
+    expect(image('shot.png', true, savedEnv)).toEqual(['one', 'two'])
+    expect(image('new.png', false, savedEnv)).toEqual([undefined, 'three'])
+    // Nothing saved (a session from before), or the objects are gone: the images are unavailable.
+    expect(image('shot.png', true)).toBe('GONE')
+    expect(
+      image('shot.png', true, { ...savedEnv, SAVED_TREE: '4b825dc642cb6eb9a060e54bf8d69288fbee4904' }),
+    ).toBe('GONE')
   })
 })

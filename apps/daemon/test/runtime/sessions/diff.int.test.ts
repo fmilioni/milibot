@@ -335,6 +335,19 @@ describe('work session changes', () => {
     const big = await diff('big.txt')
     expect(big.truncated).toBe(true)
     expect(Buffer.byteLength(big.patch)).toBeLessThanOrEqual(MAX_PATCH_BYTES)
+    // The repository went with the folder: the images can't be read anymore.
+    const tree = runtime.store.db.prepare('SELECT patches_tree FROM work_sessions').get() as {
+      patches_tree: string
+    }
+    expect(JSON.parse(tree.patches_tree)).toMatchObject({
+      prefix: '',
+      tree: expect.stringMatching(/^[0-9a-f]{40}$/),
+    })
+    expect(
+      await call<SessionFileImages>('getWorkSessionFileImages', { sessionId: session.id }, undefined, {
+        path: 'art/logo.png',
+      }),
+    ).toEqual({ before: null, after: null, unavailable: true })
   })
 
   it('runs an approved plan in the project folder it names, made when missing', async () => {

@@ -26,6 +26,11 @@ if [ -n "${ALL_PATCHES:-}" ]; then
     printf '\0@@FILE\0%s\0' "$path"
     r diff --cached --no-color --no-ext-diff -M --relative "$BASE" -- "$@" | head -c "$MAX_PATCH"
   done < "$tmp/names" | head -c "$MAX_TOTAL"
+  # The folder's files as a tree in the git dir, so images can be shown once the folder is gone.
+  if tree=$(r write-tree 2>/dev/null) && prefix=$(r rev-parse --show-prefix 2>/dev/null); then
+    if [ "$MODE" = shadow ]; then dir=$SHADOW_DIR; else dir=$(r rev-parse --path-format=absolute --git-common-dir 2>/dev/null); fi
+    [ -n "$dir" ] && printf '\0@@TREE\0%s\0%s\0%s\0' "$tree" "$dir" "$prefix"
+  fi
   exit 0
 fi
 r diff --cached -z --no-color --numstat -M --relative "$BASE" -- . || exit 6

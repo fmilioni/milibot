@@ -89,7 +89,7 @@ import {
   resolveBotModelRequest,
 } from '../providers'
 import { RefService } from '../refs'
-import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
+import { readRepoInstructions, RepoTools, WorktreeJanitor, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
 import { SetAsideService } from '../set-aside'
@@ -207,6 +207,7 @@ export function createContainer(options: ContainerOptions) {
   const mcpRef = lazy<McpToolServer>('MCP tool server')
   const imagesRef = lazy<ImageService>('images')
   const cliBackendsRef = lazy<Partial<Record<CliEngine, CliBackend>>>('CLI backends')
+  const janitorRef = lazy<WorktreeJanitor>('worktree janitor')
 
   const store = new WorkspaceStore(db, now)
   const llmCalls = new LlmCallStore(db, now)
@@ -494,7 +495,10 @@ export function createContainer(options: ContainerOptions) {
       vm.status().state === 'running'
         ? vm.runningGuest().exec({ user: botLinuxUser(bot.slug), cmd, env: vars, timeoutMs: 20_000 })
         : null,
-    onPullRequest: (conversationId, payload) => boardsRef.get().linkPullRequest(conversationId, payload),
+    onPullRequest: (conversationId, payload) => {
+      if (payload.status === 'done' || payload.status === 'failed') janitorRef.get().kick()
+      boardsRef.get().linkPullRequest(conversationId, payload)
+    },
     log,
   })
   const attachments = new AttachmentService({
@@ -664,7 +668,7 @@ export function createContainer(options: ContainerOptions) {
         query,
       ),
     apply: (statuses) => {
-      taskCards.applyPullRequestStatuses(statuses)
+      if (taskCards.applyPullRequestStatuses(statuses)) janitorRef.get().kick()
       boards.applyPullRequestStates(statuses)
     },
     log,
@@ -811,10 +815,23 @@ export function createContainer(options: ContainerOptions) {
       pullRequestNote: (plan) => settings.pullRequestNote(plan ?? undefined),
       cards: boards,
       modelLanesChanged: () => void credentials.syncSecretFiles().catch(() => undefined),
+      worktreeFinished: () => janitorRef.get().kick(),
       appendMessage: append,
       updateMessage: update,
       emit: emitAndRefreshGitPolicy,
       now,
+      log,
+    }),
+  )
+  const janitor = janitorRef.set(
+    new WorktreeJanitor({
+      worktrees,
+      vm,
+      sessionDone: (sessionId) => workSessions.worktreeDone(sessionId),
+      sessionWorktreeRemoved: (sessionId) => workSessions.worktreeRemoved(sessionId),
+      pullRequestStatus: (repoName, branch) => taskCards.pullRequestOfBranch(repoName, branch),
+      sessionOpen: (sessionId) => workSessions.isOpen(sessionId),
+      botBusy: (botId) => host.botBusy(botId),
       log,
     }),
   )
@@ -1107,6 +1124,7 @@ export function createContainer(options: ContainerOptions) {
     { name: 'git policy', start: () => gitPolicy.start(), stop: () => gitPolicy.stop() },
     { name: 'user requests', start: () => userRequests.start(), stop: () => userRequests.stop() },
     { name: 'work sessions', start: () => workSessions.start(), stop: () => workSessions.stop() },
+    { name: 'worktree janitor', start: () => janitor.start(), stop: () => janitor.stop() },
     { name: 'plans', stop: () => plans.stop() },
     { name: 'agent host', start: () => host.start(env), stop: () => host.stop() },
     routinesComponent(routines, vm),

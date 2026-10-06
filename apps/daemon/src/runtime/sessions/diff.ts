@@ -150,13 +150,36 @@ export function cutPatch(patch: string): { patch: string; truncated: boolean } {
   return { patch: cut.slice(0, cut.lastIndexOf('\n') + 1), truncated: true }
 }
 
+const TREE_MARKER = '\0@@TREE\0'
+
+/** Where the files of a finished session can be read once its folder is gone. */
+export interface SavedTree {
+  /** Tree of the folder's files when the patches were saved (written with them). */
+  tree: string
+  /** The git dir the tree was written to: the repository's common one, or the shadow one. */
+  gitDir: string
+  /** The session folder's path in the tree ('' or ending in '/'). */
+  prefix: string
+}
+
+/** The trailer of the `changes` script with ALL_PATCHES; null when it has none. */
+export function parseSavedTree(stdout: string): SavedTree | null {
+  const at = stdout.lastIndexOf(TREE_MARKER)
+  if (at < 0) return null
+  const [tree = '', gitDir = '', prefix = ''] = stdout.slice(at + TREE_MARKER.length).split('\0')
+  if (!/^[0-9a-f]{7,64}$/.test(tree) || !gitDir.startsWith('/')) return null
+  return { tree, gitDir, prefix }
+}
+
 /** Output of the `changes` script with `ALL_PATCHES`: the patch of each file (the last one cut when all hit the cap). */
 export function parseAllPatches(
   stdout: string,
   maxTotal: number,
 ): Array<{ path: string; patch: string; truncated: boolean }> {
-  const parts = stdout.split('\0@@FILE\0').slice(1)
-  const full = Buffer.byteLength(stdout, 'utf8') >= maxTotal
+  const trailer = stdout.lastIndexOf(TREE_MARKER)
+  const patches = trailer < 0 ? stdout : stdout.slice(0, trailer)
+  const parts = patches.split('\0@@FILE\0').slice(1)
+  const full = Buffer.byteLength(patches, 'utf8') >= maxTotal
   return parts.flatMap((part, i) => {
     const end = part.indexOf('\0')
     if (end <= 0) return []

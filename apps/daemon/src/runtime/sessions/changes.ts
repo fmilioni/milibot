@@ -30,6 +30,8 @@ import {
   parseBaseline,
   parseChanges,
   parseImageSides,
+  parseSavedTree,
+  type SavedTree,
   SHADOW_MAX_FILES,
   SHADOW_MAX_KB,
   shadowGitDir,
@@ -269,11 +271,15 @@ export class SessionChangesTracker {
     return { ...base, ...cutPatch(patch) }
   }
 
-  /** A changed image at the baseline and now, to show instead of a binary diff. */
+  /**
+   * A changed image at the baseline and now, to show instead of a binary diff. Once the folder is gone (its
+   * worktree was cleaned up) both sides come from the tree saved with the patches; `unavailable` when they can't.
+   */
   async fileImages(id: string, path: string): Promise<SessionFileImages> {
     const file = await this.changedFile(id, path)
     if (!isPreviewableImagePath(file.path)) throw notFound('changed image', path)
     const row = this.deps.store.requireRow(id)
+    const saved = this.savedChanges(row) ? parseJson<SavedTree | null>(row.patches_tree, null) : null
     const stdout = await this.git(
       row,
       this.guestForDiff(),
@@ -283,9 +289,11 @@ export class SessionChangesTracker {
         BEFORE_PATH: file.status === 'added' ? '' : (file.oldPath ?? file.path),
         AFTER_PATH: file.status === 'deleted' ? '' : file.path,
         MAX_IMAGE: String(MAX_IMAGE_BYTES),
+        ...(saved ? { SAVED_TREE: saved.tree, SAVED_GIT_DIR: saved.gitDir, SAVED_PREFIX: saved.prefix } : {}),
       },
       IMAGE_OUTPUT_BYTES,
     )
+    if (stdout.trim() === 'GONE') return { before: null, after: null, unavailable: true }
     const sides = parseImageSides(stdout)
     return { before: sessionImage(sides.before), after: sessionImage(sides.after) }
   }
@@ -336,7 +344,11 @@ export class SessionChangesTracker {
         MAX_TOTAL: String(MAX_SAVED_PATCHES_BYTES),
       })
       if (this.stopped || !this.deps.store.row(row.id)) return
-      this.deps.store.savePatches(row.id, parseAllPatches(stdout, MAX_SAVED_PATCHES_BYTES))
+      this.deps.store.savePatches(
+        row.id,
+        parseAllPatches(stdout, MAX_SAVED_PATCHES_BYTES),
+        parseSavedTree(stdout),
+      )
     } catch (err) {
       this.deps.log?.('warn', 'work session patches not saved', { sessionId: row.id, err: errorMessage(err) })
     }

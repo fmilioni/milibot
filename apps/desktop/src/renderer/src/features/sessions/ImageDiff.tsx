@@ -121,7 +121,9 @@ export function ImageDiff({ sessionId, file }: { sessionId: string; file: Sessio
       className={CENTERED}
     >
       {(images) =>
-        images.before || images.after ? (
+        images.unavailable ? (
+          <div className={CENTERED}>{t('session.diff.imageUnavailable')}</div>
+        ) : images.before || images.after ? (
           <ImagePair images={images} file={file} />
         ) : (
           <div className={CENTERED}>{t('session.diff.binary')}</div>

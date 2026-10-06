@@ -872,6 +872,13 @@ created_at INTEGER NOT NULL,
 updated_at INTEGER NOT NULL
 );
 
+-- table repo_worktree_sessions
+CREATE TABLE repo_worktree_sessions (
+worktree_id TEXT NOT NULL REFERENCES repo_worktrees (id) ON DELETE CASCADE,
+session_id TEXT NOT NULL,
+PRIMARY KEY (worktree_id, session_id)
+);
+
 -- table repo_worktrees
 CREATE TABLE repo_worktrees (
 id TEXT PRIMARY KEY,
@@ -1096,7 +1103,7 @@ created_at INTEGER NOT NULL,
 updated_at INTEGER NOT NULL,
 finished_at INTEGER,
 deleted_at INTEGER
-, replaced_by TEXT);
+, replaced_by TEXT, patches_tree TEXT);
 
 -- trigger board_cards_fts_delete on board_cards
 CREATE TRIGGER board_cards_fts_delete AFTER DELETE ON board_cards BEGIN

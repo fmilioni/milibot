@@ -86,9 +86,43 @@ export class WorktreeStore {
     return this.get(id) as WorktreeRow
   }
 
-  release(id: string): void {
+  /** The worktree is gone; `branch` = the one it was on at the end, when known. */
+  release(id: string, options: { branch?: string } = {}): void {
+    this.db.transaction(() => {
+      this.db
+        .prepare(
+          "UPDATE repo_worktrees SET status = 'released', released_at = ?, branch = coalesce(?, branch) WHERE id = ?",
+        )
+        .run(this.now(), options.branch || null, id)
+      this.db.prepare('DELETE FROM repo_worktree_sessions WHERE worktree_id = ?').run(id)
+    })()
+  }
+
+  /** A work session checked out the worktree (a chat one, shared by the bot's lanes). */
+  usedBySession(id: string, sessionId: string): void {
     this.db
-      .prepare("UPDATE repo_worktrees SET status = 'released', released_at = ? WHERE id = ?")
-      .run(this.now(), id)
+      .prepare('INSERT OR IGNORE INTO repo_worktree_sessions (worktree_id, session_id) VALUES (?, ?)')
+      .run(id, sessionId)
+  }
+
+  /** The work sessions that checked out the worktree since it was made. */
+  sessionsUsing(id: string): string[] {
+    return (
+      this.db
+        .prepare('SELECT session_id FROM repo_worktree_sessions WHERE worktree_id = ?')
+        .all(id) as Array<{
+        session_id: string
+      }>
+    ).map((r) => r.session_id)
+  }
+
+  /** The branch checked out in it now (a bot renamed it or switched). */
+  setBranch(id: string, branch: string): void {
+    this.db.prepare('UPDATE repo_worktrees SET branch = ? WHERE id = ?').run(branch, id)
+  }
+
+  /** A released worktree made again at the same path (a session that reopened). */
+  reactivate(id: string): void {
+    this.db.prepare("UPDATE repo_worktrees SET status = 'active', released_at = NULL WHERE id = ?").run(id)
   }
 }

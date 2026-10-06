@@ -71,6 +71,7 @@
     "imageMeta": "{{width}}×{{height}} · {{size}}",
     "imageTooLarge": "Image too large to preview ({{size}}).",
     "imageLoadFailed": "Could not open the image.",
+    "imageUnavailable": "The image is no longer available: the session’s folder was removed.",
     "imageBackdropLight": "Show on a light background",
     "imageBackdropDark": "Show on a dark background",
     "loadFailed": "Could not open this file’s differences.",

@@ -1,4 +1,4 @@
-import { app, nativeTheme, session } from 'electron'
+import { app, nativeTheme, powerSaveBlocker, session } from 'electron'
 
 import { systemLanguage } from './app/i18n'
 import { AppLifecycle, prepareApp } from './app/lifecycle'
@@ -6,6 +6,7 @@ import { launchMode, runDaemonMode } from './app/modes'
 import { AppSettingsWatcher } from './app/settings'
 import { DaemonManager } from './daemon/manager'
 import { registerIpc } from './ipc/register'
+import { KeepAwakeGuard } from './services/keep-awake/guard'
 import { NotificationCenter } from './services/notifications/center'
 import { VncBridge } from './services/vnc-bridge'
 import { WorkspaceEventFeed } from './services/workspace-events'
@@ -34,6 +35,7 @@ function startApp(): void {
   })
   registerIpc({ daemon, vncBridge, settings })
   const feed = new WorkspaceEventFeed(settings)
+  new KeepAwakeGuard({ feed, settings, blocker: powerSaveBlocker })
   new NotificationCenter({
     settings,
     feed,

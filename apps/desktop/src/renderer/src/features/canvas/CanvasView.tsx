@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { queryKeys } from '@/api/queries'
 import { useApiQuery } from '@/api/use-api-query'
 import { centerOn, fitAll, frameRects, resolveTheme, withLabel } from '@/features/canvas/lib/canvas'
+import { elementContextPrefix, elementRef, splitSourceDocument } from '@/features/canvas/lib/element-ref'
 import { DeleteDesignDialog } from '@/features/designs/DeleteDesignDialog'
 import { useAppStore } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
@@ -13,6 +14,7 @@ import { ScreenPlaceholder } from '@/ui/AsyncView'
 import { Menu } from '@/ui/Menu'
 import { Popover } from '@/ui/Popover'
 
+import { getDesignFrameSource } from './api'
 import { frameMenuEntries, switcherEntries, themeMenuEntries } from './CanvasMenus'
 import { CanvasToolbar } from './CanvasToolbar'
 import { DesignExportPanel, useDesignExport } from './ExportPanel'
@@ -137,7 +139,10 @@ function DesignCanvas({
   const [sourceFrame, setSourceFrame] = useState<DesignFrame | null>(null)
   const [revisionsFrame, setRevisionsFrame] = useState<DesignFrame | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [commentTool, setCommentTool] = useState(false)
   const bot = design.botId ? bots[design.botId] : undefined
+  // The canvas window has no chat of its own: comments go to the design's conversation.
+  const commentTarget = conversationId ?? design.conversationId
 
   const setViewport = useCallback(
     (next: Viewport) => {
@@ -187,7 +192,26 @@ function DesignCanvas({
     fit,
     copySelected: selected ? () => void exporter.copy(selected) : null,
     deselect: selectedId && !frameMenu && !exportAnchor && !variablesOpen ? () => setSelectedId(null) : null,
+    toggleComment: commentTarget ? () => setCommentTool((on) => !on) : null,
+    leaveTool:
+      commentTool && !frameMenu && !exportAnchor && !variablesOpen ? () => setCommentTool(false) : null,
   })
+
+  const commentOn = async (frameId: string, element: Element, text: string) => {
+    const frame = design.frames.find((f) => f.id === frameId)
+    if (!commentTarget || !frame) throw new Error('nowhere to send the comment')
+    // Without the source the bot still gets the selector; the opening tag only saves it a read.
+    const source = await getDesignFrameSource(workspaceId, design.id, frameId).then(
+      (doc) => splitSourceDocument(doc.source),
+      () => null,
+    )
+    const ref = elementRef(
+      element,
+      { frameId, frameName: frame.name, designId: design.id, designName: design.name },
+      source,
+    )
+    await useAppStore.getState().sendMessage(commentTarget, `${elementContextPrefix(ref)}\n${text}`)
+  }
 
   const menuFrame = frameMenu ? design.frames.find((f) => f.id === frameMenu.frameId) : undefined
   useEffect(() => {
@@ -237,6 +261,9 @@ function DesignCanvas({
         forcedTheme={forcedTheme}
         variablesOpen={variablesOpen}
         exportOpen={exportAnchor !== null}
+        commentTool={commentTool}
+        canComment={commentTarget !== null}
+        onCommentTool={() => setCommentTool(!commentTool)}
         exporting={exporter.busy}
         onSwitcher={(anchor) => setSwitcherAnchor(toggle(anchor))}
         onThemeMenu={(anchor) => setThemeAnchor(toggle(anchor))}
@@ -267,6 +294,8 @@ function DesignCanvas({
         onZoomToFrame={zoomToFrame}
         onFit={fit}
         presence={presence}
+        commentTool={commentTool}
+        onComment={commentTarget ? commentOn : null}
       />
 
       {variablesOpen && (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { placeAtPoint, placeBeside, placePopover } from './floating'
+import { placeAtPoint, placeBeside, placeNextTo, placePopover } from './floating'
 
 const viewport = { width: 1000, height: 800 }
 const size = { width: 200, height: 300 }
@@ -41,5 +41,34 @@ describe('placePopover', () => {
       bottom: 406,
       maxHeight: 386,
     })
+  })
+})
+
+describe('placeNextTo', () => {
+  const view = { width: 1000, height: 800 }
+  const size = { width: 300, height: 200 }
+  const rect = (left: number, top: number, width: number, height: number) => ({
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+  })
+
+  it('goes on the right of the rect, top-aligned', () => {
+    expect(placeNextTo(rect(100, 100, 200, 50), size, view)).toEqual({ left: 308, top: 100 })
+  })
+
+  it('flips to the left when the right has no room', () => {
+    expect(placeNextTo(rect(600, 100, 300, 50), size, view)).toEqual({ left: 292, top: 100 })
+  })
+
+  it('goes under, then over, a rect as wide as the view', () => {
+    expect(placeNextTo(rect(0, 100, 1000, 300), size, view)).toEqual({ left: 8, top: 408 })
+    expect(placeNextTo(rect(0, 400, 1000, 300), size, view)).toEqual({ left: 8, top: 192 })
+  })
+
+  it('stays inside the view when nothing fits', () => {
+    expect(placeNextTo(rect(-50, -50, 1100, 900), size, view)).toEqual({ left: 8, top: 8 })
+    expect(placeNextTo(rect(100, 700, 100, 50), size, view)).toEqual({ left: 208, top: 592 })
   })
 })

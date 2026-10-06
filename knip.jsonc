@@ -32,8 +32,6 @@
       "entry": ["src/**/*.test.{ts,tsx}", "test/**/*.test.ts", "scripts/**/*.mjs"],
       "project": ["src/**/*.{ts,tsx,css}", "test/**/*.ts", "scripts/**/*.mjs"],
       "paths": { "@/*": ["src/renderer/src/*"] },
-      // The root vitest.config.ts names the `dom` project's environment.
-      "ignoreDependencies": ["happy-dom"],
     },
     "vm/host": {
       "entry": ["src/cli/*.ts", "test/**/*.test.ts", "test/support/*.mjs"],

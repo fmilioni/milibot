@@ -15,13 +15,15 @@ import {
   themeKey,
   visibleFrameIds,
 } from '@/features/canvas/lib/canvas'
+import { trailOf } from '@/features/canvas/lib/element-pick'
 import { useReducedMotion } from '@/features/workspace/use-reduced-motion'
 import { cn } from '@/lib/cn'
 import { type Size, stepZoom, type Viewport, zoomAt } from '@/lib/viewport'
 import { ZoomControls } from '@/ui/ZoomControls'
 
 import { BotCursors } from './BotCursor'
-import { FramePage } from './FramePage'
+import { ElementCommentPopover } from './ElementCommentPopover'
+import { FramePage, type LiveFrame } from './FramePage'
 import { PenCursors, usePenTrails } from './PenCursors'
 import {
   botColor,
@@ -35,6 +37,7 @@ import {
 import { type Presence, useDesignStore } from './store'
 import { useBotCursors } from './use-bot-cursors'
 import { useChangeFlashes } from './use-change-flashes'
+import { useElementComment } from './use-element-comment'
 import { useStageGestures } from './use-stage-gestures'
 
 const IDENTITY: Viewport = { x: 0, y: 0, zoom: 1 }
@@ -55,6 +58,10 @@ export interface StageProps {
   onZoomToFrame: (frameId: string) => void
   onFit: () => void
   presence: Presence | null
+  /** The Comment tool is on: elements are pointed at without holding Alt. */
+  commentTool: boolean
+  /** Sends a comment about an element; null when there is no conversation to send it to. */
+  onComment: ((frameId: string, element: Element, text: string) => Promise<void>) | null
 }
 
 /** The canvas surface: frames at their positions, pan/zoom, selection, dragging by the label. */
@@ -74,6 +81,8 @@ export function Stage({
   onZoomToFrame,
   onFit,
   presence,
+  commentTool,
+  onComment,
 }: StageProps) {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
@@ -120,6 +129,18 @@ export function Stage({
       })),
     [draftList, draftHeights, rects],
   )
+  const comment = useElementComment({
+    enabled: onComment !== null,
+    tool: commentTool,
+    rects,
+    frames: design.frames,
+    replaced,
+    worldAt,
+  })
+  const frameLoaded = useRef(comment.onFrameLoad)
+  useLayoutEffect(() => {
+    frameLoaded.current = comment.onFrameLoad
+  })
   const visibleDrafts = useMemo(() => visibleFrameIds(draftRects, v, size), [draftRects, v, size])
   const measureDraft = useCallback(
     (draftId: string, height: number) =>
@@ -140,6 +161,10 @@ export function Stage({
   const cursors = useBotCursors({ bots, presences, drafts: writtenDrafts, draftRects, rects, colorOf })
   const pens = usePenTrails()
   const { flashes, flash } = useChangeFlashes()
+  const live = useMemo<LiveFrame>(
+    () => ({ onFlash: flash, onLoad: (frameId) => frameLoaded.current(frameId) }),
+    [flash],
+  )
   const penEntries = draftList.flatMap((d) =>
     d.art ? [{ draftId: d.draftId, name: bots[d.botId]?.name ?? '…', color: colorOf(d.botId) }] : [],
   )
@@ -175,8 +200,19 @@ export function Stage({
       aria-label={t('canvas.stageLabel', { name: design.name })}
       aria-roledescription={t('canvas.stageRole')}
       {...stageHandlers}
+      onPointerDown={(event) => {
+        if (comment.onPointerDown(event, space)) return
+        if (event.button === 0 && !space) comment.close()
+        stageHandlers.onPointerDown(event)
+      }}
+      onPointerMove={(event) => {
+        comment.onPointerMove(event)
+        stageHandlers.onPointerMove(event)
+      }}
+      onPointerLeave={comment.onPointerLeave}
       onContextMenu={onContextMenu}
       onDoubleClick={(event) => {
+        if (comment.active) return
         const hit = hitTest(rects, worldAt(event))
         if (hit) onZoomToFrame(hit)
       }}
@@ -226,7 +262,7 @@ export function Stage({
                     background={background}
                     watch={cursors.writers.has(frame.id)}
                     onChange={cursors.markFrame}
-                    onFlash={flash}
+                    live={live}
                   />
                 )}
                 {flashes[frame.id] && (
@@ -236,6 +272,14 @@ export function Stage({
                     zoom={v.zoom}
                     className="canvas-change-flash"
                   />
+                )}
+                {comment.hover?.frameId === frame.id &&
+                  !drag?.moved &&
+                  comment.hover.element !== comment.picked?.element && (
+                    <ElementOutlines boxes={[comment.hover.box]} zoom={v.zoom} />
+                  )}
+                {comment.picked?.frameId === frame.id && (
+                  <ElementOutlines boxes={[comment.picked.box]} zoom={v.zoom} />
                 )}
                 {scan && (
                   <div
@@ -362,6 +406,38 @@ export function Stage({
               <Move size={11} aria-hidden />
               {t('canvas.dragHint')}
             </div>
+          )
+        })()}
+
+      {comment.picked &&
+        onComment &&
+        viewport &&
+        (() => {
+          const picked = comment.picked
+          const rect = rects.find((r) => r.id === picked.frameId)
+          if (!rect) return null
+          const anchor = () => {
+            const stage = ref.current?.getBoundingClientRect()
+            const box = rectToScreen(v, {
+              x: rect.x + picked.box.x,
+              y: rect.y + picked.box.y,
+              width: picked.box.width,
+              height: picked.box.height,
+            })
+            const left = (stage?.left ?? 0) + box.x
+            const top = (stage?.top ?? 0) + box.y
+            return { left, top, right: left + box.width, bottom: top + box.height }
+          }
+          return (
+            <ElementCommentPopover
+              key={picked.frameId}
+              anchor={anchor}
+              trail={trailOf(picked.element).map((el) => ({ key: el, label: el.tagName.toLowerCase() }))}
+              onPick={comment.pickInTrail}
+              onSend={(text) => onComment(picked.frameId, picked.element, text).then(comment.close)}
+              onClose={comment.close}
+              keepOpen={(target) => Boolean(ref.current?.contains(target))}
+            />
           )
         })()}
 

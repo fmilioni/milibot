@@ -35,6 +35,7 @@ import {
   FolderPen,
   FolderPlus,
   Frame,
+  Gauge,
   GitBranch,
   GitPullRequest,
   Globe,
@@ -209,6 +210,7 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   mcp_server_test: RefreshCw,
   mcp_server_connect: KeyRound,
   daemon_logs: ScrollText,
+  vm_status: Gauge,
 }
 
 /** Steps whose detail is a command or code, shown in monospace. */

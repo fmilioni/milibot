@@ -31,11 +31,20 @@ const definitions = {
       },
     },
   },
+  vm_status: {
+    name: 'vm_status',
+    description:
+      "Read the workspace VM's status, the same as the app's VM screen: state, CPUs, memory and disks, " +
+      'restore points, the operation or system update in progress, and live usage (CPU, memory, disks inside ' +
+      'the VM, what each bot uses). Read-only: it changes nothing.',
+    inputSchema: { type: 'object', properties: {} },
+  },
 } satisfies Record<string, ToolDefinition>
 
 export const diagnosticTools = defineTools({
   definitions,
-  describe(_name, a) {
+  describe(name, a) {
+    if (name === 'vm_status') return { kind: 'vm_status', detail: '' }
     const bot = scalarText(a.bot)
     return { kind: 'daemon_logs', detail: bot === 'me' ? '' : bot || scalarText(a.contains) }
   },

@@ -14,7 +14,7 @@ milibot:
 ## Tool reference
 
 Documents are named by id (`kdoc_…`) or exact title. The user can read, download and delete every document.
-To point the user at a document, write its id (`kdoc_…`) outside code: the app shows its title as a link that opens it.
+To point the user at a document, write its id (kdoc_…) as plain text, never in backticks or code: the app shows its title as a link that opens it.
 
 - `project` of the search tools (knowledge_search, knowledge_list): default the current project plus general material; a project name to look only there (e.g. to reuse something from another project), "general" for material without a project, "all" for every project.
 - `project` of knowledge_add and knowledge_write: default the conversation's current project; "general" for material every project uses (conventions, shared infrastructure); or a project name.

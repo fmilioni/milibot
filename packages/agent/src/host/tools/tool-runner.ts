@@ -115,7 +115,13 @@ export class ToolRunner {
           : undefined
         const target =
           typeof ref === 'string' && ref.trim() ? this.ctx.messaging.findBotRef(ref.trim()) : null
-        lanes.setStatus(lane, turn && turn.consecutiveErrors >= 2 ? 'effort' : 'working', kind, target?.id)
+        lanes.setStatus(
+          lane,
+          turn && turn.consecutiveErrors >= 2 ? 'effort' : 'working',
+          kind,
+          target?.id,
+          turn ? 'tool' : 'out_of_turn_call',
+        )
         this.hostTools ??= hostTools(this.ctx)
         const hostTool = this.hostTools.get(call.name)
         result = hostTool
@@ -176,7 +182,7 @@ export class ToolRunner {
     if (turn && shown) activity.syncActivity(turn, 'running')
     if (shown) activity.emitAction(step, turn, botId, conversationId)
     // Inside its turn the next step sets the status; outside it, nothing would take the lane out of 'working'.
-    if (!turn || lane.current !== turn) lanes.settle(lane)
+    if (!turn || lane.current !== turn) lanes.settle(lane, 'out_of_turn_call')
     return result
   }
 }

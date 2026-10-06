@@ -41,7 +41,8 @@ export class TurnRunner {
       }
     lane.current = turn
     lane.stopped = false
-    ctx.lanes.setStatus(lane, 'thinking')
+    ctx.lanes.log.turnStarted(turn, request.trigger)
+    ctx.lanes.setStatus(lane, 'thinking', undefined, undefined, 'turn_start')
 
     let crashed = false
     try {
@@ -74,6 +75,7 @@ export class TurnRunner {
       this.errorCard(turn, 'turn_crashed', (err as Error).message)
     } finally {
       const outcome = this.finish(turn, crashed)
+      ctx.lanes.log.turnEnded(turn, request.trigger, outcome)
       request.onFinished?.(outcome, crashed || Boolean(turn.failed))
       // A helper's turn is part of its session's: it is not a turn of the chat, nor a reply to anyone.
       if (!helper) this.turnEnded(bot, request, turn, outcome)

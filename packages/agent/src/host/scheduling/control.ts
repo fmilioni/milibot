@@ -62,7 +62,7 @@ export class BotControl {
         state.paused = true
         state.userPaused = true
         env.hostState.setPaused(botId, true)
-        lanes.setStatus(main, 'paused')
+        lanes.setStatus(main, 'paused', undefined, undefined, 'pause')
         break
       case 'resume':
         state.paused = false
@@ -78,7 +78,13 @@ export class BotControl {
           lanes.systemLine(botId, 'user_took_control', `You took control of ${name}'s screen`)
         state.paused = true
         state.takenOver = true
-        lanes.setStatus(main, [...state.lanes.values()].some((l) => l.running) ? 'paused' : 'idle')
+        lanes.setStatus(
+          main,
+          [...state.lanes.values()].some((l) => l.running) ? 'paused' : 'idle',
+          undefined,
+          undefined,
+          'takeover',
+        )
         break
       case 'release':
         if (state.takenOver) {
@@ -106,7 +112,7 @@ export class BotControl {
               lane,
               fallbackConversationId: queuedIn,
             })
-          if (!lane.running) lanes.setStatus(lane, 'idle')
+          if (!lane.running) lanes.setStatus(lane, 'idle', undefined, undefined, 'stop')
         }
         lanes.wake(botId)
         break
@@ -119,7 +125,7 @@ export class BotControl {
     const state = this.ctx.lanes.bot(lane.info.botId)
     while (state.paused) {
       if (signal.aborted) throw new StoppedError()
-      this.ctx.lanes.setStatus(lane, 'paused')
+      this.ctx.lanes.setStatus(lane, 'paused', undefined, undefined, 'paused_wait')
       await new Promise<void>((resolve) => {
         const onAbort = () => resolve()
         signal.addEventListener('abort', onAbort, { once: true })

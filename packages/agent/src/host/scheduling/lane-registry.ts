@@ -3,14 +3,18 @@ import type { BotStatus, SystemEventName, SystemPayload } from '@milibot/shared'
 import type { HostContext } from '../context'
 import { busier, laneInfo, type LaneKey } from '../lanes'
 import type { BotState, LaneState, TurnState } from '../state'
+import { StatusLog, type StatusReason } from './status-log'
 
 /** The bots' lanes and what the bot shows of them (its status, system lines in its chat). */
 export class LaneRegistry {
   private readonly bots = new Map<string, BotState>()
   /** Session lanes this host forgot (their sessions ended) and nothing opened again since. */
   private readonly closedSessions = new Set<LaneKey>()
+  readonly log: StatusLog
 
-  constructor(private readonly ctx: HostContext) {}
+  constructor(private readonly ctx: HostContext) {
+    this.log = new StatusLog(ctx)
+  }
 
   botStates(): IterableIterator<[string, BotState]> {
     return this.bots.entries()
@@ -67,6 +71,7 @@ export class LaneRegistry {
         status: 'idle',
       }
       state.lanes.set(key, lane)
+      this.log.laneOpened(info)
     }
     return lane
   }
@@ -85,7 +90,10 @@ export class LaneRegistry {
   }
 
   removeBot(botId: string): void {
+    for (const lane of this.bots.get(botId)?.lanes.values() ?? [])
+      this.log.laneClosed(lane.info, 'bot_removed')
     this.bots.delete(botId)
+    this.log.botRemoved(botId)
     for (const key of this.closedSessions) if (laneInfo(key).botId === botId) this.closedSessions.delete(key)
   }
 
@@ -95,7 +103,8 @@ export class LaneRegistry {
     if (state?.lanes.get(lane.info.key) !== lane) return
     state.lanes.delete(lane.info.key)
     if (lane.info.kind === 'session') this.closedSessions.add(lane.info.key)
-    this.show(state, lane.info.botId, null)
+    this.log.laneClosed(lane.info)
+    this.show(state, lane.info.botId, null, 'remove')
   }
 
   /** Wakes what waits for the bot to be runnable again (resumed, released or stopped). */
@@ -115,7 +124,14 @@ export class LaneRegistry {
     return shown
   }
 
-  setStatus(lane: LaneState, status: BotStatus, detail?: string, targetBotId?: string): void {
+  setStatus(
+    lane: LaneState,
+    status: BotStatus,
+    detail?: string,
+    targetBotId?: string,
+    reason?: StatusReason,
+  ): void {
+    this.log.laneStatus(lane.info, status, reason)
     lane.status = status
     lane.detail = detail
     lane.targetBotId = targetBotId
@@ -124,16 +140,17 @@ export class LaneRegistry {
     if (state?.lanes.get(lane.info.key) !== lane) return
     if (lane.info.kind === 'session' && lane.info.sessionId)
       this.ctx.env().workSessions.laneStatus(lane.info.sessionId, status, detail ?? null)
-    this.show(state, lane.info.botId, lane)
+    this.show(state, lane.info.botId, lane, reason)
   }
 
   /** A lane no turn runs in any more shows what is left for it: its queue, else nothing. */
-  settle(lane: LaneState): void {
-    if (!lane.running) this.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
+  settle(lane: LaneState, reason?: StatusReason): void {
+    if (!lane.running)
+      this.setStatus(lane, lane.queue.length ? 'thinking' : 'idle', undefined, undefined, reason)
   }
 
   /** Reports the bot's status from its lanes; `changed`: the lane whose status was just set. */
-  private show(state: BotState, botId: string, changed: LaneState | null): void {
+  private show(state: BotState, botId: string, changed: LaneState | null, reason?: StatusReason): void {
     const shown = this.shownLane(state, botId)
     const own = shown === changed
     const effective = state.userPaused || (state.paused && shown.status !== 'idle') ? 'paused' : shown.status
@@ -145,6 +162,7 @@ export class LaneRegistry {
       return
     state.status = effective
     state.statusLane = shown.info.key
+    this.log.botStatus(botId, effective, shown.info.key, reason)
     this.ctx
       .env()
       .setBotStatus(
@@ -160,7 +178,13 @@ export class LaneRegistry {
   /** Status of the chat lane from what it is doing (after the bot is resumed or given its screen back). */
   refreshStatus(botId: string): void {
     const main = this.lane(botId)
-    this.setStatus(main, main.running ? 'working' : main.queue.length ? 'thinking' : 'idle')
+    this.setStatus(
+      main,
+      main.running ? 'working' : main.queue.length ? 'thinking' : 'idle',
+      undefined,
+      undefined,
+      'refresh',
+    )
   }
 
   /**

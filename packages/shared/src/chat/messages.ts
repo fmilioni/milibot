@@ -285,6 +285,8 @@ export const WorkSessionPayload = z.object({
   planId: z.string().nullable().optional(),
   planConversationId: z.string().nullable().optional(),
   resultSummary: z.string().nullable().optional(),
+  /** The session of the same bot that replaced it (a new session for the same plan or card). */
+  replacedBy: z.object({ id: z.string(), title: z.string() }).nullable().optional(),
   changes: SessionChangeTotals.nullable().optional(),
   removed: z.boolean().optional(),
 })

@@ -36,6 +36,7 @@ export interface SessionCardsDeps {
   /** Pull request rules of the session (its plan's merge choice, else the workspace's). */
   pullRequestNote?: (plan: Plan | null) => string
   plan: (id: string) => Plan | null
+  row: (id: string) => SessionRow | null
   steps: (row: SessionRow) => PlanStep[]
   branch: (row: SessionRow) => string | null
   appendMessage: (message: NewAgentMessage) => Message
@@ -62,16 +63,27 @@ export class SessionCards {
       planId: row.plan_id,
       planConversationId: row.plan_id ? (this.deps.plan(row.plan_id)?.conversationId ?? null) : null,
       resultSummary: row.result_summary,
+      replacedBy: this.replacedBy(row),
       changes: storedChanges(row)?.totals ?? null,
       ...(removed ? { removed: true } : {}),
     }
   }
 
+  /** The session that replaced this one, while it exists. */
+  replacedBy(row: SessionRow): { id: string; title: string } | null {
+    const by = row.replaced_by ? this.deps.row(row.replaced_by) : null
+    return by ? { id: by.id, title: by.title } : null
+  }
+
   /** What the bot reads about its session in the chat where it started it. */
   content(row: SessionRow): string {
+    const replacedBy = this.replacedBy(row)
     if (isFinished(row.status))
       return (
-        `[Milibot] Your work session "${row.title}" (${row.id}) ended: ${STATUS_TEXT[row.status]}.` +
+        `[Milibot] Your work session "${row.title}" (${row.id}) ended: ` +
+        (replacedBy
+          ? `replaced by your work session "${replacedBy.title}" (${replacedBy.id}).`
+          : `${STATUS_TEXT[row.status]}.`) +
         (row.result_summary ? `\nResult: ${row.result_summary}` : '')
       )
     return (

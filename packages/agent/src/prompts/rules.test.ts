@@ -134,6 +134,14 @@ describe('global rules', () => {
     expect(sessionRules(session, null, false)).not.toContain('request_secret')
   })
 
+  it('tells a session to finish once what is left depends on another bot', () => {
+    const rules = sessionRules({ id: 'ses_1', title: 'Shop', cwd: '/workspace/shop' })
+    expect(rules).toContain('When what is left depends on another bot')
+    expect(rules).toMatch(
+      /would only wait here, call session_finish: the summary says what you found and who has it now/,
+    )
+  })
+
   it("writes for the user in the app's language unless they write in another one", () => {
     const withLanguage = composeSystemPrompt({ bot, team: [], language: 'pt-BR' })
     expect(withLanguage).toContain("The user's language is Brazilian Portuguese")

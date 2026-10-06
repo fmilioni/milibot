@@ -116,6 +116,8 @@ export const WorkSession = z.object({
   steps: Progress,
   costUsd: z.number(),
   resultSummary: z.string().nullable(),
+  /** The session of the same bot that replaced it (a new session for the same plan or card). */
+  replacedBy: z.object({ id: z.string(), title: z.string() }).nullable().optional(),
   /** Last computed totals (null: not computed yet or unavailable). */
   changes: SessionChangeTotals.nullable().optional(),
   /** Helpers (`subagent`): running now and started since the runtime started. */

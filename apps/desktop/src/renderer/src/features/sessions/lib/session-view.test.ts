@@ -1,5 +1,9 @@
 import type { Plan, PlanPayload, SessionChangedFile, WorkSession, WorkSessionPayload } from '@milibot/shared'
-import { describe, expect, it } from 'vitest'
+import i18next, { type TFunction } from 'i18next'
+import { beforeAll, describe, expect, it } from 'vitest'
+
+import en from '@/i18n/locales/en'
+import ptBR from '@/i18n/locales/pt-BR'
 
 import {
   activeWork,
@@ -12,6 +16,7 @@ import {
   sessionCardIsCompact,
   sessionMatchesFilters,
   sessionPanelCollapsed,
+  sessionResult,
   sessionTone,
   shortFilePath,
   splitPath,
@@ -217,5 +222,32 @@ describe('plans and their sessions', () => {
       'plan:plan_newer',
       'plan:plan_chat',
     ])
+  })
+})
+
+describe('sessionResult', () => {
+  let t: TFunction
+  let tEn: TFunction
+  beforeAll(async () => {
+    const instance = i18next.createInstance()
+    await instance.init({
+      lng: 'pt-BR',
+      resources: { 'pt-BR': { translation: ptBR }, en: { translation: en } },
+      interpolation: { escapeValue: false },
+    })
+    t = instance.getFixedT('pt-BR')
+    tEn = instance.getFixedT('en')
+  })
+
+  it("shows the bot's summary, else the session that replaced it in the user's language", () => {
+    const replacedBy = { id: 'wses_2', title: 'Retest login' }
+    expect(sessionResult({ resultSummary: 'PR opened.', replacedBy }, t)).toBe('PR opened.')
+    expect(sessionResult({ resultSummary: null, replacedBy }, t)).toBe(
+      'Substituída pela sessão “Retest login”.',
+    )
+    expect(sessionResult({ resultSummary: null, replacedBy }, tEn)).toBe(
+      'Replaced by the session “Retest login”.',
+    )
+    expect(sessionResult({ resultSummary: null, replacedBy: null }, t)).toBeNull()
   })
 })

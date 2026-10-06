@@ -27,6 +27,7 @@
   "deleteTitle": "Delete work session?",
   "deleteBody": "The conversation of “{{title}}” and its history leave the app. The files in the virtual machine and the branch stay there.",
   "deleteConfirm": "Delete",
+  "replacedBy": "Replaced by the session “{{title}}”.",
   "plan": {
     "result": "Result",
     "planSteps": "Plan steps",

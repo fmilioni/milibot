@@ -28,6 +28,8 @@ export interface SessionRow {
   cli_generation: number
   model_spec: string | null
   result_summary: string | null
+  /** The session that replaced this one (a new session of the same bot for the same work). */
+  replaced_by: string | null
   created_at: number
   updated_at: number
   finished_at: number | null

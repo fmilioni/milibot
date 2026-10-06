@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { PlanDialog } from '@/features/plans/PlanDialog'
 import { PlanProgress, PlanStepList } from '@/features/plans/PlanParts'
-import { isSessionFinished } from '@/features/sessions/lib/session-view'
+import { isSessionFinished, sessionResult } from '@/features/sessions/lib/session-view'
 import { Markdown } from '@/ui/Markdown'
 
 /** "Plan": the steps the session follows (its plan's, or its own list) and, once finished, the result. */
@@ -13,17 +13,18 @@ export function PlanPane({ session }: { session: WorkSessionDetail }) {
   const { t } = useTranslation()
   const [planOpen, setPlanOpen] = useState(false)
   const finished = isSessionFinished(session.status)
+  const result = finished ? sessionResult(session, t) : null
   const markdown = { copyLabel: t('chat.copyCode'), copiedLabel: t('chat.copied') }
 
   return (
     <div className="scroll-slim flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
-      {finished && session.resultSummary && (
+      {result && (
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs font-semibold tracking-[0.04em] text-fg-muted uppercase">
             {t('session.plan.result')}
           </h3>
           <div className="rounded-lg border border-border bg-surface-2 px-3.5 py-1">
-            <Markdown text={session.resultSummary} compact {...markdown} />
+            <Markdown text={result} compact {...markdown} />
           </div>
         </section>
       )}

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { FakeProvider, type FakeStep } from '../llm/fake'
 import type { CompletionRequest } from '../llm/provider'
+import { localStamp } from '../memory/compaction'
 import { makeBot, TestEnv } from '../test-support/env'
 import { DefaultAgentHost } from './agent-host'
 
@@ -60,8 +61,15 @@ describe("the bot's state in every conversation", () => {
   it('lists sessions, plans and requests set aside from other conversations', async () => {
     const { env, provider } = setup({})
     const internal = env.internalConversation(ana.id, iris.id)
+    const today = new Date(env.now())
+    today.setHours(0, 5, 0, 0)
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
     env.workStates.set(iris.id, {
-      sessions: [{ id: 'wses_1', conversationId: 'cnv_session', title: 'QA of PR #22' }],
+      sessions: [
+        { id: 'wses_1', conversationId: 'cnv_session', title: 'QA of PR #22', idleSince: today.getTime() },
+        { id: 'wses_2', conversationId: 'cnv_old', title: 'QA of PR #21', idleSince: yesterday.getTime() },
+      ],
       plans: [{ id: 'plan_1', title: 'Release 0.3', status: 'awaiting_approval' }],
     })
     const entry = env.setAside.add({
@@ -77,7 +85,8 @@ describe("the bot's state in every conversation", () => {
     expect(lastUserText(provider.requests[0] as CompletionRequest)).toContain(
       [
         'Work sessions still open, with no turn running now (waiting for a reply or an answer, or never finished with session_finish):',
-        '- your work session "QA of PR #22"',
+        '- your work session "QA of PR #22" (idle since 00:05, no turn running)',
+        `- your work session "QA of PR #21" (idle since ${localStamp(yesterday.getTime())}, no turn running)`,
         'Plans not finished:',
         '- "Release 0.3" (awaiting approval)',
         'Requests you set aside, to take up when your current work ends (you are woken with each then):',

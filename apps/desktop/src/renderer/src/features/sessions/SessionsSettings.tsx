@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { PlanProgress } from '@/features/plans/PlanParts'
 import { useProjectStore } from '@/features/projects/store'
-import type { SessionFilters } from '@/features/sessions/lib/session-view'
+import { type SessionFilters, sessionResult } from '@/features/sessions/lib/session-view'
 import { SettingsFilterBar } from '@/features/settings/SettingsFilterBar'
 import { SettingsPage } from '@/features/settings/SettingsLayout'
 import { SettingsList, SettingsListRow } from '@/features/settings/SettingsList'
@@ -60,7 +60,7 @@ export function SessionsSettings() {
           <SessionStatusChip status={session.status} />
         </div>
         <span className="line-clamp-2 text-sm leading-[17px] text-fg-secondary">
-          {session.resultSummary ?? session.goal}
+          {sessionResult(session, t) ?? session.goal}
         </span>
         <span className="flex flex-wrap gap-x-3 text-xs text-fg-muted">
           <span>{bots[session.botId]?.name ?? '…'}</span>

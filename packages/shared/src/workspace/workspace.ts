@@ -58,6 +58,8 @@ export const AppSettings = z.object({
   animateEyes: z.boolean(),
   /** null follows the OS setting. */
   reduceMotion: z.boolean().nullable(),
+  /** The app keeps the computer from sleeping while a bot of any workspace is working. */
+  keepAwake: z.boolean(),
 })
 export type AppSettings = z.infer<typeof AppSettings>
 
@@ -66,6 +68,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'system',
   animateEyes: true,
   reduceMotion: null,
+  keepAwake: true,
 }
 
 export const WorkspaceStatus = z.object({

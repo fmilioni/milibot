@@ -35,7 +35,7 @@
     "@eslint/js": "^10.0.1",
     "@semantic-release/changelog": "7.0.0",
     "@semantic-release/git": "11.0.1",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.4",
     "concurrently": "^10.0.5",
     "conventional-changelog-conventionalcommits": "9.3.1",
     "cross-env": "^10.1.0",

@@ -17,6 +17,12 @@ export function notAFile(): DaemonError {
   return new DaemonError('validation_failed', 'The path is not a file', { code: 'NOT_A_FILE' })
 }
 
+export function outsideWorkspace(): DaemonError {
+  return new DaemonError('validation_failed', 'The path leads outside /workspace', {
+    code: 'OUTSIDE_WORKSPACE',
+  })
+}
+
 export function vmNotRunning(): DaemonError {
   return new DaemonError('conflict', 'The workspace VM is not running', { code: 'VM_NOT_RUNNING' })
 }

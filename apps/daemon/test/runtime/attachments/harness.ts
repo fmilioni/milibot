@@ -18,6 +18,8 @@ import { openWorkspaceDb } from '../../../src/workspace-db/open'
 function memoryGuest() {
   const files = new Map<string, Buffer>()
   const folders = new Set<string>()
+  /** Symlinks to outside `/workspace`, which the guest refuses to follow. */
+  const escapes = new Set<string>()
   const owners = new Map<string, string | undefined>()
   const writes: string[] = []
   const execs: Array<{ user?: string; cmd: string; env?: Record<string, string> }> = []
@@ -41,6 +43,8 @@ function memoryGuest() {
     },
     async fsReadChunk(path: string, offset: number, maxBytes: number) {
       if (folders.has(path)) throw new GuestError('not_a_file', `not a file: ${path}`, 400)
+      if (escapes.has(path))
+        throw new GuestError('path_outside_workspace', `escapes via symlink: ${path}`, 400)
       const file = files.get(path)
       if (!file) throw new GuestError('path_not_found', `no such path: ${path}`, 404)
       const part = file.subarray(offset, offset + maxBytes)
@@ -88,7 +92,7 @@ function memoryGuest() {
       }
     },
   }
-  return { files, folders, owners, writes, execs, guest: guest as unknown as GuestClient }
+  return { files, folders, escapes, owners, writes, execs, guest: guest as unknown as GuestClient }
 }
 
 function fakeVm(guest: GuestClient) {

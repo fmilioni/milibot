@@ -10,6 +10,7 @@ const PATH_ERRORS: Record<string, ToastKey> = {
   VM_NOT_RUNNING: 'fileNeedsVmToOpen',
   FILE_REMOVED: 'fileMissing',
   NOT_A_FILE: 'notAFile',
+  OUTSIDE_WORKSPACE: 'fileOutsideWorkspace',
   FILE_TOO_LARGE: 'fileTooLargeToOpen',
 }
 

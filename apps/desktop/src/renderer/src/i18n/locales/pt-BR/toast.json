@@ -34,5 +34,6 @@
   "fileNeedsVmToOpen": "Ligue a VM para abrir este arquivo.",
   "fileMissing": "Este arquivo não existe mais na VM.",
   "notAFile": "Este caminho não é um arquivo.",
+  "fileOutsideWorkspace": "Este arquivo aponta para fora de /workspace e não pode ser aberto pelo app.",
   "fileTooLargeToOpen": "Este arquivo é grande demais para abrir pelo app."
 }

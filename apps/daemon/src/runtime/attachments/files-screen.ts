@@ -17,7 +17,7 @@ import { hostSafeName, sanitizeFileName } from '../../util/safe-path'
 import { GuestError, isVmRunning, type VmController } from '../vm'
 import type { AttachmentEvents } from './notify'
 import { type AttachmentRow, type AttachmentStore, toMessageAttachment } from './store'
-import { fileRemoved, freePath, notAFile, vmNotRunning } from './vm-files'
+import { fileRemoved, freePath, notAFile, outsideWorkspace, vmNotRunning } from './vm-files'
 
 export interface FilesScreenDeps {
   attachments: AttachmentStore
@@ -169,9 +169,7 @@ export class FilesScreen {
     try {
       size = (await guest.fsReadChunk(path, 0, 1)).size
     } catch (err) {
-      if (err instanceof GuestError && err.code === 'path_not_found') throw fileRemoved()
-      if (err instanceof GuestError && err.code === 'not_a_file') throw notAFile()
-      throw err
+      throw pathError(err)
     }
     if (size > this.deps.maxFileBytes())
       throw new DaemonError('conflict', 'The file is too large to open', { code: 'FILE_TOO_LARGE' })
@@ -192,11 +190,19 @@ export class FilesScreen {
     } catch (err) {
       await handle.close()
       await rm(partial, { force: true })
-      if (err instanceof GuestError && err.code === 'path_not_found') throw fileRemoved()
-      throw err
+      throw pathError(err)
     }
     await handle.close()
     await rename(partial, target)
     return { path: target }
   }
+}
+
+/** The guest's refusal to read a path named in text, as the error the app shows a message for. */
+function pathError(err: unknown): unknown {
+  if (!(err instanceof GuestError)) return err
+  if (err.code === 'path_not_found') return fileRemoved()
+  if (err.code === 'not_a_file') return notAFile()
+  if (err.code === 'path_outside_workspace') return outsideWorkspace()
+  return err
 }

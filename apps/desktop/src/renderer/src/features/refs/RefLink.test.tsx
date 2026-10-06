@@ -1,4 +1,4 @@
-import type { RefInfo } from '@milibot/shared'
+import { ApiError, type RefInfo } from '@milibot/shared'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -90,5 +90,16 @@ describe('ids in text', () => {
     )
     await waitFor(() => expect(screen.queryByRole('link', { name: 'Links plan' })).toBeNull())
     expect(screen.getByText(plan)).toBeTruthy()
+  })
+})
+
+describe('/workspace paths in text', () => {
+  it('tells a symlink to outside /workspace apart from other failures', async () => {
+    daemon.call.mockRejectedValue(
+      new ApiError('validation_failed', 'outside', 400, { code: 'OUTSIDE_WORKSPACE' }),
+    )
+    show(<LinkifiedText text="see /workspace/link-out.txt" />)
+    fireEvent.click(screen.getByRole('link', { name: '/workspace/link-out.txt' }))
+    await waitFor(() => expect(useAppStore.getState().toast).toBe('fileOutsideWorkspace'))
   })
 })

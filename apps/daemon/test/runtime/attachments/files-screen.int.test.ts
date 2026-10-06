@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { ATTACHMENT_SETTING_KEYS } from '@milibot/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { DaemonError } from '../../../src/errors'
 import { useTempDir } from '../../support/temp'
 import { type AttachmentsHarness, attachmentsHarness } from './harness'
 
@@ -163,6 +164,14 @@ describe('opening a /workspace file from a link', () => {
     expect(await code(service.files.exportPath('/workspace/gone.md'))).toBe('FILE_REMOVED')
     vmFs.folders.add('/workspace/milibot')
     expect(await code(service.files.exportPath('/workspace/milibot'))).toBe('NOT_A_FILE')
+  })
+
+  it('refuses a symlink to outside /workspace as a client error of its own', async () => {
+    vm.set('running')
+    vmFs.escapes.add('/workspace/link-out.txt')
+    const err = await service.files.exportPath('/workspace/link-out.txt').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(DaemonError)
+    expect(err).toMatchObject({ code: 'validation_failed', details: { code: 'OUTSIDE_WORKSPACE' } })
   })
 
   it('refuses a file above the chats size limit', async () => {

@@ -34,5 +34,6 @@
   "fileNeedsVmToOpen": "Turn on the VM to open this file.",
   "fileMissing": "This file no longer exists in the VM.",
   "notAFile": "This path is not a file.",
+  "fileOutsideWorkspace": "This file points outside /workspace and cannot be opened from the app.",
   "fileTooLargeToOpen": "This file is too large to open from the app."
 }

@@ -494,6 +494,18 @@ describe('moving a card to another board', () => {
     expect(detail.comments.map((c) => c.body)).toEqual(['Movido de "A" para "B".'])
   })
 
+  it('moves with new labels without creating the old ones on the target', async () => {
+    await boot()
+    await tool('board_create', { title: 'From', summary: 'S.', cards: [{ title: 'Card' }] })
+    await tool('board_create', { title: 'To', summary: 'S.' })
+    await tool('board_card_write', { card: 'Card', labels: ['Old'] })
+    await tool('board_card_write', { card: 'Card', board: 'To', labels: ['New'] })
+    const to = (await h.call<Board[]>('listBoards', {}, undefined, {})).find((b) => b.title === 'To') as Board
+    const target = await h.call<BoardDetail>('getBoard', { boardId: to.id })
+    expect(target.labels.map((l) => l.name)).toEqual(['New'])
+    expect(target.cards[0]?.labelIds).toEqual([target.labels[0]?.id])
+  })
+
   it('moves for the user to a chosen column and refuses archived boards', async () => {
     await boot()
     const a = await h.call<BoardDetail>('createBoard', {}, { title: 'A' })

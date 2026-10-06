@@ -421,6 +421,7 @@ export class BoardTools extends ToolSwitch {
         status: target,
         ...(index !== undefined ? { index } : {}),
         author: { type: 'bot', botId: ctx.bot.id },
+        keepLabels: a.labels === undefined,
       })
     }
     const board = to

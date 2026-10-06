@@ -354,7 +354,7 @@ export class BoardStore {
   /**
    * Moves a card to another board, keeping its id, comments, links and assignees: its labels are matched by
    * name on the target (missing ones created with the same color), `images` are the target's rows for the
-   * images its texts show, and both columns get dense positions.
+   * images its texts show, and both columns get dense positions. Without `keepLabels` it lands with none.
    */
   moveCardToBoard(
     cardId: string,
@@ -362,10 +362,11 @@ export class BoardStore {
     status: BoardCardStatus,
     index: number,
     images: ReadonlyArray<{ sha256: string; name: string; path: string }>,
+    keepLabels = true,
   ): void {
     const card = this.card(cardId)
     if (!card) return
-    const labels = this.cardLabelIds(cardId).flatMap((id) => this.label(id) ?? [])
+    const labels = keepLabels ? this.cardLabelIds(cardId).flatMap((id) => this.label(id) ?? []) : []
     const now = this.now()
     this.db.transaction(() => {
       const labelIds = labels.map(

@@ -414,6 +414,8 @@ export class BoardService implements BoardCardLinks {
       status?: BoardCardStatus
       index?: number
       author: { type: 'user' | 'bot'; botId: string | null }
+      /** False when the caller sets the card's labels right after (the old ones would be created for nothing). */
+      keepLabels?: boolean
     },
   ): CardRow {
     const card = this.requireCard(id)
@@ -430,8 +432,8 @@ export class BoardService implements BoardCardLinks {
       throw new DaemonError('conflict', `A board holds at most ${BOARD_LIMITS.cards} cards.`, {
         reason: 'cards_limit',
       })
-    const missing = this.store
-      .cardLabelIds(id)
+    const keepLabels = options.keepLabels ?? true
+    const missing = (keepLabels ? this.store.cardLabelIds(id) : [])
       .flatMap((labelId) => this.store.label(labelId) ?? [])
       .filter((l) => !this.store.labelByName(to.id, l.name))
     if (this.store.labels(to.id).length + missing.length > BOARD_LIMITS.labels)

@@ -27,6 +27,13 @@ describe('global rules', () => {
     expect(prompt(true)).not.toContain('your own Linux user `bot-iris`')
   })
 
+  it('tells every bot to write raw ids and /workspace paths, which the app turns into links', () => {
+    for (const cc of [false, true]) {
+      expect(prompt(cc)).toContain('write its raw id (`bcd_…`')
+      expect(prompt(cc)).toContain('absolute /workspace path')
+    }
+  })
+
   it('tells every bot to read its own daemon log before guessing why something of its misbehaved', () => {
     for (const cc of [false, true]) expect(prompt(cc)).toContain('read `daemon_logs` with `bot: "me"`')
   })

@@ -81,6 +81,7 @@ import {
   UserMinus,
   UserPen,
   UserPlus,
+  UserSearch,
   Users,
   Wrench,
 } from 'lucide-react'
@@ -107,6 +108,7 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   create_bot: UserPlus,
   update_bot: UserPen,
   list_bots: Users,
+  get_bot: UserSearch,
   repo_checkout: GitBranch,
   repo_list: FolderGit2,
   repo_release: GitBranch,

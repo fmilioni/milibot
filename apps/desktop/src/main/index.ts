@@ -11,6 +11,8 @@ import { KeepAwakeGuard } from './services/keep-awake/guard'
 import { NotificationCenter } from './services/notifications/center'
 import { VncBridge } from './services/vnc-bridge'
 import { WorkspaceEventFeed } from './services/workspace-events'
+import { AppUpdateService } from './update/app-updater'
+import { createUpdaterEngine, logUpdate } from './update/engine'
 import { applyPermissionPolicy } from './windows/permissions'
 import { windowsOf, workspaceFocus } from './windows/registry'
 import { showConversation } from './windows/workspace'
@@ -39,7 +41,17 @@ function startApp(): void {
   keepAwake.onChange((state) => {
     for (const window of windowsOf('workspace')) emit(window.webContents, 'keepAwakeChanged', state)
   })
-  registerIpc({ daemon, vncBridge, settings, keepAwake })
+  const lifecycle = new AppLifecycle({ daemon, settings, vncBridge, keepAwake })
+  const appUpdate = new AppUpdateService({
+    engine: createUpdaterEngine(),
+    beforeInstall: () => lifecycle.prepareUpdateQuit(),
+    installFailed: () => lifecycle.updateQuitAborted(),
+    log: logUpdate,
+  })
+  appUpdate.onChange((state) => {
+    for (const window of windowsOf('workspace')) emit(window.webContents, 'appUpdateChanged', state)
+  })
+  registerIpc({ daemon, vncBridge, settings, keepAwake, appUpdate })
   new NotificationCenter({
     settings,
     feed,
@@ -50,6 +62,7 @@ function startApp(): void {
         .then((client) => showConversation(client, workspaceId, conversationId))
         .catch((err: unknown) => console.error('[main] showConversation failed', err)),
   })
-  new AppLifecycle({ daemon, settings, vncBridge, keepAwake }).start()
+  lifecycle.start()
   settings.start()
+  appUpdate.start()
 }

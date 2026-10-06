@@ -65,4 +65,17 @@ describe('preload bridge', () => {
     expect(seen).toEqual([['ws_1', 'c1']])
     expect(listeners.has(EVENT_CHANNELS.showConversation)).toBe(false)
   })
+
+  it("relays the app's update state and the install request", () => {
+    const { ipc, calls, listeners } = fakeIpc()
+    const bridge = createBridge(host('workspace', ipc))
+    const seen: unknown[] = []
+    const off = bridge.onAppUpdateChanged((state) => seen.push(state))
+    listeners.get(EVENT_CHANNELS.appUpdateChanged)?.({}, { status: 'ready', version: '0.5.0' })
+    off()
+    expect(seen).toEqual([{ status: 'ready', version: '0.5.0' }])
+    void bridge.installAppUpdate()
+    expect(calls).toEqual([{ kind: 'invoke', channel: INVOKE_CHANNELS.installAppUpdate, args: [] }])
+    expect('onAppUpdateChanged' in createBridge(host('canvas', ipc))).toBe(false)
+  })
 })

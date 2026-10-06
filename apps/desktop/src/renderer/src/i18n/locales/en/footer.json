@@ -50,5 +50,15 @@
     "title": "System update",
     "link": "See what's new",
     "dismiss": "Dismiss"
+  },
+  "appUpdate": {
+    "title": "Update ready",
+    "link": "Restart to update to v{{version}}",
+    "installing": "Restarting…",
+    "dismiss": "Dismiss",
+    "confirmTitle": "Update to v{{version}} now?",
+    "confirmBody_one": "{{count}} bot is working. Updating now interrupts what it is doing.",
+    "confirmBody_other": "{{count}} bots are working. Updating now interrupts what they are doing.",
+    "confirm": "Update now"
   }
 }

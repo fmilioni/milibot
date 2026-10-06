@@ -2,6 +2,7 @@ import type { AppSettingsWatcher } from '../app/settings'
 import type { DaemonManager } from '../daemon/manager'
 import type { KeepAwakeGuard } from '../services/keep-awake/guard'
 import type { VncBridge } from '../services/vnc-bridge'
+import type { AppUpdateService } from '../update/app-updater'
 import { designInvokes } from './design'
 import { fileInvokes } from './files'
 import { type InvokeHandlers, registerHandlers } from './handle'
@@ -13,6 +14,7 @@ export interface IpcDeps {
   vncBridge: VncBridge
   settings: AppSettingsWatcher
   keepAwake: KeepAwakeGuard
+  appUpdate: AppUpdateService
 }
 
 function ipcHandlers(deps: IpcDeps) {

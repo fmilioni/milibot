@@ -92,6 +92,16 @@ export interface KeepAwakeState {
   busyBots: number
 }
 
+/**
+ * The app's own update (main process, every window): `downloading` and `ready` carry the new version;
+ * `installing` lasts until the app quits to install it. `disabled`: this build or install cannot update itself.
+ */
+export type AppUpdateState =
+  | { status: 'disabled' | 'idle' | 'checking' }
+  | { status: 'downloading'; version: string; percent: number }
+  | { status: 'ready' | 'installing'; version: string }
+  | { status: 'error'; message: string }
+
 export const TitleBarColors = z.object({ color: CssColor, symbolColor: CssColor })
 export type TitleBarColors = z.infer<typeof TitleBarColors>
 
@@ -169,6 +179,9 @@ const invokeEntries = {
   chooseDesignFilePath: { args: z.tuple([DesignSaveOptions]), result: result<string | null>() },
   saveMarkdownFile: { args: z.tuple([z.string(), DesignSaveOptions]), result: result<string | null>() },
   getKeepAwake: { args: none, result: result<KeepAwakeState>() },
+  getAppUpdate: { args: none, result: result<AppUpdateState>() },
+  /** Quits and installs the downloaded update (the app reopens on the new version); false when none is ready. */
+  installAppUpdate: { args: none, result: result<boolean>() },
 } satisfies Record<InvokeName, { args: z.ZodTuple; result: z.ZodType }>
 
 const sendEntries = {
@@ -183,6 +196,7 @@ const eventEntries = {
   /** A notification was clicked: show that conversation. */
   showConversation: { args: z.tuple([z.string(), z.string()]) },
   keepAwakeChanged: { args: z.tuple([result<KeepAwakeState>()]) },
+  appUpdateChanged: { args: z.tuple([result<AppUpdateState>()]) },
 } satisfies Record<EventName, { args: z.ZodTuple }>
 
 function withChannels<E extends Record<string, object>, C extends { [K in keyof E]: string }>(

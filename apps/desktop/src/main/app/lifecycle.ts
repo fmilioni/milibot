@@ -138,6 +138,30 @@ export class AppLifecycle {
     window.focus()
   }
 
+  /**
+   * The updater quits the app right after this and starts the new version: bot screens go back now
+   * (`before-quit` won't hold the quit), and the single-instance lock is released so the new version,
+   * which may start before this process exits, isn't turned away as a second instance.
+   */
+  async prepareUpdateQuit(): Promise<void> {
+    this.quitting = true
+    const ids = workspaceIds()
+    if (ids.length > 0) {
+      await this.deps.daemon
+        .runningClient()
+        .then((client) => (client ? releaseWorkspaces(client, ids, QUIT_RELEASE_TIMEOUT_MS) : null))
+        .catch((err: unknown) => console.warn('[main] releasing bot screens before the update failed', err))
+    }
+    app.releaseSingleInstanceLock()
+  }
+
+  /** The installer refused to start: the app goes on as before `prepareUpdateQuit`. */
+  updateQuitAborted(): void {
+    this.quitting = false
+    if (!app.requestSingleInstanceLock())
+      console.warn('[main] another instance took the lock during the update')
+  }
+
   private beforeQuit(event: Electron.Event): void {
     if (this.quitting) return
     this.quitting = true

@@ -28,6 +28,7 @@ describe('registerIpc', () => {
       vncBridge: {} as never,
       settings: {} as never,
       keepAwake: {} as never,
+      appUpdate: {} as never,
     })
     expect([...registered].sort()).toEqual(
       [...Object.values(INVOKE_CHANNELS), ...Object.values(SEND_CHANNELS)].sort(),

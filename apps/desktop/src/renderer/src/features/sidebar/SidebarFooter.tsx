@@ -10,6 +10,7 @@ import { MetaText } from '@/ui/MetaText'
 import { Tooltip } from '@/ui/Tooltip'
 
 import { ActiveWorkLine } from './ActiveWorkLine'
+import { AppUpdateCard } from './AppUpdateCard'
 import { KeepAwakeIndicator } from './KeepAwakeIndicator'
 import { UsageCards } from './UsageCards'
 import { VmStatusLine } from './VmStatusLine'
@@ -59,6 +60,7 @@ export function SidebarFooter() {
       <UsageCards />
       <ActiveWorkLine />
       <VmStatusLine label={vmLabel} dot={vmDot} running={state === 'running'} />
+      <AppUpdateCard />
       <div className="flex items-center justify-between gap-2 px-1">
         <Tooltip content={t('footer.counterHint')}>
           <button

@@ -32,6 +32,8 @@ export const INVOKE_CHANNELS = {
   chooseDesignFilePath: 'milibot:choose-design-file-path',
   saveMarkdownFile: 'milibot:save-markdown-file',
   getKeepAwake: 'milibot:get-keep-awake',
+  getAppUpdate: 'milibot:get-app-update',
+  installAppUpdate: 'milibot:install-app-update',
 } as const
 
 /** One-way messages from the page. */
@@ -45,6 +47,7 @@ export const SEND_CHANNELS = {
 export const EVENT_CHANNELS = {
   showConversation: 'milibot:show-conversation',
   keepAwakeChanged: 'milibot:keep-awake-changed',
+  appUpdateChanged: 'milibot:app-update-changed',
 } as const
 
 export type InvokeName = keyof typeof INVOKE_CHANNELS
@@ -82,6 +85,9 @@ const NOT_IN_CANVAS: readonly ChannelName[] = [
   'showConversation',
   'getKeepAwake',
   'keepAwakeChanged',
+  'getAppUpdate',
+  'installAppUpdate',
+  'appUpdateChanged',
 ]
 
 const SURFACES: Record<WindowKind, ReadonlySet<ChannelName>> = {

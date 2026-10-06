@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { PlanProgress } from '@/features/plans/PlanParts'
 import { useProjectStore } from '@/features/projects/store'
-import { isSessionFinished } from '@/features/sessions/lib/session-view'
+import { isSessionFinished, sessionResult } from '@/features/sessions/lib/session-view'
 import { SessionStatusChip, useLaneLabel } from '@/features/sessions/SessionParts'
 import { useSessionStore } from '@/features/sessions/store'
 import { useAppStore } from '@/features/workspace/store'
@@ -27,7 +27,7 @@ export function WorkSessionCard({ payload, onOpen }: { payload: WorkSessionPaylo
   const status = live?.status ?? payload.status
   const steps = live?.steps ?? payload.steps
   const changes = live?.changes ?? payload.changes
-  const summary = live?.resultSummary ?? payload.resultSummary
+  const summary = sessionResult(live ?? payload, t)
   const finished = isSessionFinished(status)
   const doing = useLaneLabel(finished ? undefined : live?.lane, laneDetail, bots)
 

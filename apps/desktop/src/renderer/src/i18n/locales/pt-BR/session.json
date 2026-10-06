@@ -27,6 +27,7 @@
   "deleteTitle": "Excluir sessão de trabalho?",
   "deleteBody": "A conversa de “{{title}}” e o histórico dela somem do app. Os arquivos na máquina virtual e o branch continuam lá.",
   "deleteConfirm": "Excluir",
+  "replacedBy": "Substituída pela sessão “{{title}}”.",
   "plan": {
     "result": "Resultado",
     "planSteps": "Passos do plano",

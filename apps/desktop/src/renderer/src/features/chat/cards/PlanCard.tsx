@@ -7,7 +7,12 @@ import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { PlanDecision } from '@/features/plans/PlanDecision'
 import { PlanDialog } from '@/features/plans/PlanDialog'
 import { PlanProgress, PlanStatusChip } from '@/features/plans/PlanParts'
-import { isSessionFinished, planSession, planShowsSession } from '@/features/sessions/lib/session-view'
+import {
+  isSessionFinished,
+  planSession,
+  planShowsSession,
+  sessionResult,
+} from '@/features/sessions/lib/session-view'
 import { SessionStatusChip, useLaneLabel } from '@/features/sessions/SessionParts'
 import { useSessionStore } from '@/features/sessions/store'
 import { toastOnError, useAppStore } from '@/features/workspace/store'
@@ -145,6 +150,7 @@ function PlanSessionCard({
   const bots = useAppStore((s) => s.bots)
   const openWorkSession = useAppStore((s) => s.openWorkSession)
   const finished = isSessionFinished(session.status)
+  const result = finished ? sessionResult(session, t) : null
   const doing = useLaneLabel(finished ? undefined : session.lane, laneDetail, bots)
   const worker = bots[session.botId]
   const otherBot = session.botId !== payload.botId
@@ -186,9 +192,9 @@ function PlanSessionCard({
         </div>
       )}
       {steps.total > 0 && <PlanProgress done={steps.done} total={steps.total} />}
-      {finished && session.resultSummary && (
+      {result && (
         <div className="line-clamp-4 border-l-2 border-border pl-2.5 text-fg-secondary">
-          <Markdown text={session.resultSummary} compact />
+          <Markdown text={result} compact />
         </div>
       )}
       <div className="flex items-center gap-3">

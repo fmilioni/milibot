@@ -129,6 +129,7 @@ export class WorkSessionService {
       cards: deps.cards,
       pullRequestNote: deps.pullRequestNote,
       plan: (id) => this.planOf(id),
+      row: (id) => this.store.row(id),
       steps: (row) => this.steps(row),
       branch: (row) => this.branch(row),
       appendMessage: deps.appendMessage,
@@ -217,6 +218,7 @@ export class WorkSessionService {
       steps: planProgress(this.steps(row)),
       costUsd: this.deps.conversationCost(row.conversation_id),
       resultSummary: row.result_summary,
+      replacedBy: this.cards.replacedBy(row),
       changes: storedChanges(row)?.totals ?? null,
       subagents: this.lanes.subagents(row.id),
       createdAt: row.created_at,
@@ -349,7 +351,6 @@ export class WorkSessionService {
         folder,
         this.store.openFolders().filter((f) => !stale.some((row) => row.cwd === f.cwd)),
       )
-    for (const old of stale) this.replace(old, input.title)
     const cwd = repoName
       ? `${WORKSPACE_DIR}/worktrees/${repoName}/${bot.slug}-${short}`
       : (folder ?? `${SESSIONS_DIR}/${bot.slug}-${short}`)
@@ -374,6 +375,7 @@ export class WorkSessionService {
     })
     if (input.model) this.deps.modelLanesChanged?.()
     this.deps.emit({ type: 'conversation.created', payload: { conversation } })
+    for (const old of stale) this.replace(old, id)
     if (cardId) this.linkCard(cardId, row)
     this.cards.postBrief(row)
     row = this.store.update(id, { origin_message_id: this.cards.postOrigin(row, input.turnId) })
@@ -407,8 +409,8 @@ export class WorkSessionService {
       )
   }
 
-  private replace(row: SessionRow, title: string): void {
-    const next = this.finish(row, 'cancelled', `Replaced by the work session "${title}".`)
+  private replace(row: SessionRow, by: string): void {
+    const next = this.finish(this.store.update(row.id, { replaced_by: by }), 'cancelled', row.result_summary)
     void this.closeLane(next).catch((err: unknown) =>
       this.deps.log?.('warn', 'work session lane close failed', {
         sessionId: row.id,

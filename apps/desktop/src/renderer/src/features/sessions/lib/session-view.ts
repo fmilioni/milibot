@@ -9,6 +9,7 @@ import {
   type WorkSessionPayload,
   type WorkSessionStatus,
 } from '@milibot/shared'
+import type { TFunction } from 'i18next'
 
 import { readPref, writePref } from '@/lib/prefs'
 
@@ -21,6 +22,17 @@ export interface SessionFilters {
 
 export function isSessionFinished(status: WorkSessionStatus): boolean {
   return FINISHED_SESSION_STATUSES.includes(status)
+}
+
+/** What a finished session shows as its result: the bot's summary, else the session that replaced it. */
+export function sessionResult(
+  session:
+    | Pick<WorkSession, 'resultSummary' | 'replacedBy'>
+    | Pick<WorkSessionPayload, 'resultSummary' | 'replacedBy'>,
+  t: TFunction,
+): string | null {
+  if (session.resultSummary) return session.resultSummary
+  return session.replacedBy ? t('session.replacedBy', { title: session.replacedBy.title }) : null
 }
 
 /** The statuses of a session still going on (listed in the sidebar's "in progress"). */

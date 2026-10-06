@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn'
 import { formatClock } from '@/lib/format'
 import type { MentionTarget } from '@/lib/mentions'
 import { shouldAnimateReveal } from '@/lib/reveal'
+import { linkifiedNodes } from '@/ui/LinkifiedText'
 import { Markdown, withMentions } from '@/ui/Markdown'
 import { Tooltip } from '@/ui/Tooltip'
 
@@ -70,7 +71,7 @@ export function MessageRow({
         {text.trim() && (
           <Tooltip content={formatClock(message.createdAt, i18n.language)} side="left">
             <div className="selectable max-w-[75%] rounded-[14px_14px_4px_14px] bg-surface-3 px-3.5 py-2.5 text-md leading-[1.5] break-words whitespace-pre-wrap text-fg">
-              {withMentions(text, mentions)}
+              {withMentions(linkifiedNodes(text), mentions)}
             </div>
           </Tooltip>
         )}

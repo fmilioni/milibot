@@ -85,6 +85,13 @@ const CssColor = z
   .trim()
   .regex(/^(#[0-9a-f]{3,8}|rgba?\([\d.,%\s/]+\)|[a-z]{3,20})$/i)
 
+/** The app keeps the computer from sleeping (`active`) while bots work (`busyBots`, every workspace). */
+export interface KeepAwakeState {
+  active: boolean
+  /** Counted even with the option off. */
+  busyBots: number
+}
+
 export const TitleBarColors = z.object({ color: CssColor, symbolColor: CssColor })
 export type TitleBarColors = z.infer<typeof TitleBarColors>
 
@@ -161,6 +168,7 @@ const invokeEntries = {
   /** Save panel for a `.mbdesign` (the daemon writes it). */
   chooseDesignFilePath: { args: z.tuple([DesignSaveOptions]), result: result<string | null>() },
   saveMarkdownFile: { args: z.tuple([z.string(), DesignSaveOptions]), result: result<string | null>() },
+  getKeepAwake: { args: none, result: result<KeepAwakeState>() },
 } satisfies Record<InvokeName, { args: z.ZodTuple; result: z.ZodType }>
 
 const sendEntries = {
@@ -174,6 +182,7 @@ const sendEntries = {
 const eventEntries = {
   /** A notification was clicked: show that conversation. */
   showConversation: { args: z.tuple([z.string(), z.string()]) },
+  keepAwakeChanged: { args: z.tuple([result<KeepAwakeState>()]) },
 } satisfies Record<EventName, { args: z.ZodTuple }>
 
 function withChannels<E extends Record<string, object>, C extends { [K in keyof E]: string }>(

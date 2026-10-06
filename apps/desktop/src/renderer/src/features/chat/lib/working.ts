@@ -2,11 +2,10 @@ import {
   type Bot,
   type ConversationSummary,
   groupSettings,
+  isBusyStatus,
   type Message,
   parseMentions,
 } from '@milibot/shared'
-
-import { isBusyStatus } from '@/features/bots/lib/bot-status'
 
 import { toMessageView } from './message-view'
 

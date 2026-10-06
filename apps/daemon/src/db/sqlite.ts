@@ -43,3 +43,8 @@ export function parseJson<T>(value: string | null | undefined, fallback: T): T {
     return fallback
   }
 }
+
+/** `?, ?, …` for an `IN (…)` over `values`. */
+export function sqlList(values: readonly unknown[]): string {
+  return values.map(() => '?').join(', ')
+}

@@ -252,6 +252,8 @@
       "browser_tab_close": "Closed the tab “{{detail}}”",
       "browser_tab_close_empty": "Closed a tab",
       "list_bots": "Checked the team",
+      "get_bot": "Read the role of {{detail}}",
+      "get_bot_empty": "Read the role of a bot",
       "update_bot": "Updated the bot {{detail}}",
       "update_bot_empty": "Updated a bot",
       "repo_checkout": "Prepared the repository {{detail}}",

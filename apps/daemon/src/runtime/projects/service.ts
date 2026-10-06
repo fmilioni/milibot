@@ -234,6 +234,11 @@ export class ProjectService {
     return lines.join('\n')
   }
 
+  /** Names of the projects among `ids`, for links in text. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    return this.rows.names(ids)
+  }
+
   handlers(): EndpointHandlers<keyof typeof projectEndpoints> {
     return {
       listProjects: ({ query }) => this.list(query.archived),

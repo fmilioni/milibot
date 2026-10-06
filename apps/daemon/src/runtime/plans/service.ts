@@ -546,6 +546,11 @@ export class PlanService {
     }
   }
 
+  /** Titles of the plans among `ids` (deleted ones left out), for links in text. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    return this.plans.names(ids)
+  }
+
   handlers(): EndpointHandlers<keyof typeof planEndpoints> {
     return {
       listPlans: ({ query }) => this.list(query),

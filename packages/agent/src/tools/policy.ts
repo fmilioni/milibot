@@ -53,7 +53,7 @@ export const TOOL_FAMILIES = {
   knowledge: [...knowledgeTools.names],
   routines: [...routineTools.names],
   secrets: ['request_secret', 'list_secrets'],
-  team: ['create_bot', 'update_bot', 'delete_bot', 'create_group'],
+  team: ['get_bot', 'create_bot', 'update_bot', 'delete_bot', 'create_group'],
   skills: ['skill_save', 'skill_delete'],
   design: [...designTools.names],
   boards: [...boardTools.names],

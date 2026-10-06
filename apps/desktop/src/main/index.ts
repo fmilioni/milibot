@@ -1,15 +1,18 @@
-import { app, nativeTheme, session } from 'electron'
+import { app, nativeTheme, powerSaveBlocker, session } from 'electron'
 
 import { systemLanguage } from './app/i18n'
 import { AppLifecycle, prepareApp } from './app/lifecycle'
 import { launchMode, runDaemonMode } from './app/modes'
 import { AppSettingsWatcher } from './app/settings'
 import { DaemonManager } from './daemon/manager'
+import { emit } from './ipc/handle'
 import { registerIpc } from './ipc/register'
+import { KeepAwakeGuard } from './services/keep-awake/guard'
 import { NotificationCenter } from './services/notifications/center'
 import { VncBridge } from './services/vnc-bridge'
+import { WorkspaceEventFeed } from './services/workspace-events'
 import { applyPermissionPolicy } from './windows/permissions'
-import { workspaceFocus } from './windows/registry'
+import { windowsOf, workspaceFocus } from './windows/registry'
 import { showConversation } from './windows/workspace'
 
 prepareApp()
@@ -31,9 +34,15 @@ function startApp(): void {
     resolvePort: async (target) =>
       (await (await daemon.client()).call('getBotDisplay', { params: target })).vncPort,
   })
-  registerIpc({ daemon, vncBridge, settings })
+  const feed = new WorkspaceEventFeed(settings)
+  const keepAwake = new KeepAwakeGuard({ feed, settings, blocker: powerSaveBlocker })
+  keepAwake.onChange((state) => {
+    for (const window of windowsOf('workspace')) emit(window.webContents, 'keepAwakeChanged', state)
+  })
+  registerIpc({ daemon, vncBridge, settings, keepAwake })
   new NotificationCenter({
     settings,
+    feed,
     focus: workspaceFocus,
     open: (workspaceId, conversationId) =>
       void daemon
@@ -41,6 +50,6 @@ function startApp(): void {
         .then((client) => showConversation(client, workspaceId, conversationId))
         .catch((err: unknown) => console.error('[main] showConversation failed', err)),
   })
-  new AppLifecycle({ daemon, settings, vncBridge }).start()
+  new AppLifecycle({ daemon, settings, vncBridge, keepAwake }).start()
   settings.start()
 }

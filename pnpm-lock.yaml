@@ -241,6 +241,9 @@ importers:
       '@types/flubber':
         specifier: ^0.4.0
         version: 0.4.0
+      '@types/mdast':
+        specifier: ^4.0.4
+        version: 4.0.4
       '@types/react':
         specifier: ^19.2.0
         version: 19.3.0

@@ -17,6 +17,7 @@ import { Button } from '@/ui/Button'
 import { InlineConfirm } from '@/ui/Confirm'
 import { DiffStat } from '@/ui/diff/DiffStat'
 import { DiffView } from '@/ui/diff/DiffView'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Markdown } from '@/ui/Markdown'
 import { Modal } from '@/ui/Modal'
 
@@ -126,7 +127,9 @@ export function PlanDialog({ planId, onClose }: { planId: string; onClose: () =>
       )}
       <section className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-fg-secondary">{t('plans.dialog.summary')}</h3>
-        <p className="text-base leading-[1.5] text-fg">{viewing?.summary ?? plan.summary}</p>
+        <p className="text-base leading-[1.5] text-fg">
+          <LinkifiedText text={viewing?.summary ?? plan.summary} />
+        </p>
       </section>
       <section className="rounded-xl border border-border bg-surface px-4 py-1">
         <Markdown text={viewing?.body ?? plan.body} compact />

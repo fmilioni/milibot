@@ -1,6 +1,6 @@
 import { newId, type Routine, type RoutineStatus } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
+import { type Db, sqlList } from '../../db/sqlite'
 
 interface RoutineRow {
   id: string
@@ -46,6 +46,14 @@ export class RoutineStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Names of the routines among `ids`, with their bots. */
+  names(ids: readonly string[]): Array<{ id: string; name: string; botId: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, name, bot_id AS botId FROM routines WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string; botId: string }>
+  }
 
   list(botId?: string): Routine[] {
     return (

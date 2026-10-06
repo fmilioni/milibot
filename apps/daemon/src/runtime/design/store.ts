@@ -9,8 +9,7 @@ import {
   type PlacedFrame,
 } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
-import { parseJson } from '../../db/sqlite'
+import { type Db, parseJson, sqlList } from '../../db/sqlite'
 
 export interface DesignRow {
   id: string
@@ -132,6 +131,22 @@ export class DesignStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Names of the designs among `ids` (archived ones too). */
+  designNames(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, name FROM designs WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
+
+  /** Names of the frames among `ids`, with their designs. */
+  frameNames(ids: readonly string[]): Array<{ id: string; name: string; designId: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, name, design_id AS designId FROM design_frames WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string; designId: string }>
+  }
 
   row(id: string): DesignRow | null {
     return (this.db.prepare('SELECT * FROM designs WHERE id = ?').get(id) as DesignRow | undefined) ?? null

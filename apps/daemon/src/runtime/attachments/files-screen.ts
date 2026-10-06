@@ -1,16 +1,23 @@
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
-import { copyFile, open, rm, stat } from 'node:fs/promises'
+import { copyFile, open, rename, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, posix } from 'node:path'
 
-import { type FilePage, ListFilesQuery, type MessageAttachment } from '@milibot/shared'
+import {
+  type FilePage,
+  isWorkspaceFilePath,
+  ListFilesQuery,
+  type MessageAttachment,
+  ulid,
+} from '@milibot/shared'
 
 import { DaemonError } from '../../errors'
 import { hostSafeName, sanitizeFileName } from '../../util/safe-path'
 import { GuestError, isVmRunning, type VmController } from '../vm'
 import type { AttachmentEvents } from './notify'
 import { type AttachmentRow, type AttachmentStore, toMessageAttachment } from './store'
-import { fileRemoved, freePath, vmNotRunning } from './vm-files'
+import { fileRemoved, freePath, notAFile, outsideWorkspace, vmNotRunning } from './vm-files'
 
 export interface FilesScreenDeps {
   attachments: AttachmentStore
@@ -20,6 +27,10 @@ export interface FilesScreenDeps {
   stagingPath: (id: string) => string
   /** Where "open"/"show in folder" copies files to (default: `$TMPDIR/milibot-attachments`). */
   exportDir?: string
+  /** Where copies of `/workspace` files opened from links go (default: `$TMPDIR/milibot-vm-files`). */
+  vmFilesDir?: string
+  /** Largest file copied to the host (the chats' limit). */
+  maxFileBytes: () => number
   copyChunkBytes: number
 }
 
@@ -144,4 +155,54 @@ export class FilesScreen {
     await rm(partial, { force: true })
     return { path: target }
   }
+
+  /**
+   * A fresh host copy of a file under `/workspace/` named in text (a link the user clicked), at
+   * `<vmFilesDir>/<sha1 of the path>/<name>`. Never boots the VM.
+   */
+  async exportPath(path: string): Promise<{ path: string }> {
+    if (!isWorkspaceFilePath(path))
+      throw new DaemonError('validation_failed', 'Not a file path under /workspace', { code: 'NOT_A_FILE' })
+    if (!isVmRunning(this.deps.vm)) throw vmNotRunning()
+    const guest = this.deps.vm.runningGuest()
+    let size: number
+    try {
+      size = (await guest.fsReadChunk(path, 0, 1)).size
+    } catch (err) {
+      throw pathError(err)
+    }
+    if (size > this.deps.maxFileBytes())
+      throw new DaemonError('conflict', 'The file is too large to open', { code: 'FILE_TOO_LARGE' })
+    const base = this.deps.vmFilesDir ?? join(tmpdir(), 'milibot-vm-files')
+    const dir = join(base, createHash('sha1').update(path).digest('hex'))
+    const target = join(dir, hostSafeName(posix.basename(path)))
+    mkdirSync(dir, { recursive: true })
+    // The file may have changed in the VM since the last copy: always copy, then swap it in whole.
+    const partial = join(dir, `.${ulid()}.part`)
+    const handle = await open(partial, 'w')
+    try {
+      await guest.fsReadAll(path, {
+        chunkBytes: this.deps.copyChunkBytes,
+        onChunk: async (bytes, offset) => {
+          await handle.write(bytes, 0, bytes.length, offset)
+        },
+      })
+    } catch (err) {
+      await handle.close()
+      await rm(partial, { force: true })
+      throw pathError(err)
+    }
+    await handle.close()
+    await rename(partial, target)
+    return { path: target }
+  }
+}
+
+/** The guest's refusal to read a path named in text, as the error the app shows a message for. */
+function pathError(err: unknown): unknown {
+  if (!(err instanceof GuestError)) return err
+  if (err.code === 'path_not_found') return fileRemoved()
+  if (err.code === 'not_a_file') return notAFile()
+  if (err.code === 'path_outside_workspace') return outsideWorkspace()
+  return err
 }

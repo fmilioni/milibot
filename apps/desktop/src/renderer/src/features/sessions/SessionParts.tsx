@@ -1,12 +1,7 @@
-import type { Bot, WorkSessionStatus } from '@milibot/shared'
+import { type Bot, isBusyStatus, type WorkSessionStatus } from '@milibot/shared'
 import { useTranslation } from 'react-i18next'
 
-import {
-  botStatusLabel,
-  isBusyStatus,
-  type StatusDetail,
-  waitingForUser,
-} from '@/features/bots/lib/bot-status'
+import { botStatusLabel, type StatusDetail, waitingForUser } from '@/features/bots/lib/bot-status'
 import { type SessionTone, sessionTone } from '@/features/sessions/lib/session-view'
 import { cn } from '@/lib/cn'
 import { StatusChip } from '@/ui/Tag'

@@ -23,7 +23,12 @@ const { registerIpc } = await import('./register')
 
 describe('registerIpc', () => {
   it('registers a handler for every channel of the contract', () => {
-    registerIpc({ daemon: {} as never, vncBridge: {} as never, settings: {} as never })
+    registerIpc({
+      daemon: {} as never,
+      vncBridge: {} as never,
+      settings: {} as never,
+      keepAwake: {} as never,
+    })
     expect([...registered].sort()).toEqual(
       [...Object.values(INVOKE_CHANNELS), ...Object.values(SEND_CHANNELS)].sort(),
     )

@@ -8,14 +8,14 @@ import {
   ToolInputError,
   toolText,
 } from '@milibot/agent/tools'
-import { Avatar, type Bot } from '@milibot/shared'
+import { Avatar, type Bot, estimateTokens, PERSONA_MAX_TOKENS } from '@milibot/shared'
 
 import { DaemonError } from '../../errors'
 import type { GroupService } from '../groups'
 import { type BotModelChange, type BotModelPatch, modelRequestArgs } from '../providers'
 import { ToolSwitch } from '../tools-core'
 import type { WorkspaceStore } from '../workspace-store'
-import { applyPersonaEdit, parsePersonaEdit, personaSizeError } from './persona-edit'
+import { applyPersonaEdit, otherBotPersona, parsePersonaEdit, personaSizeError } from './persona-edit'
 import { PromptChangeRefused, type PromptVersionService } from './prompt-versions'
 
 function parseAvatar(value: unknown): Avatar | undefined {
@@ -60,7 +60,7 @@ export interface TeamToolsDeps {
     | 'requestConfirmation'
     | 'deleteBot'
   >
-  /** Versioned persona changes (`update_own_prompt`, `update_bot` with a system prompt). */
+  /** Versioned persona changes (`update_own_prompt`, `update_bot` with a system prompt or patch). */
   prompts: Pick<PromptVersionService, 'requestChange'>
   createBot(input: NewBotInput, creator: Bot): Promise<Bot>
   updateBot(id: string, patch: Partial<NewBotInput>): Bot
@@ -76,6 +76,7 @@ export class TeamTools extends ToolSwitch {
   readonly name = 'team'
   protected readonly handlers = {
     list_bots: () => this.listBots(),
+    get_bot: (_ctx: ToolExecContext, a: ToolArgs) => this.getBot(a),
     create_bot: (ctx: ToolExecContext, a: ToolArgs) => this.createBot(ctx, a),
     update_bot: (ctx: ToolExecContext, a: ToolArgs) => this.updateBot(ctx, a),
     update_own_prompt: (ctx: ToolExecContext, a: ToolArgs) => this.updateOwnPrompt(ctx, a),
@@ -96,13 +97,48 @@ export class TeamTools extends ToolSwitch {
     return bot
   }
 
+  private botHeader(b: Bot): string {
+    const manager = this.deps.groups.managesTeam(b) ? ', manages the team' : ''
+    return `${b.name} (id ${b.id}, label "${b.label}"${manager}, status ${b.status}${b.model ? `, model ${b.model}` : ''})`
+  }
+
   private listBots(): ToolResult {
     const lines = this.deps.store.bots.list().map((b) => {
       const role = b.systemPrompt.replace(/\s+/g, ' ').slice(0, 160)
-      const manager = this.deps.groups.managesTeam(b) ? ', manages the team' : ''
-      return `- ${b.name} (id ${b.id}, label "${b.label}"${manager}, status ${b.status}${b.model ? `, model ${b.model}` : ''})${role ? `: ${role}` : ''}`
+      return `- ${this.botHeader(b)}${role ? `: ${role}` : ''}`
     })
     return toolText(lines.join('\n') || 'No bots.')
+  }
+
+  private getBot(a: ToolArgs): ToolResult {
+    const bot = this.botByRef(requireString(a, 'bot'))
+    const role = bot.systemPrompt.trim()
+    return toolText(
+      [
+        this.botHeader(bot),
+        `Role section (~${estimateTokens(role)} of ${PERSONA_MAX_TOKENS} tokens):`,
+        '<role_section>',
+        role || '(empty)',
+        '</role_section>',
+      ].join('\n'),
+    )
+  }
+
+  /**
+   * The role section `update_bot` would leave, from a whole `system_prompt` or a `patch` over the current
+   * text; null when neither was given. Resolved before anything is written, so a refused edit changes nothing.
+   */
+  private newRolePrompt(target: Bot, a: ToolArgs): { text: string } | { error: string } | null {
+    const full = givenString(a, 'system_prompt')
+    const args = { system_prompt: full?.trim() ? full : undefined, patch: a.patch ?? undefined }
+    if (args.system_prompt === undefined && args.patch === undefined) return null
+    const scope = otherBotPersona(target.name)
+    const edit = parsePersonaEdit(args, scope)
+    if ('error' in edit) throw new ToolInputError(edit.error)
+    const applied = applyPersonaEdit(target.systemPrompt.trim(), edit, scope)
+    if ('error' in applied) return applied
+    const sizeError = personaSizeError(applied.text)
+    return sizeError ? { error: sizeError } : applied
   }
 
   private async createBot(ctx: ToolExecContext, a: ToolArgs): Promise<ToolResult> {
@@ -157,6 +193,8 @@ export class TeamTools extends ToolSwitch {
 
   private updateBot(ctx: ToolExecContext, a: ToolArgs): ToolResult {
     const target = this.botByRef(requireString(a, 'bot'))
+    const prompt = this.newRolePrompt(target, a)
+    if (prompt && 'error' in prompt) return toolText(`${prompt.error} Nothing was changed.`, true)
     const avatar = parseAvatar(a.avatar)
     const name = optionalString(a, 'name')
     const label = givenString(a, 'label')
@@ -169,9 +207,8 @@ export class TeamTools extends ToolSwitch {
     }
     const updated = Object.keys(patch).length ? this.deps.updateBot(target.id, patch) : target
     const summary = Object.keys(patch).length ? `Updated ${updated.name} (id ${updated.id}).` : ''
-    const prompt = optionalString(a, 'system_prompt')
     if (!prompt) return toolText(summary || `Nothing to change for ${target.name}.`)
-    const result = this.changePrompt(ctx, updated, prompt, optionalString(a, 'reason') ?? '', true)
+    const result = this.changePrompt(ctx, updated, prompt.text, optionalString(a, 'reason') ?? '', true)
     const message = (result.content[0] as { text: string }).text
     return toolText(summary ? `${summary} ${message}` : message, result.isError === true && !summary)
   }

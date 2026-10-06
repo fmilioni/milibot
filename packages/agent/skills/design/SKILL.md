@@ -29,6 +29,7 @@ Read the guide for what you are making with `skill_read` (name "design", path be
 4. Fix in place with `design_edit_frame` (exact text replacement, copied from `design_read`). Never delete a frame to redo it for a detail.
 5. `design_screenshot` every 2 to 4 frames and at the end, and look at it critically: alignment, spacing rhythm, contrast, hierarchy, awkward line breaks, anything clipped. Not after every edit.
 6. Tell the user in a line or two what you drew; the design card in the chat opens the canvas.
+   Elsewhere (cards, plans, other chats) a design or frame is pointed at by its raw id as plain text, without backticks (dsg_…, dfr_…), which the app shows as a link to the canvas.
 
 ## Comments on an element
 

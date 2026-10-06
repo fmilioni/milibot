@@ -1,4 +1,5 @@
-import { Check, Copy, FileText } from 'lucide-react'
+import { isWorkspaceFilePath, refKindOf } from '@milibot/shared'
+import { Check, Copy } from 'lucide-react'
 import {
   Children,
   cloneElement,
@@ -18,8 +19,10 @@ import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/cn'
 import { type MentionTarget, splitMentions } from '@/lib/mentions'
 import { rehypeReveal, type RevealOptions } from '@/lib/rehype-reveal'
+import { remarkRefs } from '@/lib/remark-refs'
 import { REVEAL_FADE_MS } from '@/lib/reveal'
 
+import { FileChip, PathText, RefText } from './RefLinks'
 import { Tooltip } from './Tooltip'
 
 function MentionChip({ text }: { text: string }) {
@@ -45,6 +48,7 @@ export function withMentions(children: ReactNode, targets: MentionTarget[]): Rea
       isValidElement<{ children?: ReactNode; node?: { tagName?: string } }>(child) &&
       child.type !== 'code' &&
       child.props.node?.tagName !== 'code' &&
+      child.props.node?.tagName !== 'a' &&
       child.props.children
     ) {
       return cloneElement(child, undefined, withMentions(child.props.children, targets))
@@ -132,6 +136,8 @@ interface MarkdownProps {
   renderImage?: (src: string, alt: string) => ReactNode
 }
 
+const REMARK_PLUGINS = [remarkGfm, remarkRefs]
+
 const keepAssets = (url: string) => (url.startsWith('asset:') ? url : defaultUrlTransform(url))
 
 /** Chat markdown: GFM, inline code chips, code blocks with copy, `@mention` chips. Raw HTML is never rendered. */
@@ -169,7 +175,7 @@ export const Markdown = memo(function Markdown({
       )}
     >
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={reveal ? [[rehypeReveal, reveal]] : undefined}
         components={components}
         {...(renderAsset ? { urlTransform: keepAssets } : {})}
@@ -180,6 +186,28 @@ export const Markdown = memo(function Markdown({
     </div>
   )
 })
+
+/** The text of `children` when it is only text. */
+function plainText(children: ReactNode): string | null {
+  const parts = Children.toArray(children)
+  return parts.every((part) => typeof part === 'string') ? parts.join('') : null
+}
+
+/**
+ * Ids of the app and `/workspace/` paths (from `remarkRefs` or written as `[text](bcd_…)`) open inside the app;
+ * anything else is an external link. A link labelled with its own target shows the item's name instead.
+ */
+function MarkdownLink({ href, children }: { href: string | undefined; children: ReactNode }) {
+  const own = href !== undefined && plainText(children) === href
+  if (href && refKindOf(href)) return <RefText id={href} label={own ? undefined : children} />
+  if (href && isWorkspaceFilePath(href))
+    return <PathText path={href} variant="text" label={own ? undefined : children} />
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+      {children}
+    </a>
+  )
+}
 
 function markdownComponents(mentions: MentionTarget[], copyLabel: string, copiedLabel: string): Components {
   const m = (children: ReactNode) => withMentions(children, mentions)
@@ -210,11 +238,7 @@ function markdownComponents(mentions: MentionTarget[], copyLabel: string, copied
         <table className="border-collapse text-base">{children}</table>
       </div>
     ),
-    a: ({ href, children }) => (
-      <a href={href} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
-        {children}
-      </a>
-    ),
+    a: ({ href, children }) => <MarkdownLink href={href}>{children}</MarkdownLink>,
     hr: () => <hr className="my-3 border-border" />,
     img: () => null,
     pre: ({ children }) => {
@@ -229,14 +253,8 @@ function markdownComponents(mentions: MentionTarget[], copyLabel: string, copied
     code: ({ children, className }) => {
       if (className) return <code className={className}>{children}</code>
       const value = String(children)
-      if (/^\/(workspace|home)\//.test(value)) {
-        return (
-          <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-border bg-surface px-1.5 align-[-2px] font-mono text-sm text-fg-secondary">
-            <FileText size={12} className="shrink-0 text-fg-muted" />
-            <span className="truncate">{value}</span>
-          </span>
-        )
-      }
+      if (isWorkspaceFilePath(value)) return <PathText path={value} variant="chip" />
+      if (/^\/(workspace|home)\//.test(value)) return <FileChip path={value} />
       return (
         <code className="rounded-[5px] bg-surface-3 px-1 py-px font-mono text-code text-fg">{children}</code>
       )

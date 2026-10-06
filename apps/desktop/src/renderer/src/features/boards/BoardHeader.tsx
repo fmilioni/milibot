@@ -129,47 +129,47 @@ export function BoardHeader({ board }: { board: Board }) {
               : t('boards.createdOnUser', { date: created })}
           </span>
         </span>
-        <span className="no-drag hit">
-          <MoreMenu
-            label={t('boards.menu.label', { title: board.title })}
-            width={200}
-            entries={[
-              {
-                key: 'edit',
-                label: t('boards.menu.edit'),
-                icon: <Pencil size={14} />,
-                onSelect: () => setEditing(true),
-              },
-              {
-                key: 'copy-id',
-                label: t('boards.menu.copyId'),
-                icon: <Copy size={14} />,
-                onSelect: () => copyWithToast(board.id, 'idCopied'),
-              },
-              archived
-                ? {
-                    key: 'unarchive',
-                    label: t('boards.menu.unarchive'),
-                    icon: <ArchiveRestore size={14} />,
-                    onSelect: () => setArchived(false),
-                  }
-                : {
-                    key: 'archive',
-                    label: t('boards.menu.archive'),
-                    icon: <Archive size={14} />,
-                    onSelect: () => setArchived(true),
-                  },
-              { type: 'separator', key: 'sep' },
-              {
-                key: 'delete',
-                label: t('boards.menu.delete'),
-                icon: <Trash2 size={14} />,
-                danger: true,
-                onSelect: () => setDeleting(true),
-              },
-            ]}
-          />
-        </span>
+        <MoreMenu
+          size="md"
+          className="no-drag"
+          label={t('boards.menu.label', { title: board.title })}
+          width={200}
+          entries={[
+            {
+              key: 'edit',
+              label: t('boards.menu.edit'),
+              icon: <Pencil size={14} />,
+              onSelect: () => setEditing(true),
+            },
+            {
+              key: 'copy-id',
+              label: t('boards.menu.copyId'),
+              icon: <Copy size={14} />,
+              onSelect: () => copyWithToast(board.id, 'idCopied'),
+            },
+            archived
+              ? {
+                  key: 'unarchive',
+                  label: t('boards.menu.unarchive'),
+                  icon: <ArchiveRestore size={14} />,
+                  onSelect: () => setArchived(false),
+                }
+              : {
+                  key: 'archive',
+                  label: t('boards.menu.archive'),
+                  icon: <Archive size={14} />,
+                  onSelect: () => setArchived(true),
+                },
+            { type: 'separator', key: 'sep' },
+            {
+              key: 'delete',
+              label: t('boards.menu.delete'),
+              icon: <Trash2 size={14} />,
+              danger: true,
+              onSelect: () => setDeleting(true),
+            },
+          ]}
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <h2 className="selectable line-clamp-2 text-6xl leading-tight font-bold text-fg">{board.title}</h2>

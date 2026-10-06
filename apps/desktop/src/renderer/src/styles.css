@@ -467,17 +467,21 @@
   }
 }
 
-/* Grows the pointer target to at least 44×44 around a smaller control, centered, without changing its look. */
+/* Grows the pointer target to at least 32×32 around a smaller control, centered, without changing its look.
+   Put it on the control itself (a test checks): the ::after then belongs to the control and its clicks reach it.
+   It stays below the control's own content, so a child that handles clicks is never covered. */
 @utility hit {
   position: relative;
+  isolation: isolate;
 
   &::after {
     content: '';
     position: absolute;
+    z-index: -1;
     left: 50%;
     top: 50%;
-    width: max(100%, 44px);
-    height: max(100%, 44px);
+    width: max(100%, 32px);
+    height: max(100%, 32px);
     transform: translate(-50%, -50%);
   }
 }

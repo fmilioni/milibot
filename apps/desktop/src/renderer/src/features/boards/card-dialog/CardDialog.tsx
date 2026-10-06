@@ -201,42 +201,41 @@ export function CardDialog({
         </div>
         <aside className="scroll-slim flex w-[340px] shrink-0 flex-col gap-6 overflow-y-auto border-l border-border bg-surface px-6 pt-4 pb-5">
           <div className="-mr-2 flex justify-end gap-1">
-            <span className="hit flex size-11 items-center justify-center">
-              <MoreMenu
-                label={t('boards.card.more', { title: card.title })}
-                width={210}
-                entries={[
-                  {
-                    key: 'copy-id',
-                    label: t('boards.card.copyId'),
-                    icon: <Copy size={14} />,
-                    onSelect: () => copyWithToast(card.id, 'idCopied'),
-                  },
-                  {
-                    key: 'move',
-                    label: t('boards.card.moveTo'),
-                    icon: <FolderInput size={14} />,
-                    onSelect: () => onMove(card),
-                  },
-                  { type: 'separator', key: 'sep' },
-                  {
-                    key: 'delete',
-                    label: t('boards.card.delete'),
-                    icon: <Trash2 size={14} />,
-                    danger: true,
-                    onSelect: () => setDeleting(true),
-                  },
-                ]}
-              />
-            </span>
+            <MoreMenu
+              size="md"
+              label={t('boards.card.more', { title: card.title })}
+              width={210}
+              entries={[
+                {
+                  key: 'copy-id',
+                  label: t('boards.card.copyId'),
+                  icon: <Copy size={14} />,
+                  onSelect: () => copyWithToast(card.id, 'idCopied'),
+                },
+                {
+                  key: 'move',
+                  label: t('boards.card.moveTo'),
+                  icon: <FolderInput size={14} />,
+                  onSelect: () => onMove(card),
+                },
+                { type: 'separator', key: 'sep' },
+                {
+                  key: 'delete',
+                  label: t('boards.card.delete'),
+                  icon: <Trash2 size={14} />,
+                  danger: true,
+                  onSelect: () => setDeleting(true),
+                },
+              ]}
+            />
             <Tooltip content={t('common.close')}>
               <button
                 type="button"
                 aria-label={t('common.close')}
                 onClick={onClose}
-                className="focus-ring flex size-11 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3 hover:text-fg"
+                className="focus-ring hit flex size-7 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3 hover:text-fg"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </Tooltip>
           </div>

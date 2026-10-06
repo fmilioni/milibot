@@ -14,7 +14,8 @@ function popover(onSend = vi.fn(() => Promise.resolve()), onClose = vi.fn(), onP
   nav.append(link)
   render(
     <ElementCommentPopover
-      anchor={() => ({ left: 10, top: 10, right: 60, bottom: 30 })}
+      stage={{ current: null }}
+      box={{ x: 10, y: 10, width: 50, height: 20 }}
       trail={[
         { key: nav, label: 'nav' },
         { key: link, label: 'a' },

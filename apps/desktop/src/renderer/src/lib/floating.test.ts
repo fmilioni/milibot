@@ -45,7 +45,7 @@ describe('placePopover', () => {
 })
 
 describe('placeNextTo', () => {
-  const view = { width: 1000, height: 800 }
+  const view = { left: 0, top: 0, right: 1000, bottom: 800 }
   const size = { width: 300, height: 200 }
   const rect = (left: number, top: number, width: number, height: number) => ({
     left,
@@ -70,5 +70,10 @@ describe('placeNextTo', () => {
   it('stays inside the view when nothing fits', () => {
     expect(placeNextTo(rect(-50, -50, 1100, 900), size, view)).toEqual({ left: 8, top: 8 })
     expect(placeNextTo(rect(100, 700, 100, 50), size, view)).toEqual({ left: 208, top: 592 })
+  })
+
+  it('stays inside the canvas, not over what is around it', () => {
+    const canvas = { left: 380, top: 56, right: 1280, bottom: 776 }
+    expect(placeNextTo(rect(450, 140, 760, 570), size, canvas)).toEqual({ left: 450, top: 140 })
   })
 })

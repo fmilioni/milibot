@@ -47,17 +47,20 @@ export function placeBeside(point: Point, size: Size, viewport: Size): FloatingP
 
 /**
  * Next to a rect (a comment on something on a canvas): on its right, else its left, else under it, else over
- * it; inside the viewport margins, over the rect only when nothing else fits.
+ * it; inside `bounds` (the canvas, in viewport pixels) less the margins, over the rect only when nothing else
+ * fits.
  */
-export function placeNextTo(anchor: AnchorRect, size: Size, viewport: Size, gap = 8): FloatingPosition {
-  const maxLeft = viewport.width - size.width - MARGIN
-  const maxTop = viewport.height - size.height - MARGIN
-  const top = clamp(anchor.top, MARGIN, maxTop)
+export function placeNextTo(anchor: AnchorRect, size: Size, bounds: AnchorRect, gap = 8): FloatingPosition {
+  const minLeft = bounds.left + MARGIN
+  const minTop = bounds.top + MARGIN
+  const maxLeft = bounds.right - size.width - MARGIN
+  const maxTop = bounds.bottom - size.height - MARGIN
+  const top = clamp(anchor.top, minTop, maxTop)
   if (anchor.right + gap <= maxLeft) return { left: anchor.right + gap, top }
-  if (anchor.left - gap - size.width >= MARGIN) return { left: anchor.left - gap - size.width, top }
-  const left = clamp(anchor.left, MARGIN, maxLeft)
+  if (anchor.left - gap - size.width >= minLeft) return { left: anchor.left - gap - size.width, top }
+  const left = clamp(anchor.left, minLeft, maxLeft)
   if (anchor.bottom + gap <= maxTop) return { left, top: anchor.bottom + gap }
-  if (anchor.top - gap - size.height >= MARGIN) return { left, top: anchor.top - gap - size.height }
+  if (anchor.top - gap - size.height >= minTop) return { left, top: anchor.top - gap - size.height }
   return { left, top }
 }
 

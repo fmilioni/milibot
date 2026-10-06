@@ -160,7 +160,7 @@ export function useElementComment({
 
   /** A pointer down while pointing: true when it was taken (never selects the frame or pans). */
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>, space: boolean): boolean => {
-    if (!active || event.button !== 0 || space) return false
+    if (!(active || (enabled && event.altKey)) || event.button !== 0 || space) return false
     event.preventDefault()
     const hit = locate(event)
     if (!hit) {
@@ -181,7 +181,9 @@ export function useElementComment({
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointer.current = { clientX: event.clientX, clientY: event.clientY }
-    if (active) hoverAt(pointer.current)
+    // Alt pressed or released while the window was in the background only shows on the pointer.
+    if (event.altKey !== alt) setAlt(event.altKey)
+    if (enabled && (tool || event.altKey)) hoverAt(pointer.current)
   }
 
   const onPointerLeave = () => {

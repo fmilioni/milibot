@@ -1,9 +1,10 @@
+import type { DesignRect } from '@milibot/shared'
 import { ChevronRight, SendHorizontal } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { type KeyboardEvent, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
-import { type AnchorRect, placeNextTo } from '@/lib/floating'
+import { placeNextTo } from '@/lib/floating'
 import { handleDialogKeys } from '@/ui/dialog-keys'
 import { FloatingPortal } from '@/ui/floating/FloatingPortal'
 import { useAnchoredPosition } from '@/ui/floating/use-anchored-position'
@@ -15,15 +16,18 @@ import { Spinner } from '@/ui/Spinner'
  * outside it closes it too, except on the canvas (`keepOpen`), which picks elements itself.
  */
 export function ElementCommentPopover({
-  anchor,
+  stage,
+  box,
   trail,
   onPick,
   onSend,
   onClose,
   keepOpen,
 }: {
-  /** The element's rect on screen (viewport pixels), read when placing. */
-  anchor: () => AnchorRect
+  /** The canvas: the box stays inside it. */
+  stage: RefObject<HTMLElement | null>
+  /** The element on the canvas (pixels from its top left corner). */
+  box: DesignRect
   /** From the page's top element down to the picked one (last). */
   trail: readonly { key: Element; label: string }[]
   onPick: (element: Element) => void
@@ -37,19 +41,28 @@ export function ElementCommentPopover({
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
   const textarea = useRef<HTMLTextAreaElement>(null)
-  const { ref, position } = useAnchoredPosition((el, viewport) =>
-    placeNextTo(anchor(), el.getBoundingClientRect(), viewport),
-  )
+  const { ref, position } = useAnchoredPosition((el, viewport) => {
+    const bounds =
+      stage.current?.getBoundingClientRect() ?? new DOMRect(0, 0, viewport.width, viewport.height)
+    const left = bounds.left + box.x
+    const top = bounds.top + box.y
+    const element = { left, top, right: left + box.width, bottom: top + box.height }
+    return placeNextTo(element, el.getBoundingClientRect(), bounds)
+  })
   const tag = trail.at(-1)?.label ?? ''
 
-  // Focus moves in, and back to where it was when the box closes.
+  // Focus goes back to where it was when the box closes.
   useLayoutEffect(() => {
     const previous = document.activeElement
-    textarea.current?.focus({ preventScroll: true })
     return () => {
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus({ preventScroll: true })
     }
   }, [])
+  // It renders hidden until placed, and a hidden field can't take the focus.
+  const placed = position !== null
+  useLayoutEffect(() => {
+    if (placed) textarea.current?.focus({ preventScroll: true })
+  }, [placed])
 
   const latest = useRef({ onClose, keepOpen })
   useLayoutEffect(() => {

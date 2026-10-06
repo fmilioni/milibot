@@ -210,6 +210,10 @@ export function Stage({
         stageHandlers.onPointerMove(event)
       }}
       onPointerLeave={comment.onPointerLeave}
+      // A pick focuses the comment box; the mouse down that follows must not take the focus back.
+      onMouseDown={(event) => {
+        if (comment.active || (onComment && event.altKey)) event.preventDefault()
+      }}
       onContextMenu={onContextMenu}
       onDoubleClick={(event) => {
         if (comment.active) return
@@ -416,22 +420,17 @@ export function Stage({
           const picked = comment.picked
           const rect = rects.find((r) => r.id === picked.frameId)
           if (!rect) return null
-          const anchor = () => {
-            const stage = ref.current?.getBoundingClientRect()
-            const box = rectToScreen(v, {
-              x: rect.x + picked.box.x,
-              y: rect.y + picked.box.y,
-              width: picked.box.width,
-              height: picked.box.height,
-            })
-            const left = (stage?.left ?? 0) + box.x
-            const top = (stage?.top ?? 0) + box.y
-            return { left, top, right: left + box.width, bottom: top + box.height }
-          }
+          const box = rectToScreen(v, {
+            x: rect.x + picked.box.x,
+            y: rect.y + picked.box.y,
+            width: picked.box.width,
+            height: picked.box.height,
+          })
           return (
             <ElementCommentPopover
               key={picked.frameId}
-              anchor={anchor}
+              stage={ref}
+              box={box}
               trail={trailOf(picked.element).map((el) => ({ key: el, label: el.tagName.toLowerCase() }))}
               onPick={comment.pickInTrail}
               onSend={(text) => onComment(picked.frameId, picked.element, text).then(comment.close)}

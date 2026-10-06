@@ -35,7 +35,7 @@ Read the guide for what you are making with `skill_read` (name "design", path be
 The user can point at an element on the canvas and comment on it. The message then starts with its reference, then the comment:
 
 ```
-[Element <button> "Save" in frame "Checkout" (frm_…) of the design "Shop" (dsg_…)]
+[Element <button> "Save" in frame "Checkout" (dfr_…) of the design "Shop" (dsg_…)]
 Selector: body > main:nth-child(1) > form:nth-child(2) > button:nth-child(3)
 Source: <button class="btn-primary w-full">
 make it smaller

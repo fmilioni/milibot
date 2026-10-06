@@ -26,7 +26,7 @@ const definitions = {
         include_supervisor: {
           type: 'boolean',
           description:
-            "Also the supervisor's lines (no workspace: app startup, workspaces opening). Default false.",
+            "Also the lines of no workspace: the supervisor's (app startup, workspaces opening) and raw text (crash output). Default false.",
         },
       },
     },

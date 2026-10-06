@@ -921,6 +921,7 @@ export function createContainer(options: ContainerOptions) {
       resolveBot: (ref) => store.bots.resolveRef(ref),
       botName: (id) => store.bots.find(id)?.name ?? null,
       now,
+      redact,
     }),
   ]
   const tools = new ToolRegistry(toolProviders, redact)

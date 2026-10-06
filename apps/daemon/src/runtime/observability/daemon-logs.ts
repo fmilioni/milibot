@@ -31,12 +31,12 @@ const UNIT_MS: Record<string, number> = { s: 1000, m: 60_000, min: 60_000, h: 3_
 
 /**
  * Credentials a log line may carry that no stored secret matches (a provider's token in an error, an
- * Authorization header). Known secret values are redacted after, by the tool registry.
+ * Authorization header). Known secret values go through `deps.redact`.
  */
 const SECRET_PATTERNS: Array<[RegExp, string]> = [
   [/\b(Bearer|Basic|Token)\s+[A-Za-z0-9._~+/=-]{8,}/gi, '$1 [REDACTED]'],
   [
-    /("?(?:authorization|api[_-]?key|x-api-key|access[_-]?token|refresh[_-]?token|token|secret|password|passwd|cookie)"?\s*[:=]\s*"?)(?!\d+\b)[^\s",}&]{4,}/gi,
+    /("?(?:authorization|api[_-]?key|x-api-key|access[_-]?token|refresh[_-]?token|token|secret|password|passwd|cookie)"?\s*[:=]\s*"?)(?!\d+\b)(?!(?:Bearer|Basic|Token) \[REDACTED\])[^\s",}&]{4,}/gi,
     '$1[REDACTED]',
   ],
   [/\b(?:sk|pk|rk)-[A-Za-z0-9_-]{16,}/g, '[REDACTED]'],
@@ -58,6 +58,8 @@ export interface DaemonLogToolsDeps {
   resolveBot(ref: string): Bot | null
   botName(id: string): string | null
   now(): number
+  /** Takes the workspace's known secret values out of a text. */
+  redact(text: string): string
 }
 
 interface Query {
@@ -110,9 +112,10 @@ function localTime(ms: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`
 }
 
-function shortValue(value: unknown): string {
+/** Redacts before cutting: a secret cut in half would no longer match and part of it would show. */
+function shortValue(value: unknown, deps: DaemonLogToolsDeps): string {
   const text = typeof value === 'string' ? value : JSON.stringify(value)
-  const flat = (text ?? '').replace(/\s+/g, ' ')
+  const flat = deps.redact(redactLogText((text ?? '').replace(/\s+/g, ' ')))
   return flat.length > MAX_VALUE_CHARS ? `${flat.slice(0, MAX_VALUE_CHARS)}…` : flat
 }
 
@@ -136,8 +139,8 @@ function formatLine(
   if (query.botId && !line.includes(query.botId)) return null
   if (!record) {
     // Not a pino record (a crash's stack trace, a warning a library printed): no workspace to scope it by.
-    if (!query.supervisor && !query.contains) return null
-    return { text: `[raw] ${shortValue(line)}`, time: null }
+    if (!query.supervisor) return null
+    return { text: `[raw] ${shortValue(line, deps)}`, time: null }
   }
   const time = typeof record.time === 'number' ? record.time : null
   if (record.workspaceId !== undefined && record.workspaceId !== deps.workspaceId) return null
@@ -155,9 +158,9 @@ function formatLine(
           : '-'
   const extras = Object.entries(record)
     .filter(([key, value]) => !SHOWN_APART.has(key) && value !== undefined && value !== null)
-    .map(([key, value]) => `${key}=${shortValue(value)}`)
+    .map(([key, value]) => `${key}=${shortValue(value, deps)}`)
   const levelName = LEVEL_NAMES[level] ?? String(level)
-  const head = `${time === null ? '?' : localTime(time)} ${levelName} ${who}: ${shortValue(record.msg ?? '')}`
+  const head = `${time === null ? '?' : localTime(time)} ${levelName} ${who}: ${shortValue(record.msg ?? '', deps)}`
   return { text: extras.length ? `${head} ${extras.join(' ')}` : head, time }
 }
 
@@ -239,7 +242,7 @@ async function daemonLogs(ctx: ToolExecContext, a: ToolArgs, deps: DaemonLogTool
   }
   const footer = `-- ${result.lines.length} line(s); ${STOP_NOTE[result.stop](query)}`
   const body = result.lines.length ? result.lines.join('\n') : 'No matching lines.'
-  return toolText(redactLogText(`${body}\n${footer}`))
+  return toolText(`${body}\n${footer}`)
 }
 
 /** `daemon_logs`: a bot reads the daemon's log of its own workspace to find out what went wrong. */

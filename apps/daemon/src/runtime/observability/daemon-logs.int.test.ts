@@ -26,6 +26,7 @@ function tool(path: string | null) {
       [me, other].find((b) => b.id === ref || b.name.toLowerCase() === ref.toLowerCase()) ?? null,
     botName: (id) => [me, other].find((b) => b.id === id)?.name ?? null,
     now: () => NOW,
+    redact: (text) => redactSecrets(text, [SECRET]),
   }
   const provider = new DaemonLogTools(deps)
   const ctx: ToolExecContext = {
@@ -111,9 +112,34 @@ describe('daemon_logs', () => {
     expect((await run({ include_supervisor: true })).text).toContain(
       '[raw] node: warning printed by a library',
     )
-    expect((await run({ contains: 'warning printed' })).lines).toHaveLength(1)
+    expect((await run({ contains: 'warning printed', include_supervisor: true })).lines).toHaveLength(1)
     expect((await run({ bot: 'nobody' })).result.isError).toBe(true)
     expect((await run({ since: 'yesterday-ish' })).result.isError).toBe(true)
+  })
+
+  it('leaves out raw lines unless include_supervisor is set, even when they match "contains"', async () => {
+    const run = tool(fixture())
+    expect((await run({ contains: 'warning printed' })).lines).toEqual(['No matching lines.'])
+  })
+
+  it('redacts a secret before cutting a long value, so no part of it shows', async () => {
+    const run = tool(
+      writeLog([
+        rec(1, { workspaceId: WS, msg: 'long', detail: `${'x'.repeat(290)}${SECRET}` }),
+        rec(1, { workspaceId: WS, msg: `${'y'.repeat(295)}Bearer abcdefghijklmnopqrstuvwxyz` }),
+      ]),
+    )
+    const { text } = await run()
+    expect(text).not.toContain(SECRET.slice(0, 8))
+    expect(text).toContain('xxx••••••')
+    expect(text).not.toContain('abcdefgh')
+  })
+
+  it('keeps the scheme of a redacted Authorization header', async () => {
+    const run = tool(
+      writeLog([rec(1, { workspaceId: WS, msg: 'req', header: 'Authorization: Bearer abcdefghijkl' })]),
+    )
+    expect((await run()).text).toContain('header=Authorization: Bearer [REDACTED]')
   })
 
   it('stops at the limit and reports it', async () => {

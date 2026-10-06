@@ -182,6 +182,7 @@ export class DefaultAgentHost implements AgentHost {
     const info = laneInfo(laneKey)
     if (info.kind === 'main') return
     const lane = ctx.lanes.findLane(laneKey)
+    if (lane) lane.closed = true
     if (lane && info.kind === 'session') {
       // Requests still queued there go where the ended session started (or are dropped with a deleted one).
       const queued = lane.queue

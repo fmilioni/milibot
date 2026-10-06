@@ -7,6 +7,8 @@ import type { BotState, LaneState, TurnState } from '../state'
 /** The bots' lanes and what the bot shows of them (its status, system lines in its chat). */
 export class LaneRegistry {
   private readonly bots = new Map<string, BotState>()
+  /** Session lanes this host forgot (their sessions ended) and nothing opened again since. */
+  private readonly closedSessions = new Set<LaneKey>()
 
   constructor(private readonly ctx: HostContext) {}
 
@@ -53,7 +55,17 @@ export class LaneRegistry {
     const state = this.bot(info.botId)
     let lane = state.lanes.get(key)
     if (!lane) {
-      lane = { info, queue: [], running: false, current: null, stopped: false, detached: 0, status: 'idle' }
+      this.closedSessions.delete(key)
+      lane = {
+        info,
+        queue: [],
+        running: false,
+        current: null,
+        stopped: false,
+        closed: false,
+        detached: 0,
+        status: 'idle',
+      }
       state.lanes.set(key, lane)
     }
     return lane
@@ -63,13 +75,27 @@ export class LaneRegistry {
     return this.lane(turn?.laneKey ?? botId)
   }
 
-  removeBot(botId: string): void {
-    this.bots.delete(botId)
+  /**
+   * A lane that only a late tool call could bring back: a session lane forgotten since, or a helper's (their
+   * keys are never reused).
+   */
+  isGone(key: LaneKey): boolean {
+    if (this.findLane(key)) return false
+    return laneInfo(key).kind === 'subagent' || this.closedSessions.has(key)
   }
 
+  removeBot(botId: string): void {
+    this.bots.delete(botId)
+    for (const key of this.closedSessions) if (laneInfo(key).botId === botId) this.closedSessions.delete(key)
+  }
+
+  /** Forgets the lane; the bot's status no longer counts it. */
   removeLane(lane: LaneState): void {
     const state = this.bots.get(lane.info.botId)
-    if (state?.lanes.get(lane.info.key) === lane) state.lanes.delete(lane.info.key)
+    if (state?.lanes.get(lane.info.key) !== lane) return
+    state.lanes.delete(lane.info.key)
+    if (lane.info.kind === 'session') this.closedSessions.add(lane.info.key)
+    this.show(state, lane.info.botId, null)
   }
 
   /** Wakes what waits for the bot to be runnable again (resumed, released or stopped). */
@@ -90,29 +116,45 @@ export class LaneRegistry {
   }
 
   setStatus(lane: LaneState, status: BotStatus, detail?: string, targetBotId?: string): void {
-    const env = this.ctx.env()
-    const botId = lane.info.botId
-    const state = this.bot(botId)
     lane.status = status
     lane.detail = detail
     lane.targetBotId = targetBotId
+    const state = this.bots.get(lane.info.botId)
+    // A lane already forgotten (reached by a late tool call or wait) shows nowhere.
+    if (state?.lanes.get(lane.info.key) !== lane) return
     if (lane.info.kind === 'session' && lane.info.sessionId)
-      env.workSessions.laneStatus(lane.info.sessionId, status, detail ?? null)
+      this.ctx.env().workSessions.laneStatus(lane.info.sessionId, status, detail ?? null)
+    this.show(state, lane.info.botId, lane)
+  }
+
+  /** A lane no turn runs in any more shows what is left for it: its queue, else nothing. */
+  settle(lane: LaneState): void {
+    if (!lane.running) this.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
+  }
+
+  /** Reports the bot's status from its lanes; `changed`: the lane whose status was just set. */
+  private show(state: BotState, botId: string, changed: LaneState | null): void {
     const shown = this.shownLane(state, botId)
-    const own = shown === lane
+    const own = shown === changed
     const effective = state.userPaused || (state.paused && shown.status !== 'idle') ? 'paused' : shown.status
-    if (state.status === effective && state.statusLane === shown.info.key && (!own || detail === undefined))
+    if (
+      state.status === effective &&
+      state.statusLane === shown.info.key &&
+      (!own || shown.detail === undefined)
+    )
       return
     state.status = effective
     state.statusLane = shown.info.key
-    env.setBotStatus(
-      botId,
-      effective,
-      own ? detail : shown.detail,
-      own ? targetBotId : shown.targetBotId,
-      shown.info.sessionId ?? undefined,
-      shown.current?.conversationId,
-    )
+    this.ctx
+      .env()
+      .setBotStatus(
+        botId,
+        effective,
+        shown.detail,
+        shown.targetBotId,
+        shown.info.sessionId ?? undefined,
+        shown.current?.conversationId,
+      )
   }
 
   /** Status of the chat lane from what it is doing (after the bot is resumed or given its screen back). */

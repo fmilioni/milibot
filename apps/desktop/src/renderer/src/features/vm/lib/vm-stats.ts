@@ -82,6 +82,7 @@ export function botUsageRows(stats: VmStats, knownBots: ReadonlySet<string>): Bo
   return [...bots, { botId: null, ...stats.other }]
 }
 
+/** `ms` comes from `now - startedAt`; a `now` refreshed before the VM started makes it negative, shown as 0. */
 export function formatUptime(
   ms: number,
   t: (
@@ -89,7 +90,7 @@ export function formatUptime(
     o: Record<string, number>,
   ) => string,
 ): string {
-  const minutes = Math.floor(ms / 60_000)
+  const minutes = Math.floor(Math.max(0, ms) / 60_000)
   const days = Math.floor(minutes / 1440)
   const hours = Math.floor((minutes % 1440) / 60)
   if (days > 0) return t('settings.vm.uptimeDays', { days, hours })

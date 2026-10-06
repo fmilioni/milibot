@@ -5,8 +5,9 @@ import { hasModKey } from '@/lib/platform'
 import { type Size, stepZoom, type Viewport, zoomAt } from '@/lib/viewport'
 
 /**
- * ⌘+ / ⌘− / ⌘0 (100%) / ⌘1 (fit) / ⇧⌘C (copy the selected frame) and Escape (deselect). The ⌘ ones (Ctrl
- * off macOS) work from the composer too, which keeps the focus; plain keys don't.
+ * ⌘+ / ⌘− / ⌘0 (100%) / ⌘1 (fit) / ⇧⌘C (copy the selected frame), C (the Comment tool) and Escape (deselect,
+ * leave the tool). The ⌘ ones (Ctrl off macOS) work from the composer too, which keeps the focus; plain keys
+ * don't.
  */
 export function useCanvasShortcuts(options: {
   viewport: Viewport | null
@@ -17,6 +18,10 @@ export function useCanvasShortcuts(options: {
   copySelected: (() => void) | null
   /** Null while nothing should be deselected (no selection, or a menu or panel takes Escape). */
   deselect: (() => void) | null
+  /** Null while the Comment tool can't be used. */
+  toggleComment: (() => void) | null
+  /** Null while no tool is on. */
+  leaveTool: (() => void) | null
 }): void {
   const latest = useRef(options)
   useLayoutEffect(() => {
@@ -24,7 +29,8 @@ export function useCanvasShortcuts(options: {
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const { viewport, size, setViewport, fit, copySelected, deselect } = latest.current
+      const { viewport, size, setViewport, fit, copySelected, deselect, toggleComment, leaveTool } =
+        latest.current
       const mod = hasModKey(event)
       if (!viewport || (!mod && isTypingTarget(event.target))) return
       const mid = { x: size.width / 2, y: size.height / 2 }
@@ -48,7 +54,13 @@ export function useCanvasShortcuts(options: {
         }
         return
       }
-      if (event.key === 'Escape') deselect?.()
+      if (event.key === 'Escape') {
+        deselect?.()
+        leaveTool?.()
+      } else if (event.key.toLowerCase() === 'c' && !event.altKey && !event.shiftKey && toggleComment) {
+        event.preventDefault()
+        toggleComment()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

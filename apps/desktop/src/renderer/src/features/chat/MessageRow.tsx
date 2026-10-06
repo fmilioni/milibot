@@ -58,10 +58,15 @@ export function MessageRow({
 
   if (message.authorType === 'user') {
     const attached = message.payload?.type === 'user_message' ? message.payload : null
-    const { frame, text } = splitFrameContext(attached ? attached.text : message.content)
+    const { frame, element, text } = splitFrameContext(attached ? attached.text : message.content)
+    const chip = element
+      ? element.label
+        ? t('canvas.elementChip', { tag: element.tag, label: element.label, frame: element.frame })
+        : t('canvas.elementChipBare', { tag: element.tag, frame: element.frame })
+      : frame && t('canvas.chip', { name: frame })
     return (
       <div className="flex flex-col items-end gap-1.5">
-        {frame && <FrameChip label={t('canvas.chip', { name: frame })} className="max-w-[75%]" />}
+        {chip && <FrameChip label={chip} className="max-w-[75%]" />}
         {text.trim() && (
           <Tooltip content={formatClock(message.createdAt, i18n.language)} side="left">
             <div className="selectable max-w-[75%] rounded-[14px_14px_4px_14px] bg-surface-3 px-3.5 py-2.5 text-md leading-[1.5] break-words whitespace-pre-wrap text-fg">

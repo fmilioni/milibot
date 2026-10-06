@@ -15,17 +15,29 @@ import {
   themeKey,
   visibleFrameIds,
 } from '@/features/canvas/lib/canvas'
+import { trailOf } from '@/features/canvas/lib/element-pick'
 import { useReducedMotion } from '@/features/workspace/use-reduced-motion'
 import { cn } from '@/lib/cn'
 import { type Size, stepZoom, type Viewport, zoomAt } from '@/lib/viewport'
 import { ZoomControls } from '@/ui/ZoomControls'
 
 import { BotCursors } from './BotCursor'
-import { FramePage } from './FramePage'
+import { ElementCommentPopover } from './ElementCommentPopover'
+import { FramePage, type LiveFrame } from './FramePage'
 import { PenCursors, usePenTrails } from './PenCursors'
-import { botColor, DraftLabels, DraftLayer, DragOverlay, FrameLabels, PresencePill } from './StageLayers'
+import {
+  botColor,
+  DraftLabels,
+  DraftLayer,
+  DragOverlay,
+  ElementOutlines,
+  FrameLabels,
+  PresencePill,
+} from './StageLayers'
 import { type Presence, useDesignStore } from './store'
 import { useBotCursors } from './use-bot-cursors'
+import { useChangeFlashes } from './use-change-flashes'
+import { useElementComment } from './use-element-comment'
 import { useStageGestures } from './use-stage-gestures'
 
 const IDENTITY: Viewport = { x: 0, y: 0, zoom: 1 }
@@ -46,6 +58,10 @@ export interface StageProps {
   onZoomToFrame: (frameId: string) => void
   onFit: () => void
   presence: Presence | null
+  /** The Comment tool is on: elements are pointed at without holding Alt. */
+  commentTool: boolean
+  /** Sends a comment about an element; null when there is no conversation to send it to. */
+  onComment: ((frameId: string, element: Element, text: string) => Promise<void>) | null
 }
 
 /** The canvas surface: frames at their positions, pan/zoom, selection, dragging by the label. */
@@ -65,6 +81,8 @@ export function Stage({
   onZoomToFrame,
   onFit,
   presence,
+  commentTool,
+  onComment,
 }: StageProps) {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
@@ -111,6 +129,18 @@ export function Stage({
       })),
     [draftList, draftHeights, rects],
   )
+  const comment = useElementComment({
+    enabled: onComment !== null,
+    tool: commentTool,
+    rects,
+    frames: design.frames,
+    replaced,
+    worldAt,
+  })
+  const frameLoaded = useRef(comment.onFrameLoad)
+  useLayoutEffect(() => {
+    frameLoaded.current = comment.onFrameLoad
+  })
   const visibleDrafts = useMemo(() => visibleFrameIds(draftRects, v, size), [draftRects, v, size])
   const measureDraft = useCallback(
     (draftId: string, height: number) =>
@@ -130,9 +160,21 @@ export function Stage({
   const writtenDrafts = useMemo(() => draftList.filter((d) => !d.art), [draftList])
   const cursors = useBotCursors({ bots, presences, drafts: writtenDrafts, draftRects, rects, colorOf })
   const pens = usePenTrails()
+  const { flashes, flash } = useChangeFlashes()
+  const live = useMemo<LiveFrame>(
+    () => ({ onFlash: flash, onLoad: (frameId) => frameLoaded.current(frameId) }),
+    [flash],
+  )
   const penEntries = draftList.flatMap((d) =>
     d.art ? [{ draftId: d.draftId, name: bots[d.botId]?.name ?? '…', color: colorOf(d.botId) }] : [],
   )
+
+  // The comment box is portalled out of the stage, but React still bubbles its events up to here.
+  const onStage =
+    <E extends React.SyntheticEvent<HTMLDivElement>>(handler: (event: E) => void) =>
+    (event: E) => {
+      if (event.target instanceof Node && event.currentTarget.contains(event.target)) handler(event)
+    }
 
   const onContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -164,12 +206,28 @@ export function Stage({
       role="application"
       aria-label={t('canvas.stageLabel', { name: design.name })}
       aria-roledescription={t('canvas.stageRole')}
-      {...stageHandlers}
-      onContextMenu={onContextMenu}
-      onDoubleClick={(event) => {
+      onPointerDown={onStage((event) => {
+        if (comment.onPointerDown(event, space)) return
+        if (event.button === 0 && !space) comment.close()
+        stageHandlers.onPointerDown(event)
+      })}
+      onPointerMove={onStage((event) => {
+        comment.onPointerMove(event)
+        stageHandlers.onPointerMove(event)
+      })}
+      onPointerUp={stageHandlers.onPointerUp}
+      onPointerCancel={stageHandlers.onPointerCancel}
+      onPointerLeave={comment.onPointerLeave}
+      // A pick focuses the comment box; the mouse down that follows must not take the focus back.
+      onMouseDown={onStage((event) => {
+        if (comment.active || (onComment && event.altKey)) event.preventDefault()
+      })}
+      onContextMenu={onStage(onContextMenu)}
+      onDoubleClick={onStage((event) => {
+        if (comment.active) return
         const hit = hitTest(rects, worldAt(event))
         if (hit) onZoomToFrame(hit)
-      }}
+      })}
       className={`relative min-h-0 flex-1 touch-none overflow-hidden bg-surface outline-none select-none ${cursor}`}
     >
       {viewport && (
@@ -211,11 +269,29 @@ export function Stage({
                     frame={frame}
                     theme={theme}
                     version={`${frame.updatedAt}:${themeKeys[theme] ?? ''}`}
+                    look={themeKeys[theme] ?? theme}
                     height={rect.height}
                     background={background}
                     watch={cursors.writers.has(frame.id)}
                     onChange={cursors.markFrame}
+                    live={live}
                   />
+                )}
+                {flashes[frame.id] && (
+                  <ElementOutlines
+                    key={flashes[frame.id]?.id}
+                    boxes={flashes[frame.id]?.boxes ?? []}
+                    zoom={v.zoom}
+                    className="canvas-change-flash"
+                  />
+                )}
+                {comment.hover?.frameId === frame.id &&
+                  !drag?.moved &&
+                  comment.hover.element !== comment.picked?.element && (
+                    <ElementOutlines boxes={[comment.hover.box]} zoom={v.zoom} />
+                  )}
+                {comment.picked?.frameId === frame.id && (
+                  <ElementOutlines boxes={[comment.picked.box]} zoom={v.zoom} />
                 )}
                 {scan && (
                   <div
@@ -342,6 +418,33 @@ export function Stage({
               <Move size={11} aria-hidden />
               {t('canvas.dragHint')}
             </div>
+          )
+        })()}
+
+      {comment.picked &&
+        onComment &&
+        viewport &&
+        (() => {
+          const picked = comment.picked
+          const rect = rects.find((r) => r.id === picked.frameId)
+          if (!rect) return null
+          const box = rectToScreen(v, {
+            x: rect.x + picked.box.x,
+            y: rect.y + picked.box.y,
+            width: picked.box.width,
+            height: picked.box.height,
+          })
+          return (
+            <ElementCommentPopover
+              key={picked.frameId}
+              stage={ref}
+              box={box}
+              trail={trailOf(picked.element).map((el) => ({ key: el, label: el.tagName.toLowerCase() }))}
+              onPick={comment.pickInTrail}
+              onSend={(text) => onComment(picked.frameId, picked.element, text).then(comment.close)}
+              onClose={comment.close}
+              keepOpen={(target) => Boolean(ref.current?.contains(target))}
+            />
           )
         })()}
 

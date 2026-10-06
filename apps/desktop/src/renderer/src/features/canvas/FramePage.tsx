@@ -1,11 +1,21 @@
 import type { DesignFrame } from '@milibot/shared'
 import { ImageOff } from 'lucide-react'
-import { memo, useEffect, useRef } from 'react'
+import { memo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { type Box, changedRegion, type ElementShot, snapshotPage } from '@/features/canvas/lib/bot-cursor'
+import { type Box, changedRegion, snapshotPage } from '@/features/canvas/lib/bot-cursor'
+import { pageChanged, shownPage } from '@/features/canvas/lib/change-flash'
 
+import { registerFrameIframe } from './frame-iframes'
 import { docKey, useDesignStore } from './store'
+
+/** What the canvas follows of its frames' pages (absent in the chat's previews). */
+export interface LiveFrame {
+  /** The elements that changed since the page shown before (frame pixels). */
+  onFlash: (frameId: string, boxes: Box[]) => void
+  /** A page finished loading (its iframe is registered for `frameDocument`). */
+  onLoad: (frameId: string) => void
+}
 
 /**
  * A frame's compiled page at its native size, in a sandboxed iframe (no scripts; the page's CSP forbids any
@@ -18,34 +28,43 @@ export const FramePage = memo(function FramePage({
   frame,
   theme,
   version,
+  look,
   height,
   background,
   watch = false,
   onChange,
+  live,
 }: {
   workspaceId: string
   designId: string
   frame: DesignFrame
   theme: string
   version: string
+  /** Key of the theme's values: a page loaded in another look is restyled, not changed. */
+  look?: string
   height: number
   background: string | null
   /** A bot is changing this frame: report where each new version differs from the one shown before. */
   watch?: boolean
   onChange?: (frameId: string, box: Box) => void
+  /** With `look`: record each page shown, outline what changed and register the iframe. */
+  live?: LiveFrame
 }) {
   const { t } = useTranslation()
   const doc = useDesignStore((s) => s.docs[docKey(frame.id, theme)])
   const ensureDoc = useDesignStore((s) => s.ensureDoc)
   const setMeasured = useDesignStore((s) => s.setMeasured)
-  const iframe = useRef<HTMLIFrameElement>(null)
+  const iframe = useRef<HTMLIFrameElement | null>(null)
+  const frameId = frame.id
+  const attach = useCallback(
+    (el: HTMLIFrameElement | null) => {
+      iframe.current = el
+      if (!el || !live) return
+      return registerFrameIframe(frameId, el)
+    },
+    [frameId, live],
+  )
   const auto = frame.height === null
-  const shots = useRef<ElementShot[] | null>(null)
-
-  useEffect(() => {
-    const doc = iframe.current?.contentDocument
-    shots.current = watch && doc?.body ? snapshotPage(doc) : null
-  }, [watch])
 
   useEffect(() => {
     ensureDoc(workspaceId, designId, frame.id, theme, version)
@@ -54,10 +73,15 @@ export const FramePage = memo(function FramePage({
   const loaded = () => {
     measure()
     const doc = iframe.current?.contentDocument
-    if (!watch || !doc) return
+    if (!doc?.body) return
     const next = snapshotPage(doc)
-    const box = shots.current && changedRegion(shots.current, next)
-    shots.current = next
+    const before = shownPage(frame.id)
+    if (live && look !== undefined) {
+      const boxes = pageChanged(frame.id, look, next)
+      if (boxes.length) live.onFlash(frame.id, boxes)
+      live.onLoad(frame.id)
+    }
+    const box = watch && before ? changedRegion(before, next) : null
     if (box) onChange?.(frame.id, box)
   }
 
@@ -78,7 +102,7 @@ export const FramePage = memo(function FramePage({
     >
       {html ? (
         <iframe
-          ref={iframe}
+          ref={attach}
           title={frame.name}
           srcDoc={html}
           sandbox="allow-same-origin"

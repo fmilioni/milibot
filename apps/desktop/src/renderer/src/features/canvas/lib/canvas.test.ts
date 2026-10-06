@@ -230,9 +230,10 @@ describe('revisions and frame messages', () => {
     const prefix = frameContextPrefix('Dashboard', 'Onboarding')
     expect(splitFrameContext(`${prefix}\nmake the balance bigger`)).toEqual({
       frame: 'Dashboard',
+      element: null,
       text: 'make the balance bigger',
     })
-    expect(splitFrameContext('just text')).toEqual({ frame: null, text: 'just text' })
+    expect(splitFrameContext('just text')).toEqual({ frame: null, element: null, text: 'just text' })
   })
 })
 

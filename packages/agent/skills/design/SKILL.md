@@ -30,6 +30,21 @@ Read the guide for what you are making with `skill_read` (name "design", path be
 5. `design_screenshot` every 2 to 4 frames and at the end, and look at it critically: alignment, spacing rhythm, contrast, hierarchy, awkward line breaks, anything clipped. Not after every edit.
 6. Tell the user in a line or two what you drew; the design card in the chat opens the canvas.
 
+## Comments on an element
+
+The user can point at an element on the canvas and comment on it. The message then starts with its reference, then the comment:
+
+```
+[Element <button> "Save" in frame "Checkout" (dfr_…) of the design "Shop" (dsg_…)]
+Selector: body > main:nth-child(1) > form:nth-child(2) > button:nth-child(3)
+Source: <button class="btn-primary w-full">
+make it smaller
+```
+
+- `Source` is the element's opening tag exactly as written in the frame's HTML and unique there (sometimes the whole element): use it as `old_text` in `design_edit_frame`, keeping or changing its attributes in `new_text`. To change what is inside the element, `design_read` the frame and take a longer `old_text` starting at it.
+- `Source (occurrence 2 of 3)` means the same text appears more than once: `design_read` and include the text around it. `Source, as a JSON string` holds line breaks: decode it before using it as `old_text`. Without `Source`, find the element by its `Selector`, a path of element positions in the frame's HTML (icons are `<i data-icon>`, drawings `<div data-art>` there).
+- Change only that element (and what the comment asks around it), then answer in a line what you changed.
+
 ## Frames
 
 - A frame is a whole page or a whole screen, never a section of one. A web page (landing page, site page, article) is **one** frame 1440 wide with no height: it grows with its content, however long. Asked for "a landing page", you draw one frame. Its mobile version is another frame, 390 wide, no height.

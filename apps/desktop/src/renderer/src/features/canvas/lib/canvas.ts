@@ -10,6 +10,8 @@ import {
 
 import { fitViewport, type Point, type Size, toScreen, toWorld, type Viewport } from '@/lib/viewport'
 
+import { type ElementContext, splitElementContext } from './element-ref'
+
 /** Height assumed for a frame that grows with its content and was never measured (as the daemon does). */
 export const AUTO_HEIGHT_GUESS = 900
 /** Gap the daemon keeps between a dropped frame and the ones around it. */
@@ -213,7 +215,7 @@ export function themeKey(
 }
 
 /** Short FNV-1a hash (cache keys). */
-function hashString(value: string): string {
+export function hashString(value: string): string {
   let hash = 0x811c9dc5
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i)
@@ -268,9 +270,18 @@ export function frameContextPrefix(frame: string, design: string): string {
   return `[Frame "${frame}" of the design "${design}"]`
 }
 
-/** Splits a message written about a frame into the frame's name and the text. */
-export function splitFrameContext(content: string): { frame: string | null; text: string } {
+/**
+ * Splits a message written about a frame ("Ask for a change") or one of its elements (a comment from the
+ * canvas) into what it is about and the text.
+ */
+export function splitFrameContext(content: string): {
+  frame: string | null
+  element: ElementContext | null
+  text: string
+} {
+  const element = splitElementContext(content)
+  if (element) return { frame: element.element.frame, element: element.element, text: element.text }
   const match = /^\[Frame "(.+)" of the design "(.+)"\]\n?/.exec(content)
-  if (!match) return { frame: null, text: content }
-  return { frame: match[1] as string, text: content.slice(match[0].length) }
+  if (!match) return { frame: null, element: null, text: content }
+  return { frame: match[1] as string, element: null, text: content.slice(match[0].length) }
 }

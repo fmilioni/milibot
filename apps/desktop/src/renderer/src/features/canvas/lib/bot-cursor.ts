@@ -14,6 +14,8 @@ export interface Box {
 export interface ElementShot {
   signature: string
   box: Box
+  /** Index of the parent element's shot; -1 for the body's children. */
+  parent: number
 }
 
 const ATTRIBUTE_CHARS = 120
@@ -33,13 +35,19 @@ function ownSignature(el: Element): string {
 export function snapshotPage(doc: Document): ElementShot[] {
   const body = doc.body
   if (!body) return []
-  return Array.from(body.querySelectorAll('*'), (el) => {
+  const elements = Array.from(body.querySelectorAll('*'))
+  const index = new Map(elements.map((el, i) => [el, i]))
+  return elements.map((el) => {
     const r = el.getBoundingClientRect()
-    return { signature: ownSignature(el), box: { x: r.left, y: r.top, width: r.width, height: r.height } }
+    return {
+      signature: ownSignature(el),
+      box: { x: r.left, y: r.top, width: r.width, height: r.height },
+      parent: el.parentElement ? (index.get(el.parentElement) ?? -1) : -1,
+    }
   })
 }
 
-function union(boxes: Box[]): Box | null {
+export function union(boxes: Box[]): Box | null {
   if (!boxes.length) return null
   const left = Math.min(...boxes.map((b) => b.x))
   const top = Math.min(...boxes.map((b) => b.y))

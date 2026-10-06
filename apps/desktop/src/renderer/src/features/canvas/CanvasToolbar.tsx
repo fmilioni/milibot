@@ -5,6 +5,7 @@ import {
   ArchiveRestore,
   ChevronDown,
   Download,
+  MessageSquare,
   Palette,
   PenTool,
   SwatchBook,
@@ -36,6 +37,9 @@ export function CanvasToolbar({
   variablesOpen,
   exportOpen,
   exporting,
+  commentTool,
+  canComment,
+  onCommentTool,
   onSwitcher,
   onThemeMenu,
   onVariables,
@@ -54,6 +58,10 @@ export function CanvasToolbar({
   variablesOpen: boolean
   exportOpen: boolean
   exporting: boolean
+  commentTool: boolean
+  /** There is a conversation to send comments to. */
+  canComment: boolean
+  onCommentTool: () => void
   onSwitcher: (anchor: DOMRect) => void
   onThemeMenu: (anchor: DOMRect) => void
   onVariables: () => void
@@ -98,6 +106,29 @@ export function CanvasToolbar({
         </span>
       </div>
       <div className="flex-1" />
+      <Tooltip
+        content={
+          canComment
+            ? t('canvas.comment.toolHint', { name: bot?.name ?? '…' })
+            : t('canvas.comment.toolUnavailable')
+        }
+      >
+        <button
+          type="button"
+          aria-pressed={commentTool}
+          aria-keyshortcuts="C"
+          aria-disabled={!canComment}
+          onClick={canComment ? onCommentTool : undefined}
+          className={cn(toolbarButton(commentTool), 'aria-disabled:cursor-default aria-disabled:opacity-50')}
+        >
+          <MessageSquare
+            size={13}
+            className={commentTool ? 'text-accent' : 'text-fg-secondary'}
+            aria-hidden
+          />
+          <span className="font-semibold text-fg">{t('canvas.comment.tool')}</span>
+        </button>
+      </Tooltip>
       {design.themes.length > 1 && (
         <button
           type="button"

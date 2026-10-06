@@ -12,6 +12,8 @@ export interface DescribeOptions {
   full?: boolean
   /** Display name of an external MCP server by its slug ("GitHub" for `github`). */
   mcpServerName?: (slug: string) => string | null | undefined
+  /** Name of the bot a call targets, as the model referred to it; '' when it is the calling bot itself. */
+  botName?: (ref: string) => string | null | undefined
 }
 
 /** Shell commands that do nothing (`true`, `:`, an empty line): tool calls with them are not shown. */
@@ -29,8 +31,8 @@ export function isNoopToolCall(name: string, args: unknown): boolean {
 /** Stable `kind` (icon/i18n key) + short human detail for the activity card. */
 export function describeToolCall(name: string, args: unknown, options: DescribeOptions = {}): ToolStep {
   const view: StepView = options.full
-    ? { full: true, clip: (text) => text.trim() }
-    : { full: false, clip: (text, max = 80) => clipLine(text, max) }
+    ? { full: true, clip: (text) => text.trim(), botName: options.botName }
+    : { full: false, clip: (text, max = 80) => clipLine(text, max), botName: options.botName }
   for (const family of TOOL_CATALOG)
     if (family.has(name)) return (family.describe as DescribeAny)(name, argsObject(args), view)
   const external = parseMcpToolName(name)

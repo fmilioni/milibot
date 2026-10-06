@@ -162,8 +162,10 @@ export const teamTools = defineTools({
       case 'skill_import':
         return { kind: name, detail: view.clip(scalarText(a.source), 60) }
       case 'bot_skills_set':
-      case 'bot_mcp_set':
-        return { kind: name, detail: view.clip(scalarText(a.bot), 40) }
+      case 'bot_mcp_set': {
+        const ref = scalarText(a.bot)
+        return { kind: name, detail: view.clip(ref && (view.botName?.(ref) ?? ref), 40) }
+      }
     }
   },
   labels: {

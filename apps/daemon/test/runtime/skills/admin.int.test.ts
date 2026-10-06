@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import type { CompletionRequest } from '@milibot/agent/llm'
 import type { FakeStep } from '@milibot/agent/testing'
-import type { BotMcpServer, BotSkill, McpServer, Message, Skill } from '@milibot/shared'
+import type { ActivityPayload, BotMcpServer, BotSkill, McpServer, Message, Skill } from '@milibot/shared'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { ZipWriter } from '../../../src/util/zip'
@@ -326,5 +326,28 @@ describe('bot_skills_set and bot_mcp_set', () => {
       type: 'mcp.bot_server.updated',
       payload: { botId: h.botId, server: { serverId: server.id, enabled: true, disabledTools: [] } },
     })
+  })
+
+  it('names the target bot in the step as the team knows it, whatever the model typed', async () => {
+    await boot([
+      { toolCalls: [{ name: 'bot_skills_set', arguments: { bot: 'iris', disable: ['routines'] } }] },
+      { toolCalls: [{ name: 'bot_mcp_set', arguments: { bot: 'IRIS', enable: ['Tracker'] } }] },
+    ])
+    const steps = async () =>
+      (await messages())
+        .filter((m) => m.payload?.type === 'activity')
+        .flatMap((m) => (m.payload as ActivityPayload).steps)
+        .map((s) => [s.kind, s.detail])
+    await call('createBot', {}, { name: 'Iris', label: 'Dev', systemPrompt: '' })
+    await call('createMcpServer', {}, { name: 'Tracker', transport: 'http', url: 'http://127.0.0.1:1/mcp' })
+    await call('postMessage', { conversationId: h.dm }, { content: 'trim Iris' })
+    const card = await pendingCard('bot_skills')
+    expect(await steps()).toEqual([['bot_skills_set', 'Iris']])
+    await resolve(card, false)
+    await until(async () => (await steps()).length === 2, 8000)
+    expect(await steps()).toEqual([
+      ['bot_skills_set', 'Iris'],
+      ['bot_mcp_set', 'Iris'],
+    ])
   })
 })

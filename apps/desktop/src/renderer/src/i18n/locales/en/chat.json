@@ -493,6 +493,9 @@
       "families_one": "Unlocks {{families}} ({{count}} tool)",
       "families_other": "Unlocks {{families}} ({{count}} tools)",
       "noFamilies": "Unlocks no tools",
+      "removes_one": "Removes {{families}} ({{count}} tool)",
+      "removes_other": "Removes {{families}} ({{count}} tools)",
+      "noRemoves": "Removes no tools",
       "allow": "Also gives {{botName}} access to the skill"
     }
   },

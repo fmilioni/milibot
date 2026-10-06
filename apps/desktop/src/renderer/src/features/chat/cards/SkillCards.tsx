@@ -104,7 +104,7 @@ export function SkillImportDetails({ details }: { details: string }) {
   )
 }
 
-/** What a change of a bot's skills asks to approve: each switch and the tool families it unlocks. */
+/** What a change of a bot's skills asks to approve: each switch and the tool families it unlocks or removes. */
 export function BotSkillsDetails({ details, botName }: { details: string; botName: string }) {
   const { t } = useTranslation()
   const parsed = parseCardDetails<BotSkillsDetailsJson>(details)
@@ -121,11 +121,11 @@ export function BotSkillsDetails({ details, botName }: { details: string; botNam
           </span>
           <span className="text-fg-secondary">
             {change.families.length
-              ? t('chat.confirmation.skills.families', {
+              ? t(change.on ? 'chat.confirmation.skills.families' : 'chat.confirmation.skills.removes', {
                   count: change.tools,
                   families: change.families.join(', '),
                 })
-              : t('chat.confirmation.skills.noFamilies')}
+              : t(change.on ? 'chat.confirmation.skills.noFamilies' : 'chat.confirmation.skills.noRemoves')}
           </span>
           {change.allow && <Warning text={t('chat.confirmation.skills.allow', { botName })} />}
         </li>

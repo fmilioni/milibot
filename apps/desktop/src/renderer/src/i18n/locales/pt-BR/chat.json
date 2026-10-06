@@ -493,6 +493,9 @@
       "families_one": "Libera {{families}} ({{count}} ferramenta)",
       "families_other": "Libera {{families}} ({{count}} ferramentas)",
       "noFamilies": "Não libera ferramentas",
+      "removes_one": "Tira {{families}} ({{count}} ferramenta)",
+      "removes_other": "Tira {{families}} ({{count}} ferramentas)",
+      "noRemoves": "Não tira ferramentas",
       "allow": "Também dá acesso à skill para {{botName}}"
     }
   },

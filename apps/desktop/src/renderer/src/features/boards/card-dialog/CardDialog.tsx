@@ -63,13 +63,13 @@ function StatusPill({
           setAt({ x: rect.left, y: rect.bottom + 4 })
         }}
         className={cn(
-          'focus-ring flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-md font-semibold',
+          'focus-ring flex h-7 shrink-0 items-center gap-1.5 rounded-full pr-2 pl-2.5 text-sm font-semibold',
           STATUS_PILL[status],
         )}
       >
-        <span className={`size-2 rounded-full ${TONE_FILL[CARD_TONE[status]]}`} aria-hidden />
+        <span className={`size-1.5 rounded-full ${TONE_FILL[CARD_TONE[status]]}`} aria-hidden />
         {t(`boards.columns.${status}`)}
-        <ChevronDown size={16} aria-hidden />
+        <ChevronDown size={14} aria-hidden />
       </button>
       {at && (
         <Menu
@@ -141,20 +141,20 @@ export function CardDialog({
   const sessions = detail?.links.filter((l) => l.kind === 'session') ?? []
 
   return (
-    <Modal title={card.title} width={1040} height={860} header={false} padded={false} onClose={onClose}>
+    <Modal title={card.title} width={960} height={860} header={false} padded={false} onClose={onClose}>
       <span className={`h-1 shrink-0 ${TONE_FILL[CARD_TONE[card.status]]}`} aria-hidden />
       <div className="flex min-h-0 flex-1">
         {/* The padding is inside the scroller: the sticky header of an open file in the changes sits flush at its top. */}
         <div ref={setScroller} className="scroll-slim flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex flex-col gap-8 px-10 pt-7 pb-10">
-            <div className="flex flex-col gap-4">
-              <span className="flex items-center gap-2 text-base text-fg-secondary">
-                <SquareKanban size={16} aria-hidden />
+          <div className="flex flex-col gap-6 px-8 pt-5 pb-8">
+            <div className="flex flex-col gap-3">
+              <span className="flex items-center gap-1.5 text-sm text-fg-secondary">
+                <SquareKanban size={14} aria-hidden />
                 <span className="truncate">{board.title}</span>
               </span>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <StatusPill status={card.status} onChange={(s) => void setStatus(s)} />
-                <span className="text-base text-fg-secondary">
+                <span className="text-sm text-fg-secondary">
                   {t(fresh ? 'boards.card.created' : 'boards.card.updated', { time: when })}
                 </span>
                 {liveBot && (
@@ -172,7 +172,7 @@ export function CardDialog({
                 value={card.title}
                 label={t('boards.card.title')}
                 max={120}
-                className="text-6xl leading-tight font-bold text-fg"
+                className="text-3xl leading-[1.3] font-bold tracking-[-0.01em] text-fg"
                 onSave={(title) => void (title && save({ title }))}
               />
               <EditableLine
@@ -181,7 +181,7 @@ export function CardDialog({
                 label={t('boards.card.summary')}
                 placeholder={t('boards.card.addSummary')}
                 max={600}
-                className="text-lg leading-[1.55] text-fg-secondary"
+                className="text-base leading-[1.5] text-fg-secondary"
                 multiline
                 onSave={(summary) => void save({ summary })}
               />
@@ -199,8 +199,8 @@ export function CardDialog({
             )}
           </div>
         </div>
-        <aside className="scroll-slim flex w-[340px] shrink-0 flex-col gap-6 overflow-y-auto border-l border-border bg-surface px-6 pt-4 pb-5">
-          <div className="-mr-2 flex justify-end gap-1">
+        <aside className="scroll-slim flex w-[300px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface pt-3">
+          <div className="flex shrink-0 justify-end gap-0.5 px-3">
             <MoreMenu
               size="md"
               label={t('boards.card.more', { title: card.title })}
@@ -239,15 +239,17 @@ export function CardDialog({
               </button>
             </Tooltip>
           </div>
-          <CardDetails board={board} card={card} onSave={(patch) => void save(patch)} />
-          {detail && <Links board={board} detail={detail} onChanged={reload} />}
-          <span className="flex-1" />
-          <span className="border-t border-border pt-4 text-sm text-fg-secondary">
-            {t(author ? 'boards.card.createdBy' : 'boards.card.createdByUser', {
-              name: author,
-              date: new Date(card.createdAt).toLocaleDateString(i18n.language),
-            })}
-          </span>
+          <div className="flex flex-1 flex-col gap-6 px-5 pt-1 pb-5">
+            <CardDetails board={board} card={card} onSave={(patch) => void save(patch)} />
+            {detail && <Links board={board} detail={detail} onChanged={reload} />}
+            <span className="flex-1" />
+            <span className="border-t border-border pt-3 text-xs text-fg-secondary">
+              {t(author ? 'boards.card.createdBy' : 'boards.card.createdByUser', {
+                name: author,
+                date: new Date(card.createdAt).toLocaleDateString(i18n.language),
+              })}
+            </span>
+          </div>
         </aside>
       </div>
       {deleting && (

@@ -58,8 +58,8 @@ export function BoardHeader({ board }: { board: Board }) {
   const late = board.dueDate !== null && board.status === 'active' && board.dueDate < todayIso
 
   return (
-    <header className="flex shrink-0 flex-col gap-3 px-5 pt-5 pb-4">
-      <div className="drag-region flex min-h-7 items-center gap-2 win:pr-caption-0">
+    <header className="flex shrink-0 flex-col gap-1.5 px-5 pt-3 pb-3 min-[1600px]:pt-4 min-[1600px]:pb-4">
+      <div className="drag-region flex h-8 items-center gap-2 win:pr-caption-0">
         {listCollapsed && (
           <>
             <button
@@ -68,7 +68,7 @@ export function BoardHeader({ board }: { board: Board }) {
               onClick={() => setListCollapsed(false)}
               className="no-drag focus-ring hit flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-1.5 text-sm text-fg-secondary hover:bg-surface-3 hover:text-fg"
             >
-              <PanelLeftOpen size={15} aria-hidden />
+              <PanelLeftOpen size={14} aria-hidden />
               {t('boards.list.show')}
             </button>
             <span className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden />
@@ -172,16 +172,18 @@ export function BoardHeader({ board }: { board: Board }) {
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <h2 className="selectable line-clamp-2 text-6xl leading-tight font-bold text-fg">{board.title}</h2>
+        <h2 className="selectable line-clamp-2 text-3xl leading-[1.3] font-bold tracking-[-0.01em] text-fg">
+          {board.title}
+        </h2>
         {board.summary && (
           <Tooltip content={board.summary} maxWidth={480}>
-            <p className="selectable line-clamp-2 max-w-[660px] text-md leading-[1.5] text-fg-secondary">
+            <p className="selectable line-clamp-2 max-w-[660px] text-base leading-[1.5] text-fg-secondary">
               {board.summary}
             </p>
           </Tooltip>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
         <BoardProgressBar counts={board.counts} className="w-[220px]" />
         <span className="text-sm text-fg-secondary">
           <span className="font-semibold text-fg">

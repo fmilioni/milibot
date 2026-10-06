@@ -27,7 +27,7 @@ export function LabelChip({ label, size = 'sm' }: { label: BoardLabel; size?: 's
     <span
       className={cn(
         'inline-flex max-w-full items-center truncate font-medium',
-        size === 'md' ? 'h-8 rounded-md px-2.5 text-base' : 'h-5 rounded-[5px] px-1.5 text-xs',
+        size === 'md' ? 'h-6 rounded-[6px] px-2 text-sm' : 'h-[18px] rounded-[5px] px-[5px] text-xs',
         LABEL_COLOR_CLASSES[label.color].chip,
       )}
     >

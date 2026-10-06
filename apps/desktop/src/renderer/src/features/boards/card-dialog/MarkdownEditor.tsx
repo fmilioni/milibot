@@ -110,9 +110,12 @@ export function MarkdownEditor({
         type="button"
         aria-label={withText ? undefined : t('boards.card.editor.image')}
         onClick={() => pick.current?.click()}
-        className="focus-ring hit flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-base text-fg-secondary hover:bg-surface-3 hover:text-fg"
+        className={cn(
+          'focus-ring hit flex h-7 shrink-0 items-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg',
+          withText ? 'gap-1.5 px-2 text-sm font-medium' : 'w-7 justify-center',
+        )}
       >
-        <ImagePlus size={16} aria-hidden />
+        <ImagePlus size={withText ? 14 : 16} aria-hidden />
         {withText && t('boards.card.editor.image')}
       </button>
     </Tooltip>
@@ -131,7 +134,7 @@ export function MarkdownEditor({
     />
   )
   const uploadStatus = uploading && (
-    <span className="flex min-w-0 items-center gap-1.5 text-sm text-fg-secondary">
+    <span className="flex min-w-0 items-center gap-1.5 text-xs text-fg-secondary">
       <Spinner size={13} className="shrink-0 text-accent" />
       <span className="truncate">
         {t('boards.card.uploading')}
@@ -157,10 +160,10 @@ export function MarkdownEditor({
         }
       }}
       className={cn(
-        'selectable block w-full bg-transparent px-4 py-3 text-fg outline-none placeholder:text-fg-secondary',
+        'selectable block w-full bg-transparent px-3 text-fg outline-none placeholder:text-fg-secondary',
         variant === 'full'
-          ? 'resize-y font-mono text-code leading-[1.7]'
-          : 'resize-none text-base leading-[1.5]',
+          ? 'resize-y py-2.5 font-mono text-code leading-[1.7]'
+          : 'max-h-60 min-h-10 resize-none pt-2.5 pb-1 text-base leading-[1.5] [field-sizing:content]',
       )}
     />
   )
@@ -169,7 +172,7 @@ export function MarkdownEditor({
     return (
       <div className="flex flex-col rounded-card border border-border bg-surface-2 focus-within:border-accent">
         {field}
-        <div className="flex items-center gap-2 px-2 pb-2">
+        <div className="flex items-center gap-1.5 px-1.5 pb-1.5">
           {imageButton(false)}
           {uploadStatus}
           <span className="flex-1" />
@@ -181,11 +184,11 @@ export function MarkdownEditor({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-card border border-border bg-surface-2 focus-within:border-accent">
-      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-surface px-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-surface px-1.5 py-1">
         <div
           role="tablist"
           aria-label={t('boards.card.editor.tabs')}
-          className="flex gap-0.5 rounded-lg bg-surface-3 p-[3px]"
+          className="flex gap-0.5 rounded-lg bg-surface-3 p-0.5"
         >
           {(['write', 'preview'] as const).map((value, i) => (
             <button
@@ -202,7 +205,7 @@ export function MarkdownEditor({
               onClick={() => setTab(value)}
               onKeyDown={onTabKey}
               className={cn(
-                'focus-ring hit h-[30px] rounded-md px-3 text-base',
+                'focus-ring hit h-6 rounded-[6px] px-2.5 text-sm',
                 tab === value
                   ? 'bg-surface-2 font-semibold text-fg shadow-sm'
                   : 'text-fg-secondary hover:text-fg',
@@ -224,9 +227,9 @@ export function MarkdownEditor({
                 aria-label={t(`boards.card.editor.${kind}`)}
                 disabled={tab !== 'write'}
                 onClick={() => format(kind)}
-                className="focus-ring hit flex size-8 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg disabled:opacity-40"
+                className="focus-ring hit flex size-7 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg disabled:opacity-40"
               >
-                <Icon size={16} aria-hidden />
+                <Icon size={14} aria-hidden />
               </button>
             </Tooltip>
           ))}
@@ -243,7 +246,7 @@ export function MarkdownEditor({
         {tab === 'write' ? (
           field
         ) : (
-          <div className="min-h-[160px] px-4 py-3">
+          <div className="min-h-[160px] px-3 py-2.5">
             {value.trim() ? (
               <Markdown text={value} renderAsset={renderAsset} compact />
             ) : (
@@ -252,10 +255,10 @@ export function MarkdownEditor({
           </div>
         )}
       </div>
-      <div className="flex items-center gap-3 border-t border-border bg-surface px-4 py-2">
+      <div className="flex items-center gap-2 border-t border-border bg-surface px-3 py-2">
         {uploadStatus}
         <span className="flex-1" />
-        <span className="shrink-0 text-sm text-fg-secondary">{t('boards.card.editor.hint')}</span>
+        <span className="shrink-0 text-xs text-fg-secondary">{t('boards.card.editor.hint')}</span>
       </div>
       {fileInput}
     </div>

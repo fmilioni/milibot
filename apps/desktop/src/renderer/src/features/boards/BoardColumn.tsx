@@ -47,9 +47,9 @@ const EMPTY_ICON: Record<BoardCardStatus, typeof Inbox> = {
   dropped: CircleSlash,
 }
 
-/** The 3px stripe on top of a column, in its status color. */
+/** The 2px stripe on top of a column, in its status color. */
 function Stripe({ status }: { status: BoardCardStatus }) {
-  return <span className={`h-[3px] shrink-0 rounded-full ${TONE_FILL[CARD_TONE[status]]}`} aria-hidden />
+  return <span className={`h-[2px] shrink-0 rounded-full ${TONE_FILL[CARD_TONE[status]]}`} aria-hidden />
 }
 
 function CountBadge({
@@ -65,7 +65,7 @@ function CountBadge({
     <span
       aria-label={label}
       className={cn(
-        'flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums',
+        'flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-[5px] text-2xs font-semibold tabular-nums',
         warn ? 'bg-warning-tint text-warning-strong' : 'bg-surface-3 text-fg-secondary',
       )}
     >
@@ -108,11 +108,11 @@ export function Column({
     <section
       ref={setNodeRef}
       aria-label={t(`boards.columns.${status}`)}
-      className="flex min-w-[200px] flex-1 flex-col gap-1"
+      className="flex min-w-[200px] flex-1 flex-col"
     >
       <Stripe status={status} />
-      <header className="flex h-10 shrink-0 items-center gap-2 px-0.5">
-        <h3 className="truncate text-md font-bold text-fg">{t(`boards.columns.${status}`)}</h3>
+      <header className="flex h-[34px] shrink-0 items-center gap-2 px-0.5">
+        <h3 className="truncate text-base font-semibold text-fg">{t(`boards.columns.${status}`)}</h3>
         {load ? (
           <Tooltip content={board.doingLimit ? t('boards.doingLimit', { limit: board.doingLimit }) : null}>
             <CountBadge warn={load.over}>{load.text}</CountBadge>
@@ -131,11 +131,11 @@ export function Column({
               aria-label={t('boards.addCard')}
               onClick={() => setAdding(true)}
               className={cn(
-                'focus-ring hit flex size-7 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg',
+                'focus-ring hit flex size-6 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg',
                 adding && 'bg-surface-3 text-fg',
               )}
             >
-              <Plus size={16} />
+              <Plus size={14} />
             </button>
           </Tooltip>
         )}
@@ -145,9 +145,9 @@ export function Column({
               type="button"
               aria-label={t('boards.collapse')}
               onClick={onCollapse}
-              className="focus-ring hit flex size-7 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg"
+              className="focus-ring hit flex size-6 items-center justify-center rounded-md text-fg-secondary hover:bg-surface-3 hover:text-fg"
             >
-              <ChevronsRight size={16} />
+              <ChevronsRight size={14} />
             </button>
           </Tooltip>
         )}
@@ -170,8 +170,8 @@ export function Column({
             <p className="px-1 py-3 text-sm text-fg-secondary">{t('boards.noMatches')}</p>
           ) : (
             !dropTarget && (
-              <div className="flex flex-col items-center gap-1.5 rounded-card border border-dashed border-fg-muted/60 px-4 py-6 text-center">
-                <span className="mb-1 flex size-9 items-center justify-center rounded-full bg-surface-3 text-fg-secondary">
+              <div className="flex flex-col items-center gap-1.5 rounded-card border border-dashed border-fg-muted/60 px-4 py-5 text-center">
+                <span className="mb-1 flex size-8 items-center justify-center rounded-full bg-surface-3 text-fg-secondary">
                   <EmptyIcon size={16} aria-hidden />
                 </span>
                 <span className="text-base font-semibold text-fg">
@@ -197,18 +197,18 @@ export function CollapsedColumn({ count, onOpen }: { count: number; onOpen: () =
       onClick={onOpen}
       aria-label={t('boards.expandDropped', { count })}
       className={cn(
-        'focus-ring flex w-11 shrink-0 flex-col items-center gap-2.5 rounded-b-card pb-3 hover:bg-surface-2',
+        'focus-ring flex w-9 shrink-0 flex-col items-center gap-2 rounded-b-card pb-3 hover:bg-surface-2',
         isOver && 'bg-danger-tint',
       )}
     >
-      <span className={`h-[3px] w-full shrink-0 rounded-full ${TONE_FILL.danger}`} aria-hidden />
-      <span className="mt-2">
+      <span className={`h-[2px] w-full shrink-0 rounded-full ${TONE_FILL.danger}`} aria-hidden />
+      <span className="-mt-2 flex h-[34px] items-center">
         <CountBadge>{count}</CountBadge>
       </span>
-      <span className="text-md font-bold text-fg-secondary [writing-mode:vertical-rl]">
+      <span className="text-base font-semibold text-fg-secondary [writing-mode:vertical-rl]">
         {t('boards.columns.dropped')}
       </span>
-      <ChevronsLeft size={16} className="mt-auto text-fg-secondary" aria-hidden />
+      <ChevronsLeft size={14} className="mt-auto text-fg-secondary" aria-hidden />
     </button>
   )
 }
@@ -274,7 +274,7 @@ export function CardTile({
     <article
       onClick={() => onCard?.(card, 'open')}
       className={cn(
-        'group relative flex w-full cursor-pointer flex-col gap-2 rounded-card border border-border bg-surface-2 p-3 text-left',
+        'group relative flex w-full cursor-pointer flex-col gap-1.5 rounded-card border border-border bg-surface-2 px-3 py-2.5 text-left',
         'has-[.card-open:focus-visible]:outline-2 has-[.card-open:focus-visible]:outline-offset-2 has-[.card-open:focus-visible]:outline-accent',
         overlay
           ? 'rotate-2 cursor-grabbing border-accent/60 shadow-[0_14px_36px_rgba(0,0,0,0.28)]'
@@ -317,7 +317,7 @@ export function CardTile({
         </span>
       )}
       {hasIndicators ? (
-        <span className="relative flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm text-fg-secondary">
+        <span className="relative flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-secondary">
           {plan && (
             <Indicator tip={t('boards.indicators.plan', { label: plan.label })}>
               <ListChecks size={14} aria-hidden />
@@ -335,7 +335,7 @@ export function CardTile({
               <Indicator key={link.id} tip={t('boards.indicators.pr', { label: link.label })}>
                 <span
                   className={cn(
-                    'flex h-5 items-center gap-1 rounded-[5px] px-1.5 text-xs font-semibold',
+                    'flex h-[18px] items-center gap-1 rounded-[5px] px-[5px] text-xs font-semibold',
                     chip.state === 'done'
                       ? 'bg-success-soft text-success-strong'
                       : chip.state === 'failed'
@@ -376,7 +376,7 @@ export function CardTile({
             >
               <span
                 className={cn(
-                  'flex h-5 items-center gap-1 rounded-[5px] px-1.5 text-xs font-semibold',
+                  'flex h-[18px] items-center gap-1 rounded-[5px] px-[5px] text-xs font-semibold',
                   late ? 'bg-danger-tint text-danger-strong' : 'bg-surface-3 text-fg-secondary',
                 )}
               >
@@ -405,6 +405,7 @@ export function CardTile({
           onKeyDown={stop}
         >
           <MoreMenu
+            className="hit"
             label={t('boards.card.more', { title: card.title })}
             width={210}
             entries={[
@@ -480,7 +481,7 @@ function NewCard({ board, onDone }: { board: Board; onDone: () => void }) {
             onDone()
           }
         }}
-        className="h-11 rounded-card border-2 border-accent bg-surface-2 px-3 text-base text-fg outline-none placeholder:text-fg-secondary"
+        className="h-9 rounded-card border-2 border-accent bg-surface-2 px-3 text-base text-fg outline-none placeholder:text-fg-secondary"
       />
       <span className="px-1 text-xs text-fg-secondary">{t('boards.newCardHint')}</span>
     </div>

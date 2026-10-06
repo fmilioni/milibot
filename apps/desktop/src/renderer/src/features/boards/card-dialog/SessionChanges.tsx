@@ -35,24 +35,24 @@ export function SessionChanges({
         aria-expanded={open}
         aria-controls={panel}
         onClick={() => setOpen(!open)}
-        className="focus-inset flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-surface-3/50"
+        className="focus-inset flex min-h-10 w-full items-center gap-2.5 px-3 text-left hover:bg-surface-3/50"
       >
-        <GitCompare size={17} className="shrink-0 text-fg-secondary" aria-hidden />
-        <span className="text-md font-semibold text-fg">{t('boards.card.changes')}</span>
+        <GitCompare size={14} className="shrink-0 text-fg-secondary" aria-hidden />
+        <span className="text-base font-semibold text-fg">{t('boards.card.changes')}</span>
         {totals && (
           <>
-            <span className="text-base text-fg-secondary">
+            <span className="text-sm text-fg-secondary">
               {t('boards.card.changesFiles', { count: totals.files })}
             </span>
             <DiffStat added={totals.additions} removed={totals.deletions} />
           </>
         )}
         <span className="flex-1" />
-        <span className="text-base text-fg-secondary">
+        <span className="text-sm text-fg-secondary">
           {t(open ? 'boards.card.hideChanges' : 'boards.card.showChanges')}
         </span>
         <ChevronDown
-          size={16}
+          size={14}
           className={cn('shrink-0 text-fg-secondary transition-transform', open && 'rotate-180')}
           aria-hidden
         />

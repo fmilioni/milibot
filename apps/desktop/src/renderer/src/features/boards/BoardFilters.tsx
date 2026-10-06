@@ -12,7 +12,7 @@ import { Popover } from '@/ui/Popover'
 import { LabelChip, PickerRow, UserAvatar } from './CardPeople'
 
 const CONTROL =
-  'focus-ring hit flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-base whitespace-nowrap'
+  'focus-ring hit flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-sm whitespace-nowrap'
 
 /** Narrows the board to cards matching a text, assignees, labels or the user's own. */
 export function BoardFilters({
@@ -38,8 +38,8 @@ export function BoardFilters({
 
   return (
     <div role="search" aria-label={t('boards.filters.label')} className="flex flex-wrap items-center gap-2">
-      <label className="relative flex h-9 w-40 items-center">
-        <Search size={15} className="pointer-events-none absolute left-3 text-fg-secondary" aria-hidden />
+      <label className="relative flex h-7 w-40 items-center">
+        <Search size={14} className="pointer-events-none absolute left-2.5 text-fg-secondary" aria-hidden />
         <input
           type="search"
           value={filters.text}
@@ -53,14 +53,14 @@ export function BoardFilters({
             }
           }}
           className={cn(
-            'selectable h-9 w-full rounded-lg border bg-surface-2 pr-2 pl-9 text-base text-fg outline-none placeholder:text-fg-secondary focus:border-accent',
+            'selectable h-7 w-full rounded-lg border bg-surface-2 pr-2 pl-8 text-sm text-fg outline-none placeholder:text-fg-secondary focus:border-accent',
             filters.text.trim() ? 'border-accent/60' : 'border-border',
           )}
         />
       </label>
       <FilterMenu
         label={t('boards.filters.assignee')}
-        icon={<Users size={15} aria-hidden />}
+        icon={<Users size={14} aria-hidden />}
         picked={filters.assignees.length}
       >
         {people.map((person) => (
@@ -80,7 +80,7 @@ export function BoardFilters({
       </FilterMenu>
       <FilterMenu
         label={t('boards.filters.labels')}
-        icon={<TagIcon size={15} aria-hidden />}
+        icon={<TagIcon size={14} aria-hidden />}
         picked={filters.labels.length}
       >
         {board.labels.length === 0 && (
@@ -107,14 +107,14 @@ export function BoardFilters({
             : 'border-transparent text-fg-secondary hover:bg-surface-3 hover:text-fg',
         )}
       >
-        <User size={15} aria-hidden />
+        <User size={14} aria-hidden />
         {t('boards.filters.mine')}
       </button>
       {count > 0 && (
         <button
           type="button"
           onClick={() => onChange({ text: '', assignees: [], labels: [], mine: false })}
-          className="focus-ring hit flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-fg-secondary hover:bg-surface-3 hover:text-fg"
+          className="focus-ring hit flex h-7 items-center gap-1.5 rounded-lg px-2 text-sm text-fg-secondary hover:bg-surface-3 hover:text-fg"
         >
           <X size={14} aria-hidden />
           {t('boards.filters.clear')}

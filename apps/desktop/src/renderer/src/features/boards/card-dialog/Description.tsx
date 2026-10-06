@@ -22,9 +22,9 @@ export function SectionHeading({
   action?: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-11 items-center gap-2 border-b border-border pb-2">
+    <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border">
       <span className="flex text-fg-secondary">{icon}</span>
-      <h3 className="text-lg font-semibold text-fg">{children}</h3>
+      <h3 className="text-base font-semibold text-fg">{children}</h3>
       {extra}
       <span className="flex-1" />
       {action}
@@ -60,7 +60,7 @@ export function Description({
   return (
     <section ref={section} tabIndex={-1} className="flex flex-col gap-3 outline-none">
       <SectionHeading
-        icon={<FileText size={18} aria-hidden />}
+        icon={<FileText size={14} aria-hidden />}
         extra={
           draft !== null && <span className="text-sm text-fg-secondary">· {t('boards.card.editing')}</span>
         }
@@ -70,9 +70,9 @@ export function Description({
             <button
               type="button"
               onClick={() => setDraft(detail.body)}
-              className="focus-ring hit flex h-8 items-center gap-1.5 rounded-md px-2 text-base font-semibold text-accent-strong hover:bg-accent-soft"
+              className="focus-ring hit -mr-2 flex h-7 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-accent-strong hover:bg-accent-soft"
             >
-              <Pencil size={15} aria-hidden />
+              <Pencil size={12} aria-hidden />
               {t('boards.card.edit')}
             </button>
           )
@@ -82,19 +82,21 @@ export function Description({
       </SectionHeading>
       {draft === null ? (
         detail.body.trim() ? (
-          <div className="max-w-[68ch] text-md leading-[1.6] text-fg">
-            <Markdown text={detail.body} renderAsset={renderAsset} />
+          <div className="max-w-[72ch] text-fg [&_.markdown]:leading-[1.55]">
+            <Markdown text={detail.body} renderAsset={renderAsset} compact />
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-fg-muted/60 px-6 py-8 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-surface-3 text-fg-secondary">
-              <FilePen size={18} aria-hidden />
+          <div className="flex flex-col items-center gap-2.5 rounded-card border border-dashed border-fg-muted/60 px-6 py-6 text-center">
+            <span className="flex size-8 items-center justify-center rounded-full bg-surface-3 text-fg-secondary">
+              <FilePen size={16} aria-hidden />
             </span>
-            <span className="text-md font-semibold text-fg">{t('boards.card.noDescriptionTitle')}</span>
-            <span className="max-w-[420px] text-base text-fg-secondary">
-              {t('boards.card.noDescriptionHint')}
+            <span className="flex flex-col gap-1">
+              <span className="text-base font-semibold text-fg">{t('boards.card.noDescriptionTitle')}</span>
+              <span className="max-w-[48ch] text-sm text-fg-secondary">
+                {t('boards.card.noDescriptionHint')}
+              </span>
             </span>
-            <Button size="lg" variant="outline" className="mt-2" onClick={() => setDraft('')}>
+            <Button variant="outline" onClick={() => setDraft('')}>
               <Pencil size={14} aria-hidden />
               {t('boards.card.writeDescription')}
             </Button>
@@ -110,10 +112,10 @@ export function Description({
             label={t('boards.card.description')}
           />
           <div className="flex justify-end gap-2">
-            <Button size="lg" variant="outline" onClick={close}>
+            <Button variant="outline" onClick={close}>
               {t('common.cancel')}
             </Button>
-            <Button size="lg" variant="primary" disabled={saving} onClick={save}>
+            <Button variant="primary" disabled={saving} onClick={save}>
               {t('boards.card.saveDescription')}
             </Button>
           </div>

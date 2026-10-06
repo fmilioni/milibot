@@ -12,18 +12,18 @@ import { DatePicker } from '@/ui/DatePicker'
 import { Tooltip } from '@/ui/Tooltip'
 
 const DASHED_ADD =
-  'focus-ring hit flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-fg-muted text-fg-secondary hover:border-fg-secondary hover:text-fg'
+  'focus-ring hit flex size-6 shrink-0 items-center justify-center border border-dashed border-fg-muted text-fg-secondary hover:border-fg-secondary hover:text-fg'
 const QUIET_ACTION =
-  'focus-ring hit flex h-8 items-center gap-1.5 rounded-md px-1 text-base text-fg-secondary hover:text-fg'
+  'focus-ring hit -ml-2 flex h-6 items-center gap-1.5 rounded-[6px] px-2 text-sm text-fg-secondary hover:bg-surface-3 hover:text-fg'
 
 function Row({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-11 items-start gap-2">
-      <span className="flex h-11 w-[108px] shrink-0 items-center gap-2 text-base text-fg-secondary">
+    <div className="flex min-h-8 items-start gap-2 py-1">
+      <span className="flex h-6 w-[92px] shrink-0 items-center gap-1.5 text-sm text-fg-secondary">
         {icon}
         {label}
       </span>
-      <div className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-1.5 py-1.5">{children}</div>
+      <div className="flex min-h-6 min-w-0 flex-1 flex-wrap items-center gap-1">{children}</div>
     </div>
   )
 }
@@ -65,25 +65,25 @@ export function CardDetails({
         : t('boards.card.dueAgo', { count: -days })
 
   return (
-    <section className="flex flex-col" aria-labelledby="card-details-title">
-      <h3
-        id="card-details-title"
-        className="flex min-h-11 items-center text-sm font-semibold text-fg-secondary"
-      >
+    <section className="flex flex-col gap-1" aria-labelledby="card-details-title">
+      <h3 id="card-details-title" className="pb-1 text-sm font-semibold text-fg-secondary">
         {t('boards.card.details')}
       </h3>
-      <Row icon={<Users size={16} aria-hidden />} label={t('boards.card.assignees')}>
+      <Row icon={<Users size={14} aria-hidden />} label={t('boards.card.assignees')}>
         {card.assignees.map((id) => {
           const bot = bots[id]
           return (
             <span
               key={id}
-              className="flex h-8 max-w-full items-center gap-1.5 rounded-full border border-border bg-surface-2 pr-3 pl-1 text-base text-fg"
+              className={cn(
+                'flex h-6 max-w-full items-center rounded-full border border-border bg-surface-2 pr-2 text-sm font-medium text-fg',
+                id === BOARD_USER || !bot ? 'gap-1.5 pl-1' : 'gap-1 pl-0.5',
+              )}
             >
               {id === BOARD_USER || !bot ? (
-                <UserAvatar size={22} ring />
+                <UserAvatar size={16} ring />
               ) : (
-                <BotAvatar avatar={bot.avatar} state={bot.status} size={22} animated={false} />
+                <BotAvatar avatar={bot.avatar} state={bot.status} size={20} animated={false} />
               )}
               <span className="truncate">
                 {id === BOARD_USER ? t('boards.card.you') : (bot?.name ?? t('boards.card.deletedBot'))}
@@ -102,7 +102,7 @@ export function CardDetails({
                 onClick={(e) => show(e.currentTarget)}
                 className={QUIET_ACTION}
               >
-                <UserPlus size={16} aria-hidden />
+                <UserPlus size={14} aria-hidden />
                 {t('boards.card.assign')}
               </button>
             ) : (
@@ -112,16 +112,16 @@ export function CardDetails({
                   aria-haspopup="menu"
                   aria-label={t('boards.card.addAssignee')}
                   onClick={(e) => show(e.currentTarget)}
-                  className={DASHED_ADD}
+                  className={cn(DASHED_ADD, 'rounded-full')}
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                 </button>
               </Tooltip>
             )
           }
         />
       </Row>
-      <Row icon={<TagIcon size={16} aria-hidden />} label={t('boards.card.labels')}>
+      <Row icon={<TagIcon size={14} aria-hidden />} label={t('boards.card.labels')}>
         {labels.map((label) => (
           <LabelChip key={label.id} label={label} size="md" />
         ))}
@@ -136,15 +136,15 @@ export function CardDetails({
                 aria-haspopup="menu"
                 aria-label={t('boards.card.addLabel')}
                 onClick={(e) => show(e.currentTarget)}
-                className={DASHED_ADD}
+                className={cn(DASHED_ADD, 'rounded-[6px]')}
               >
-                <Plus size={16} />
+                <Plus size={14} />
               </button>
             </Tooltip>
           )}
         />
       </Row>
-      <Row icon={<CalendarDays size={16} aria-hidden />} label={t('boards.card.due')}>
+      <Row icon={<CalendarDays size={14} aria-hidden />} label={t('boards.card.due')}>
         <DatePicker
           value={card.dueDate}
           label={t('boards.card.due')}
@@ -162,7 +162,7 @@ export function CardDetails({
             </span>
           ) : (
             <>
-              <CalendarPlus size={16} aria-hidden />
+              <CalendarPlus size={14} aria-hidden />
               {t('boards.card.setDue')}
             </>
           )}

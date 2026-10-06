@@ -97,14 +97,14 @@ export function BoardsScreen() {
           aria-label={t('boards.list.label')}
           className="flex w-[256px] shrink-0 flex-col border-r border-border bg-surface"
         >
-          <div className="drag-region flex h-14 shrink-0 items-center gap-1 pr-3 pl-4">
-            <h1 className="flex-1 truncate text-xl font-bold text-fg">{t('boards.title')}</h1>
+          <div className="drag-region flex h-12 shrink-0 items-center gap-1 pr-3 pl-4">
+            <h1 className="flex-1 truncate text-lg font-semibold text-fg">{t('boards.title')}</h1>
             <Tooltip content={t('boards.list.collapse')}>
               <button
                 type="button"
                 aria-label={t('boards.list.collapse')}
                 onClick={() => setCollapsed(true)}
-                className="no-drag focus-ring hit flex size-8 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3 hover:text-fg"
+                className="no-drag focus-ring hit flex size-7 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-3 hover:text-fg"
               >
                 <PanelLeftClose size={16} />
               </button>
@@ -114,9 +114,9 @@ export function BoardsScreen() {
                 type="button"
                 aria-label={t('boards.new')}
                 onClick={() => setCreating(true)}
-                className="no-drag focus-ring hit flex size-8 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg-secondary hover:bg-surface-3 hover:text-fg"
+                className="no-drag focus-ring hit flex size-7 items-center justify-center rounded-lg border border-border bg-surface-2 text-fg-secondary hover:bg-surface-3 hover:text-fg"
               >
-                <Plus size={16} />
+                <Plus size={14} />
               </button>
             </Tooltip>
           </div>
@@ -135,7 +135,7 @@ export function BoardsScreen() {
                   aria-selected={on}
                   onClick={() => setFilter(value)}
                   className={cn(
-                    'focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-1 text-xs whitespace-nowrap',
+                    'focus-ring flex h-6 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-1 text-xs whitespace-nowrap',
                     on ? 'bg-surface-2 font-semibold text-fg shadow-sm' : 'text-fg-secondary hover:text-fg',
                   )}
                 >
@@ -147,11 +147,11 @@ export function BoardsScreen() {
           </div>
           <nav
             aria-label={t('boards.list.label')}
-            className="scroll-slim flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-3"
+            className="scroll-slim flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3"
           >
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={listed.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-                <ul className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-1.5">
                   {listed.map((board) => (
                     <BoardListItem
                       key={board.id}
@@ -234,20 +234,20 @@ function BoardListItem({
         aria-roledescription={undefined}
         aria-describedby={undefined}
         className={cn(
-          'focus-inset relative flex w-full flex-col gap-2 rounded-card border px-3 py-2.5 text-left',
-          selected ? 'border-border bg-surface-2' : 'border-transparent hover:bg-surface-2',
+          'focus-inset relative flex w-full flex-col gap-1.5 overflow-hidden rounded-card border bg-surface-2 px-3 py-2.5 text-left',
+          selected ? 'border-accent' : 'border-border hover:border-fg-muted',
           isDragging && 'shadow-[0_8px_24px_rgba(0,0,0,0.18)]',
         )}
       >
         {selected && (
-          <span className="absolute top-2.5 bottom-2.5 left-0 w-[3px] rounded-full bg-accent" aria-hidden />
+          <span className="absolute top-2.5 bottom-2.5 left-0 w-[3px] rounded-r-full bg-accent" aria-hidden />
         )}
-        <span className="line-clamp-3 text-base font-bold text-fg">{board.title}</span>
-        <BoardProgressBar counts={board.counts} className="h-1" />
-        <span className="flex items-center gap-2 text-xs text-fg-secondary">
+        <span className="line-clamp-3 text-base leading-[1.35] font-semibold text-fg">{board.title}</span>
+        <BoardProgressBar counts={board.counts} thin />
+        <span className="flex items-center gap-1.5 text-xs text-fg-secondary">
           {project && (
-            <span className="flex min-w-0 items-center gap-1 truncate rounded-[5px] bg-surface-3 px-1.5 py-0.5">
-              <Folder size={11} className="shrink-0" aria-hidden />
+            <span className="flex h-4 min-w-0 items-center gap-1 truncate rounded-[4px] bg-surface-3 px-1 text-2xs">
+              <Folder size={10} className="shrink-0" aria-hidden />
               <span className="truncate">{project.name}</span>
             </span>
           )}

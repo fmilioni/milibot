@@ -18,7 +18,7 @@ import { Tooltip } from '@/ui/Tooltip'
 import { SectionHeading } from './Description'
 import { MarkdownEditor } from './MarkdownEditor'
 
-const AVATAR = 32
+const AVATAR = 28
 
 export function Comments({
   board,
@@ -51,10 +51,10 @@ export function Comments({
   return (
     <section className="flex flex-col gap-4">
       <SectionHeading
-        icon={<MessageSquare size={18} aria-hidden />}
+        icon={<MessageSquare size={14} aria-hidden />}
         extra={
           detail.comments.length > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-surface-3 px-1.5 text-xs font-semibold text-fg-secondary tabular-nums">
+            <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-surface-3 px-1.5 text-2xs font-semibold text-fg-secondary tabular-nums">
               {detail.comments.length}
             </span>
           )
@@ -63,25 +63,25 @@ export function Comments({
         {t('boards.card.comments')}
       </SectionHeading>
       {detail.comments.length === 0 && (
-        <p className="text-base text-fg-secondary">{t('boards.card.noComments')}</p>
+        <p className="text-sm text-fg-secondary">{t('boards.card.noComments')}</p>
       )}
       {detail.comments.map((comment) => {
         const bot = comment.authorBotId ? bots[comment.authorBotId] : undefined
         return (
           <article key={comment.id} className="group flex gap-3">
-            <span className="flex w-8 shrink-0 justify-center pt-0.5">
+            <span className="flex w-7 shrink-0 justify-center">
               {bot ? (
-                <BotAvatar avatar={bot.avatar} state={bot.status} size={AVATAR - 4} animated={false} />
+                <BotAvatar avatar={bot.avatar} state={bot.status} size={AVATAR} animated={false} />
               ) : (
-                <UserAvatar size={AVATAR - 4} ring={comment.authorType === 'user'} />
+                <UserAvatar size={AVATAR} ring={comment.authorType === 'user'} />
               )}
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-fg">
+                <span className="text-base font-semibold text-fg">
                   {bot?.name ?? (comment.authorType === 'user' ? t('boards.card.you') : '…')}
                 </span>
-                <span className="text-sm text-fg-secondary">
+                <span className="text-xs text-fg-secondary">
                   {formatRelative(comment.createdAt, i18n.language, now, t('time.now'))}
                 </span>
                 <span className="flex-1" />
@@ -102,39 +102,39 @@ export function Comments({
                   </Tooltip>
                 )}
               </div>
-              <div className="text-md leading-[1.55] text-fg">
+              <div className="max-w-[72ch] text-fg [&_.markdown]:leading-[1.55]">
                 <Markdown text={comment.body} renderAsset={renderAsset} compact />
               </div>
             </div>
           </article>
         )
       })}
-      <div className="flex items-start gap-3">
-        <span className="flex w-8 shrink-0 justify-center pt-1.5">
-          <UserAvatar size={AVATAR - 4} ring />
+      <div className="flex items-start gap-3 pt-1">
+        <span className="flex w-7 shrink-0 justify-center">
+          <UserAvatar size={AVATAR} ring />
         </span>
         <div className="min-w-0 flex-1">
           <MarkdownEditor
             board={board}
             value={draft}
             onChange={setDraft}
-            rows={2}
+            rows={1}
             variant="composer"
             label={t('boards.card.commentPlaceholder')}
             placeholder={t('boards.card.commentPlaceholder')}
             onSubmit={send}
             footer={
               <>
-                <span className="hidden truncate text-sm text-fg-secondary sm:inline">
+                <span className="hidden truncate text-xs text-fg-secondary sm:inline">
                   {t('boards.card.commentHint', { shortcut: shortcutLabel('Enter') })}
                 </span>
                 <button
                   type="button"
                   disabled={!draft.trim() || busy}
                   onClick={send}
-                  className="focus-ring flex h-11 shrink-0 items-center gap-2 rounded-lg bg-accent px-4 text-base font-semibold text-on-accent disabled:bg-surface-3 disabled:text-fg-secondary"
+                  className="focus-ring flex h-7 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent disabled:bg-surface-3 disabled:text-fg-secondary"
                 >
-                  <SendHorizontal size={16} aria-hidden />
+                  <SendHorizontal size={14} aria-hidden />
                   {t('boards.card.comment')}
                 </button>
               </>

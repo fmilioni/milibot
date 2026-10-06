@@ -46,12 +46,12 @@ export function EditableLine({
         className={cn(
           'focus-ring -mx-2 rounded-lg px-2 py-1 text-left break-words hover:bg-surface-3',
           className,
-          !value && 'flex items-center gap-2 text-fg-secondary',
+          !value && 'flex h-7 items-center gap-1.5 self-start py-0 text-fg-secondary',
         )}
       >
         {value || (
           <>
-            <Plus size={16} aria-hidden />
+            <Plus size={14} aria-hidden />
             {placeholder}
           </>
         )}

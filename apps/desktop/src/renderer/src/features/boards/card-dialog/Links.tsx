@@ -78,8 +78,8 @@ export function Links({
   }
 
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="card-links-title">
-      <div className="flex min-h-11 items-center justify-between">
+    <section className="flex flex-col gap-1" aria-labelledby="card-links-title">
+      <div className="flex min-h-6 items-center justify-between pb-1">
         <h3 id="card-links-title" className="text-sm font-semibold text-fg-secondary">
           {t('boards.card.links')}
         </h3>
@@ -87,15 +87,15 @@ export function Links({
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="focus-ring hit flex h-8 items-center gap-1.5 rounded-md px-1.5 text-md font-semibold text-accent-strong hover:bg-accent-soft"
+            className="focus-ring hit -mr-1.5 flex h-6 items-center gap-1 rounded-[6px] px-1.5 text-sm font-semibold text-accent-strong hover:bg-accent-soft"
           >
-            <Plus size={16} aria-hidden />
+            <Plus size={12} aria-hidden />
             {t('boards.card.addLink')}
           </button>
         )}
       </div>
       {links.length === 0 && !adding && (
-        <p className="rounded-card border border-dashed border-fg-muted/60 px-4 py-3.5 text-base leading-[1.5] text-fg-secondary">
+        <p className="rounded-card border border-dashed border-fg-muted/60 p-3 text-sm leading-[1.5] text-fg-secondary">
           {t('boards.card.noLinksHint')}
         </p>
       )}
@@ -118,10 +118,10 @@ export function Links({
                   type="button"
                   disabled={!clickable}
                   onClick={() => open(link)}
-                  className="focus-inset flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left hover:bg-surface-3/60 disabled:cursor-default"
+                  className="focus-inset flex min-h-10 w-full items-center gap-2.5 px-2.5 py-1.5 text-left hover:bg-surface-3/60 disabled:cursor-default"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-fg-secondary">
-                    {createElement(icon, { size: 16, 'aria-hidden': true })}
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-[6px] bg-surface-3 text-fg-secondary">
+                    {createElement(icon, { size: 14, 'aria-hidden': true })}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-xs text-fg-secondary">
@@ -156,7 +156,7 @@ export function Links({
                     />
                   )}
                   {link.kind === 'url' && (
-                    <ExternalLink size={15} className="shrink-0 text-fg-secondary" aria-hidden />
+                    <ExternalLink size={14} className="shrink-0 text-fg-secondary" aria-hidden />
                   )}
                 </button>
                 <Tooltip content={t('boards.card.removeLink')}>
@@ -166,7 +166,7 @@ export function Links({
                     onClick={() =>
                       void toastOnError(deleteLink(workspaceId, board.id, detail.id, link.id)).then(onChanged)
                     }
-                    className="focus-ring absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-md bg-surface-2 text-fg-secondary opacity-0 group-hover:opacity-100 hover:text-danger-strong focus-visible:opacity-100"
+                    className="focus-ring hit absolute top-2 right-2 flex size-6 items-center justify-center rounded-md bg-surface-2 text-fg-secondary opacity-0 group-hover:opacity-100 hover:text-danger-strong focus-visible:opacity-100"
                   >
                     <X size={13} />
                   </button>
@@ -177,14 +177,14 @@ export function Links({
         </ul>
       )}
       {adding && (
-        <div className="flex flex-col gap-3 rounded-card border border-border bg-surface-2 p-4">
-          <span id="link-kind-label" className="text-sm font-semibold text-fg-secondary">
+        <div className="mt-1.5 flex flex-col gap-2.5 rounded-card border border-border bg-surface-2 p-2.5">
+          <span id="link-kind-label" className="-mb-1 text-xs font-semibold text-fg-secondary">
             {t('boards.card.linkKind')}
           </span>
           <div
             role="group"
             aria-labelledby="link-kind-label"
-            className="flex gap-0.5 rounded-lg bg-surface-3 p-[3px]"
+            className="flex gap-0.5 rounded-lg bg-surface-3 p-0.5"
           >
             {USER_LINK_KINDS.map((value) => (
               <button
@@ -193,7 +193,7 @@ export function Links({
                 aria-pressed={kind === value}
                 onClick={() => setKind(value)}
                 className={cn(
-                  'focus-ring hit h-9 min-w-0 flex-1 rounded-md px-1.5 text-sm whitespace-nowrap',
+                  'focus-ring hit h-6 min-w-0 flex-1 rounded-[6px] px-1.5 text-sm whitespace-nowrap',
                   kind === value
                     ? 'bg-surface-2 font-semibold text-fg shadow-sm'
                     : 'text-fg-secondary hover:text-fg',
@@ -216,13 +216,13 @@ export function Links({
                 setAdding(false)
               }
             }}
-            className="selectable h-11 rounded-lg border border-border bg-surface-2 px-3 text-base text-fg outline-none placeholder:text-fg-secondary focus:border-accent focus:ring-4 focus:ring-accent-soft"
+            className="selectable h-8 rounded-lg border border-border bg-surface-2 px-2.5 text-sm text-fg outline-none placeholder:text-fg-secondary focus:border-accent focus:ring-4 focus:ring-accent-soft"
           />
           <div className="flex justify-end gap-2">
-            <Button size="lg" variant="ghost" onClick={() => setAdding(false)}>
+            <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>
               {t('common.cancel')}
             </Button>
-            <Button size="lg" variant="primary" disabled={!ref.trim()} onClick={add}>
+            <Button size="sm" variant="primary" disabled={!ref.trim()} onClick={add}>
               {t('boards.card.addLink')}
             </Button>
           </div>

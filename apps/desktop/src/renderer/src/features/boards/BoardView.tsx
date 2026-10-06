@@ -152,7 +152,7 @@ export function BoardView({ board }: { board: Board }) {
   return (
     <section className="flex min-w-0 flex-1 flex-col" aria-label={board.title}>
       <BoardHeader board={board} />
-      <div className="shrink-0 px-5 pb-4">
+      <div className="shrink-0 px-5 pb-3">
         <BoardFilters board={board} filters={filters} onChange={(next) => setFilters(board.id, next)} />
       </div>
       <DndContext

@@ -21,6 +21,7 @@ import {
   PenTool,
   Plus,
   Trash2,
+  TriangleAlert,
 } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -69,6 +70,7 @@ function CountBadge({
         warn ? 'bg-warning-tint text-warning-strong' : 'bg-surface-3 text-fg-secondary',
       )}
     >
+      {warn && <TriangleAlert size={10} className="mr-0.5 shrink-0" aria-hidden />}
       {children}
     </span>
   )
@@ -115,7 +117,10 @@ export function Column({
         <h3 className="truncate text-base font-semibold text-fg">{t(`boards.columns.${status}`)}</h3>
         {load ? (
           <Tooltip content={board.doingLimit ? t('boards.doingLimit', { limit: board.doingLimit }) : null}>
-            <CountBadge warn={load.over}>{load.text}</CountBadge>
+            <CountBadge warn={load.over}>
+              {load.text}
+              {load.over && <span className="sr-only">{t('boards.doingLimitReached')}</span>}
+            </CountBadge>
           </Tooltip>
         ) : (
           <CountBadge>{total}</CountBadge>

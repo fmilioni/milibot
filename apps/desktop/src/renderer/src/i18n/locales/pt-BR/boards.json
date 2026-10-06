@@ -163,6 +163,7 @@
       "image": "Imagem",
       "hint": "Cole ou arraste imagens · Markdown"
     },
+    "changesFiles_zero": "Nenhum arquivo",
     "changesFiles_one": "{{count}} arquivo",
     "changesFiles_other": "{{count}} arquivos",
     "showChanges": "Mostrar",
@@ -217,6 +218,7 @@
     }
   },
   "doingLimit": "Limite de {{limit}} cards em Fazendo",
+  "doingLimitReached": "Limite atingido",
   "doingOver": "Fazendo chegou ao limite de {{limit}} cards",
   "live": "{{name}} trabalhando agora",
   "moreAssignees": "+{{count}}",

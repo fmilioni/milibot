@@ -163,6 +163,7 @@
       "image": "Image",
       "hint": "Paste or drop images · Markdown"
     },
+    "changesFiles_zero": "No files",
     "changesFiles_one": "{{count}} file",
     "changesFiles_other": "{{count}} files",
     "showChanges": "Show",
@@ -217,6 +218,7 @@
     }
   },
   "doingLimit": "Limit of {{limit}} cards in Doing",
+  "doingLimitReached": "Limit reached",
   "doingOver": "Doing reached its limit of {{limit}} cards",
   "live": "{{name}} working now",
   "moreAssignees": "+{{count}}",

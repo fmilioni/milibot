@@ -5,6 +5,7 @@ import {
   botUsageRows,
   diskPercent,
   diskTotals,
+  formatUptime,
   fullestDisk,
   historyBars,
   memoryPercent,
@@ -88,5 +89,19 @@ describe('VM usage', () => {
       { botId: 'bot_a', cpuPercent: 20, memoryBytes: GiB },
       { botId: null, cpuPercent: 7, memoryBytes: 3 * GiB },
     ])
+  })
+})
+
+describe('formatUptime', () => {
+  const t = (key: string, o: Record<string, number>) => `${key.split('.').pop()} ${JSON.stringify(o)}`
+
+  it('formats days, hours and minutes', () => {
+    expect(formatUptime((26 * 60 + 5) * 60_000, t)).toBe('uptimeDays {"days":1,"hours":2}')
+    expect(formatUptime(125 * 60_000, t)).toBe('uptimeHours {"hours":2,"minutes":5}')
+    expect(formatUptime(59_999, t)).toBe('uptimeMinutes {"minutes":0}')
+  })
+
+  it('never shows a negative uptime when the VM started after the last clock tick', () => {
+    expect(formatUptime(-1_500, t)).toBe('uptimeMinutes {"minutes":0}')
   })
 })

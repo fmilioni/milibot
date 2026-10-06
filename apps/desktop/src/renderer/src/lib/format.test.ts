@@ -50,6 +50,10 @@ describe('format', () => {
     expect(formatElapsed(134_900)).toBe('02:14')
   })
 
+  it('never shows a negative stopwatch time when the start is past a stale clock', () => {
+    expect(formatElapsed(-300)).toBe('00:00')
+  })
+
   it('formats clock times, optionally with seconds', () => {
     const ts = new Date(2026, 8, 26, 9, 5, 7).getTime()
     expect(formatClock(ts, 'pt-BR')).toBe('09:05')

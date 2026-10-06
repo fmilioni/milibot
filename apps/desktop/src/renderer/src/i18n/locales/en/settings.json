@@ -57,6 +57,12 @@
     "thisComputer": "This computer",
     "launchAtLogin": "Start Milibot in the background when you log in",
     "launchAtLoginHint": "Routines run even without opening the app",
+    "keepAwake": "Keep the computer from sleeping while bots work",
+    "keepAwakeHint": {
+      "mac": "Covers every workspace while the app is open. The screen may turn off; closing the lid or choosing Sleep still puts it to sleep. Shutting down while bots work asks you first.",
+      "windows": "Covers every workspace while the app is open. The screen may turn off; closing the lid or choosing Sleep still puts it to sleep. Shutting down while bots work, Windows lists the app among those keeping it from shutting down.",
+      "linux": "Covers every workspace while the app is open. The screen may turn off; closing the lid or choosing Sleep still puts it to sleep."
+    },
     "data": "Data",
     "folder": "Workspace folder",
     "reveal": "Show in Finder",

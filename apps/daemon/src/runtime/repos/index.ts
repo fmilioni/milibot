@@ -1,4 +1,5 @@
 export { isRepoUrl, runCheckout, sanitizeRepoName, slugPart } from './checkout'
 export { readRepoInstructions } from './instructions'
+export { WorktreeJanitor } from './janitor'
 export { WorktreeStore } from './store'
 export { RepoTools } from './tools'

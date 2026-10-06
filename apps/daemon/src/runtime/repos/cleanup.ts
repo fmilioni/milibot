@@ -57,6 +57,7 @@ export async function runCleanup(
     env: { REPO_NAME: input.repoName, BASE_BRANCH: input.baseBranch, GIT_TERMINAL_PROMPT: '0' },
     timeoutMs: 600_000,
   })
-  if (result.code !== 0) throw new Error((result.stderr || result.stdout).trim().slice(0, 500) || 'cleanup failed')
+  if (result.code !== 0)
+    throw new Error((result.stderr || result.stdout).trim().slice(0, 500) || 'cleanup failed')
   return parseCleanupOutput(result.stdout)
 }

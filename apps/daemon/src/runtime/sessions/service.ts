@@ -79,6 +79,8 @@ export interface WorkSessionServiceDeps {
   pullRequestNote?: (plan: Plan | null) => string
   /** Board cards a session can work on. */
   cards?: BoardCardLinks
+  /** A session ended or saved its patches: its worktree may be removed. */
+  worktreeFinished?: () => void
   /** A session on a model other than its bot's opened or ended (who reads the bot's secret files). */
   modelLanesChanged?: () => void
   appendMessage: (message: NewAgentMessage) => Message
@@ -119,6 +121,7 @@ export class WorkSessionService {
       onSaved: (row) => {
         this.cards.sync(row)
         this.emitNow(row.id)
+        if (isFinished(row.status)) this.deps.worktreeFinished?.()
       },
       now: deps.now,
       ...(deps.log ? { log: deps.log } : {}),
@@ -462,7 +465,9 @@ export class WorkSessionService {
     const repo = this.repoRefs.get(id) ?? row.repo_name
     try {
       if (row.repo_name && repo) {
-        const branch = this.plannedBranch(row, bot) as string
+        // A session reopened after its worktree was cleaned up comes back on the branch it ended on.
+        const worktree = row.worktree_id ? this.deps.worktrees.get(row.worktree_id) : null
+        const branch = worktree?.branch ?? (this.plannedBranch(row, bot) as string)
         const { code, stdout, stderr, info } = await runCheckout(guest, {
           bot,
           repo,
@@ -473,8 +478,9 @@ export class WorkSessionService {
           botEnv: (await this.deps.botEnv?.(bot)) ?? {},
         })
         if (code !== 0) throw new Error((stderr || stdout).trim().slice(0, 500))
-        if (!row.worktree_id) {
-          const worktree = this.deps.worktrees.insert({
+        if (worktree?.status === 'released') this.deps.worktrees.reactivate(worktree.id)
+        if (!worktree) {
+          const created = this.deps.worktrees.insert({
             botId: bot.id,
             repoName: row.repo_name,
             repoUrl: isRepoUrl(repo) ? repo : null,
@@ -483,7 +489,7 @@ export class WorkSessionService {
             baseBranch: info.BASE || null,
             sessionId: row.id,
           })
-          this.store.update(id, { worktree_id: worktree.id })
+          this.store.update(id, { worktree_id: created.id })
         }
       } else {
         const result = await guest.exec({
@@ -532,6 +538,7 @@ export class WorkSessionService {
     this.emitNow(row.id)
     this.changeTracker.markChanged(row.id, 0)
     if (next.model_spec) this.deps.modelLanesChanged?.()
+    if (next.worktree_id) this.deps.worktreeFinished?.()
     return next
   }
 
@@ -591,6 +598,8 @@ export class WorkSessionService {
     const row = this.store.byConversation(conversationId)
     if (!row || !isFinished(row.status)) return
     const next = this.store.update(row.id, { status: 'idle', finished_at: null })
+    if (row.worktree_id && this.deps.worktrees.get(row.worktree_id)?.status === 'released')
+      this.ready.delete(row.id)
     this.cards.sync(next)
     this.emitNow(row.id)
   }
@@ -609,6 +618,24 @@ export class WorkSessionService {
     }
     if (row.status === 'running' || row.status === 'preparing') this.store.update(row.id, { status: 'idle' })
     this.emitNow(row.id)
+  }
+
+  /**
+   * Whether the worktree of a session may be removed: the session ended, its lane is idle and not closing, its
+   * patches are saved (the changes screen reads them once the folder is gone) and no open session works in the
+   * same folder. A deleted session's may go.
+   */
+  worktreeDone(sessionId: string): boolean {
+    const row = this.store.row(sessionId)
+    if (!row) return true
+    if (!isFinished(row.status) || row.patches_at === null || this.closing.has(row.id)) return false
+    if (this.lanes.lane(row.id).status !== 'idle') return false
+    return !this.store.openFolders().some((f) => f.cwd === row.cwd)
+  }
+
+  /** The janitor removed the session's worktree: the next turn of a reopened session makes it again. */
+  worktreeRemoved(sessionId: string): void {
+    this.ready.delete(sessionId)
   }
 
   /** The bot was deleted: its open sessions end. */

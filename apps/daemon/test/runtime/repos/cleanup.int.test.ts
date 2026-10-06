@@ -225,7 +225,11 @@ describe('worktree cleanup script', () => {
   it('reports a folder already gone and never touches one outside the worktrees folder', () => {
     worktree('first')
     const outside = join(root, 'workspace/repos/app')
-    const { results } = cleanup([{ path: wt('missing') }, { path: outside }, { path: `${wt('x')}/../../app` }])
+    const { results } = cleanup([
+      { path: wt('missing') },
+      { path: outside },
+      { path: `${wt('x')}/../../app` },
+    ])
     expect(results.map((r) => [r.outcome, r.reason])).toEqual([
       ['gone', null],
       ['kept', 'outside'],

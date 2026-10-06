@@ -342,6 +342,53 @@ describe('work sessions', () => {
     )
   })
 
+  it('makes the worktree again, on the branch it ended on, when a session reopens after the cleanup', async () => {
+    await boot((request) => {
+      const { text, tools } = lastInput(request)
+      if (inSession(request)) {
+        if (text.includes('one more thing')) return { text: 'Done again.' }
+        if (tools === 0)
+          return { toolCalls: [{ name: 'session_finish', arguments: { summary: 'Done.', status: 'done' } }] }
+        return { text: 'Closed.' }
+      }
+      if (text.includes('fix the bug') && tools === 0)
+        return {
+          toolCalls: [
+            { name: 'session_start', arguments: { title: 'Fix bug', goal: 'Fix it.', repo: 'app' } },
+          ],
+        }
+      return { text: 'ok' }
+    })
+    await call('postMessage', { conversationId: chiefDm }, { content: 'fix the bug' })
+    const session = await onlySession()
+    await host.idle()
+    const sessions = runtime.services.workSessions
+    const row = () =>
+      db.prepare('SELECT id, status, branch FROM repo_worktrees').get() as {
+        id: string
+        status: string
+        branch: string
+      }
+    expect(row().status).toBe('active')
+    expect(sessions.worktreeDone(session.id)).toBe(false)
+    db.prepare('UPDATE work_sessions SET patches_at = 1 WHERE id = ?').run(session.id)
+    expect(sessions.worktreeDone(session.id)).toBe(true)
+
+    // What the janitor does once it removed the worktree of a renamed branch.
+    db.prepare("UPDATE repo_worktrees SET status = 'released', branch = 'bot/chief/fix-bug'").run()
+    sessions.worktreeRemoved(session.id)
+    const checkouts = () => guest.state.execs.filter((e) => String(e.cmd).includes('git worktree add'))
+    expect(checkouts()).toHaveLength(1)
+    await call('postMessage', { conversationId: session.conversationId }, { content: 'one more thing' })
+    await host.idle()
+
+    expect(messagesOf(session.conversationId).at(-1)?.content).toBe('Done again.')
+    expect(checkouts()).toHaveLength(2)
+    expect(checkouts()[1]?.env).toMatchObject({ BRANCH: 'bot/chief/fix-bug', WT_PATH: session.cwd })
+    expect(row()).toMatchObject({ status: 'active', branch: 'bot/chief/fix-bug' })
+    expect(db.prepare('SELECT COUNT(*) AS n FROM repo_worktrees').get()).toEqual({ n: 1 })
+  })
+
   it('leaves sessions idle after a restart, until the user writes in them', async () => {
     await boot((request) => {
       const { text, tools } = lastInput(request)

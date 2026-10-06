@@ -98,7 +98,11 @@ export function applyWorkspaceEvent(
     case 'message.created': {
       const { message } = event.payload
       const patch: Partial<WorkspaceEventState> = {}
-      const botConversation = noteBotConversation(state.botConversation, message)
+      const botConversation = noteBotConversation(
+        state.botConversation,
+        message,
+        state.conversations[message.conversationId],
+      )
       if (botConversation) patch.botConversation = botConversation
       const woken = internalWakeTarget(state.conversations[message.conversationId], message, state.bots)
       const pending = woken
@@ -116,7 +120,11 @@ export function applyWorkspaceEvent(
     }
     case 'message.updated': {
       const { message } = event.payload
-      const botConversation = noteBotConversation(state.botConversation, message)
+      const botConversation = noteBotConversation(
+        state.botConversation,
+        message,
+        state.conversations[message.conversationId],
+      )
       return {
         ...(botConversation ? { botConversation } : {}),
         ...updateMessage(state, message.conversationId, message.id, () => message),

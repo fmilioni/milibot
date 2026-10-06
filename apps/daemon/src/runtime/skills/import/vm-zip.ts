@@ -4,7 +4,7 @@ import type { GuestClient } from '../../vm'
 import { validation } from './scan'
 
 /** Largest zip a bot imports from the VM (the same as a GitHub archive). */
-export const VM_ZIP_MAX_BYTES = 50 * 1024 * 1024
+const VM_ZIP_MAX_BYTES = 50 * 1024 * 1024
 
 /** Resolves the path as `agent` (what the bot can read), symlinks included, and prints it with its size. */
 const RESOLVE_SCRIPT = [
@@ -17,7 +17,7 @@ const RESOLVE_SCRIPT = [
 ].join('\n')
 
 /** The checked path of a zip under /workspace, before reading it. */
-export function vmZipPath(input: string): string {
+function vmZipPath(input: string): string {
   const path = posix.normalize(input.trim())
   if (!path.startsWith('/workspace/') || path.includes('\0'))
     throw validation('The zip must be a file under /workspace.', 'invalid_path')

@@ -22,10 +22,10 @@ interface McpDetails {
   enabled?: boolean
 }
 
-function parseDetails(json: string): McpDetails | null {
+function parseJson<T>(json: string): T | null {
   try {
     const value: unknown = JSON.parse(json)
-    return value && typeof value === 'object' ? (value as McpDetails) : null
+    return value && typeof value === 'object' ? (value as T) : null
   } catch {
     return null
   }
@@ -37,7 +37,7 @@ const isKeyValue = (item: unknown): item is KeyValue =>
 /** What an MCP confirmation card asks the user to approve; secret references show their names, never values. */
 export function McpChangeDetails({ details }: { details: string }) {
   const { t } = useTranslation()
-  const parsed = parseDetails(details)
+  const parsed = parseJson<McpDetails>(details)
   if (!parsed) return null
   const shownValue = (value: string | undefined) =>
     value === undefined
@@ -94,12 +94,7 @@ const SHOWN_TOOLS = 8
 /** What a change of a bot's MCP servers asks to approve: each switch and the tools the server brings. */
 export function BotMcpDetails({ details, botName }: { details: string; botName: string }) {
   const { t } = useTranslation()
-  let parsed: BotMcpDetailsJson | null = null
-  try {
-    parsed = JSON.parse(details) as BotMcpDetailsJson
-  } catch {
-    return null
-  }
+  const parsed = parseJson<BotMcpDetailsJson>(details)
   if (!Array.isArray(parsed?.changes) || parsed.changes.length === 0) return null
   return (
     <ul className="flex flex-col gap-2 rounded-lg bg-surface-3 px-3 py-2 text-sm">

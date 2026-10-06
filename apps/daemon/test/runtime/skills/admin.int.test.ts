@@ -230,7 +230,13 @@ describe('bot_skills_set and bot_mcp_set', () => {
     expect(card.content).toContain('wants to change its own skills')
     const details = JSON.parse(card.payload.params.details as string) as { changes: unknown[] }
     expect(details.changes).toEqual([
-      { skill: 'routines', on: false, families: ['routines'], tools: expect.any(Number) as number, allow: false },
+      {
+        skill: 'routines',
+        on: false,
+        families: ['routines'],
+        tools: expect.any(Number) as number,
+        allow: false,
+      },
     ])
     const bot = h.store.bots.get(h.botId)
     expect(h.runtime.services.skills.skillContext(bot).families.has('routines')).toBe(true)

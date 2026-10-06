@@ -25,7 +25,7 @@ interface BotSkillsDetailsJson {
   changes?: Array<{ skill: string; on: boolean; families: string[]; tools: number; allow: boolean }>
 }
 
-export function parseCardDetails<T>(json: string): T | null {
+function parseCardDetails<T>(json: string): T | null {
   try {
     const value: unknown = JSON.parse(json)
     return value && typeof value === 'object' ? (value as T) : null

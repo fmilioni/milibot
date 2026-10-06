@@ -377,7 +377,12 @@ describe('McpAdmin', () => {
       timeoutSeconds: () => 600,
       log: () => undefined,
     })
-    const waiting = admin.proposeBot(ctx, other, [{ server: server as unknown as McpServer, on: true, allow: true }], '')
+    const waiting = admin.proposeBot(
+      ctx,
+      other,
+      [{ server: server as unknown as McpServer, on: true, allow: true }],
+      '',
+    )
     expect(updateServer).not.toHaveBeenCalled()
     expect(setBotServer).not.toHaveBeenCalled()
     const input = {

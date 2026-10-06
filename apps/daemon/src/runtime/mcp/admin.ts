@@ -73,7 +73,7 @@ export interface McpCardDetails {
 }
 
 /** The `bot_mcp` card's `details` param (JSON). */
-export interface BotMcpCardDetails {
+interface BotMcpCardDetails {
   changes: Array<{
     server: string
     on: boolean

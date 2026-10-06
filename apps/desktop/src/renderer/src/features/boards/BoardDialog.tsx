@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useAppStore } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
+import { cn } from '@/lib/cn'
 import { Button } from '@/ui/Button'
 import { DatePicker } from '@/ui/DatePicker'
 import { Modal } from '@/ui/Modal'
@@ -130,7 +131,10 @@ export function BoardDialog({
             />
           </div>
         </div>
-        <p id="board-doing-limit-hint" className="-mt-2 text-sm text-fg-secondary">
+        <p
+          id="board-doing-limit-hint"
+          className={cn('-mt-2 text-sm', limitValid ? 'text-fg-secondary' : 'text-danger-strong')}
+        >
           {t('boards.dialog.fields.doingLimitHint')}
         </p>
       </form>

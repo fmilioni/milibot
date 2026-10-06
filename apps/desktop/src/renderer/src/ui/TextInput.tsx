@@ -59,7 +59,7 @@ export function FieldLabel({
 type Tone = 'surface' | 'surface-2'
 
 const inputBase =
-  'selectable w-full rounded-lg border border-border px-3 text-base text-fg outline-none placeholder:text-fg-muted focus:border-accent'
+  'selectable w-full rounded-lg border border-border px-3 text-base text-fg outline-none placeholder:text-fg-muted focus:border-accent aria-[invalid=true]:border-danger'
 
 export function TextInput({
   tone = 'surface',

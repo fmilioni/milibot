@@ -568,12 +568,16 @@ describe('DefaultAgentHost', () => {
   })
 
   it('marks a bot busy as soon as its message is accepted, even while it waits for a slot', async () => {
-    const { env, host, bot, say } = await setup([{ text: 'one', delayMs: 30 }, { text: 'two' }])
+    const { env, host, bot, conversation, say } = await setup([{ text: 'one', delayMs: 30 }, { text: 'two' }])
     env.settings['agents.max_parallel'] = 1
     const other = makeBot({ name: 'Bia', slug: 'bia', displayNum: 2 })
     const otherDm = env.addBot(other)
     say('hi')
-    expect(env.statuses.at(-1)).toEqual({ botId: bot.id, status: 'thinking' })
+    expect(env.statuses.at(-1)).toEqual({
+      botId: bot.id,
+      status: 'thinking',
+      conversationId: conversation.id,
+    })
     host.onMessageCreated(env.userMessage(otherDm.id, 'hi Bia'))
     expect(env.statuses.at(-1)).toEqual({ botId: other.id, status: 'thinking' })
     expect(host.screenState(other.id).control).toBe('idle')

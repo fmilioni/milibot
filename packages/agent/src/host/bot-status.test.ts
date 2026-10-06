@@ -9,14 +9,14 @@ import { sessionLaneKey } from './lanes'
 
 const SESSION = 'wses_01STATUSSESSION'
 
-/** `tool:<name>` calls that tool once, then the turn answers. */
+/** `tool:<name>[:<command>]` calls that tool once (command `in turn` by default), then the turn answers. */
 function script(request: CompletionRequest): FakeStep {
   const messages = request.messages as ChatMessage[]
   const index = messages.findLastIndex((m) => m.role === 'user')
   const text = (messages[index]?.content ?? []).map((p) => (p.type === 'text' ? p.text : '')).join('\n')
   const afterTool = messages.slice(index + 1).some((m) => m.role === 'tool')
-  const tool = /tool:(\w+)/.exec(text)?.[1]
-  if (tool && !afterTool) return { toolCalls: [{ name: tool, arguments: { command: 'in turn' } }] }
+  const [, tool, command = 'in turn'] = /tool:(\w+)(?::(\S+))?/.exec(text) ?? []
+  if (tool && !afterTool) return { toolCalls: [{ name: tool, arguments: { command } }] }
   return { text: 'done' }
 }
 
@@ -162,5 +162,64 @@ describe('bot status once no lane works', () => {
     say(chat.id, 'hi')
     await host.idle(bot.id)
     expect(lastStatus()).toEqual({ botId: bot.id, status: 'idle' })
+  })
+})
+
+describe('bot status with lanes in parallel', () => {
+  it('shows the internal conversation it answers in while its work session runs', async () => {
+    const { env, bot, session, host, gates, say, lastStatus } = await setup()
+    const asker = makeBot({ name: 'Maestro', slug: 'maestro' })
+    env.addBot(asker)
+    const internal = env.internalConversation(asker.id, bot.id)
+    const sessionTool = newGate()
+    gates.set('in turn', sessionTool)
+    say(session.id, 'tool:bash')
+    await until(() => sessionTool.started)
+    expect(lastStatus()).toMatchObject({ status: 'working', sessionId: SESSION })
+
+    const internalTool = newGate()
+    gates.set('internal', internalTool)
+    host.enqueueTurn({
+      botId: bot.id,
+      conversationId: internal.id,
+      trigger: 'bot_reply',
+      note: 'tool:bash:internal',
+    })
+    await until(() => internalTool.started)
+    expect(lastStatus()).toEqual({
+      botId: bot.id,
+      status: 'working',
+      detail: 'bash',
+      conversationId: internal.id,
+    })
+
+    internalTool.release()
+    await until(() => lastStatus()?.sessionId === SESSION)
+    expect(lastStatus()).toMatchObject({ status: 'working', sessionId: SESSION })
+    sessionTool.release()
+    await host.idle(bot.id)
+    expect(lastStatus()).toEqual({ botId: bot.id, status: 'idle' })
+  })
+})
+
+describe('bot status of a queued internal request while a session runs', () => {
+  it('names the internal conversation from the start of a turn that only answers', async () => {
+    const { env, bot, session, host, gates, say, lastStatus } = await setup()
+    const asker = makeBot({ name: 'Maestro', slug: 'maestro' })
+    env.addBot(asker)
+    const internal = env.internalConversation(asker.id, bot.id)
+    const sessionTool = newGate()
+    gates.set('in turn', sessionTool)
+    say(session.id, 'tool:bash')
+    await until(() => sessionTool.started)
+
+    const from = env.statuses.length
+    host.enqueueTurn({ botId: bot.id, conversationId: internal.id, trigger: 'bot_reply', note: 'answer' })
+    await until(() => lastStatus()?.sessionId === SESSION && env.statuses.length > from + 1)
+    const internalStatuses = env.statuses.slice(from).filter((s) => s.conversationId === internal.id)
+    expect(internalStatuses[0]).toMatchObject({ status: 'thinking' })
+
+    sessionTool.release()
+    await host.idle(bot.id)
   })
 })

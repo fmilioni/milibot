@@ -1,7 +1,7 @@
 import type { BotStatus, SystemEventName, SystemPayload } from '@milibot/shared'
 
 import type { HostContext } from '../context'
-import { busier, laneInfo, type LaneKey } from '../lanes'
+import { busier, internalLaneKey, laneInfo, type LaneKey } from '../lanes'
 import type { BotState, LaneState, TurnState } from '../state'
 import { StatusLog, type StatusReason } from './status-log'
 
@@ -115,10 +115,16 @@ export class LaneRegistry {
     for (const waiter of waiters) waiter()
   }
 
-  /** The lane the bot's status shows: the chat lane while it is busy, else the busiest other lane. */
+  /**
+   * The lane the bot's status shows: the chat lane while it is busy, else the internal one (answering
+   * another bot) while busy, else the busiest other lane. Conversation lanes come first because the app
+   * places the bot's "Working…" row from this status, while session lanes show their own status.
+   */
   private shownLane(state: BotState, botId: string): LaneState {
     const main = this.lane(botId)
     if (main.status !== 'idle') return main
+    const internal = state.lanes.get(internalLaneKey(botId))
+    if (internal && internal.status !== 'idle') return internal
     let shown = main
     for (const lane of state.lanes.values()) if (busier(lane.status, shown.status)) shown = lane
     return shown
@@ -154,14 +160,19 @@ export class LaneRegistry {
     const shown = this.shownLane(state, botId)
     const own = shown === changed
     const effective = state.userPaused || (state.paused && shown.status !== 'idle') ? 'paused' : shown.status
+    const conversationId = shown.current?.conversationId
+    // A lane queued before its turn starts already shows, without a conversation: the turn's start must
+    // still report it, since the app places the "Working…" row from it.
     if (
       state.status === effective &&
       state.statusLane === shown.info.key &&
+      state.statusConversationId === conversationId &&
       (!own || shown.detail === undefined)
     )
       return
     state.status = effective
     state.statusLane = shown.info.key
+    state.statusConversationId = conversationId
     this.log.botStatus(botId, effective, shown.info.key, reason)
     this.ctx
       .env()
@@ -171,7 +182,7 @@ export class LaneRegistry {
         shown.detail,
         shown.targetBotId,
         shown.info.sessionId ?? undefined,
-        shown.current?.conversationId,
+        conversationId,
       )
   }
 

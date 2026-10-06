@@ -9,8 +9,7 @@ import {
   type ProjectView,
 } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
-import { parseJson } from '../../db/sqlite'
+import { type Db, parseJson, sqlList } from '../../db/sqlite'
 import { notFound } from '../../errors'
 import type { ChunkDraft } from './chunker'
 
@@ -225,6 +224,14 @@ export class KnowledgeStore {
     readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Titles of the documents among `ids`. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, title AS name FROM knowledge_docs WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
 
   insertDoc(input: NewDoc): DocRow {
     const id = newId('knowledgeDoc')

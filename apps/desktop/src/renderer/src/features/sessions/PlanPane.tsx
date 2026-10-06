@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { PlanDialog } from '@/features/plans/PlanDialog'
 import { PlanProgress, PlanStepList } from '@/features/plans/PlanParts'
 import { isSessionFinished, sessionResult } from '@/features/sessions/lib/session-view'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Markdown } from '@/ui/Markdown'
 
 /** "Plan": the steps the session follows (its plan's, or its own list) and, once finished, the result. */
@@ -61,7 +62,7 @@ export function PlanPane({ session }: { session: WorkSessionDetail }) {
           {t('session.plan.goal')}
         </h3>
         <p className="selectable text-base leading-[1.5] whitespace-pre-wrap text-fg-secondary">
-          {session.goal}
+          <LinkifiedText text={session.goal} />
         </p>
       </section>
       {planOpen && session.planId && (

@@ -748,6 +748,16 @@ export class WorkSessionService {
     return finished
   }
 
+  /** Titles of the sessions among `ids` (deleted ones left out), for links in text. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    return this.store.names(ids)
+  }
+
+  /** The sessions whose conversations are among `conversationIds`. */
+  sessionsOfConversations(conversationIds: readonly string[]): Array<{ id: string; conversationId: string }> {
+    return this.store.byConversations(conversationIds)
+  }
+
   handlers(): EndpointHandlers<keyof typeof workSessionEndpoints> {
     return {
       listWorkSessions: ({ query }) => this.list(query),

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CanvasView } from '@/features/canvas/CanvasView'
 import { useDesignStore } from '@/features/canvas/store'
+import { RefLinkProvider } from '@/features/refs/RefLinkProvider'
 import { useAppStore } from '@/features/workspace/store'
 
 /** "Open in window": only the canvas of a design, following the same events as the main window. */
@@ -28,8 +29,10 @@ export function CanvasWindow({ params }: { params: URLSearchParams }) {
       </div>
     )
   return (
-    <div className="flex h-full">
-      <CanvasView designId={designId} conversationId={null} windowMode onClose={() => window.close()} />
-    </div>
+    <RefLinkProvider navigable={false}>
+      <div className="flex h-full">
+        <CanvasView designId={designId} conversationId={null} windowMode onClose={() => window.close()} />
+      </div>
+    </RefLinkProvider>
   )
 }

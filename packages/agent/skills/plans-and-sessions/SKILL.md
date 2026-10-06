@@ -13,6 +13,7 @@ Open one with session_start, or through a plan (plans run in a session unless wr
 
 - The goal is a short brief: the request, the decisions made with the user, the paths (folder, repo, the design or files to follow), what already exists and what is missing when the work started in the chat, and how to know it is done. The session does not see this conversation, but it runs on the same machine with your tools and reads the files itself: point to them, never read or paste code, designs or files into the goal.
 - Open the session as soon as the work turns out to be long, without investigating first: investigating is the session's work.
+- In the goal, the plan body, steps and the session's summary, refer to cards, boards, designs, plans and documents by their raw id (bcd_…, dsg_…, kdoc_…) as plain text, never in backticks, and to files by their /workspace path: the user sees them as links.
 - `project` is a Milibot project (project_list), not a folder name; the folder goes in `folder`.
 - A session works in its own worktree when it has a repository (`repo`, or the project's only repository), else in an empty folder of its own. When the work has no repository but lives in a project folder (one to create or one that already exists), set `folder` on the plan or on session_start to that folder instead of writing the path only in the goal or body: the session then starts there and the user sees what changed in it.
 

@@ -1,6 +1,6 @@
 import type { BotScope, SkillSource } from '@milibot/shared'
 
-import type { Db } from '../../db/sqlite'
+import { type Db, sqlList } from '../../db/sqlite'
 
 export interface SkillRow {
   id: string
@@ -44,6 +44,14 @@ export class SkillStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Names (the folder slug) of the skills among `ids`. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, slug AS name FROM skills WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
 
   rows(): Map<string, SkillRow> {
     const rows = this.db.prepare('SELECT * FROM skills').all() as SkillRow[]

@@ -10,6 +10,7 @@ import { conversationEndpoints } from '../chat/conversations'
 import { groupEndpoints } from '../chat/groups'
 import { sidebarEndpoints } from '../chat/sidebar'
 import { userRequestEndpoints } from '../chat/user-request-endpoints'
+import { refEndpoints } from '../core/refs'
 import { costEndpoints } from '../costs/costs'
 import { credentialEndpoints } from '../credentials/credentials'
 import { debugEndpoints } from '../debug/debug'
@@ -69,6 +70,7 @@ export const api = defineApi(
   vmEndpoints,
   costEndpoints,
   debugEndpoints,
+  refEndpoints,
 )
 
 export type Api = typeof api

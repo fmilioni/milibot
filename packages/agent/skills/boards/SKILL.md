@@ -42,6 +42,8 @@ When every card is done or dropped the board completes by itself. Archive a boar
 
 Comments are for what the next person working the card needs: decisions, deviations from the plan or the body, blockers, open questions. One to three sentences, in the user's language. Never a summary of what you did (the plan, session and pull request already show that) and never a progress log.
 
+In comments, bodies and the chat, refer to another card, board, plan, session or design by its raw id as plain text, without backticks (bcd_…, brd_…), and to files by their /workspace path: the app turns them into links with the current name, so the name need not be repeated.
+
 ## Tool reference
 
 Boards and cards are named by id or title; everything in the user's language.

@@ -19,8 +19,12 @@ export type SettingsSection =
   | 'workspaces'
   | 'appearance'
 
-/** Screens the rows at the top of the sidebar open instead of the chat; `boardId` null: the first board. */
-export type NavScreen = { kind: 'boards'; boardId: string | null } | { kind: 'designs' } | { kind: 'files' }
+/**
+ * Screens the rows at the top of the sidebar open instead of the chat; `boardId` null: the first board;
+ * `cardId`: a card whose dialog the board opens once (then drops it from the screen).
+ */
+export type NavScreen =
+  { kind: 'boards'; boardId: string | null; cardId?: string } | { kind: 'designs' } | { kind: 'files' }
 
 /** Where closing a canvas opened from a work session's conversation goes back to. */
 interface CanvasBack {

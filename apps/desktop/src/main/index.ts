@@ -50,6 +50,6 @@ function startApp(): void {
         .then((client) => showConversation(client, workspaceId, conversationId))
         .catch((err: unknown) => console.error('[main] showConversation failed', err)),
   })
-  new AppLifecycle({ daemon, settings, vncBridge }).start()
+  new AppLifecycle({ daemon, settings, vncBridge, keepAwake }).start()
   settings.start()
 }

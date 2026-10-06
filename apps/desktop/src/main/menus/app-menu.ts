@@ -3,16 +3,21 @@ import { mkdirSync } from 'node:fs'
 import type { Language } from '@milibot/shared'
 import { app, BrowserWindow, dialog, Menu, shell } from 'electron'
 
-import { mainText } from '../app/i18n'
+import { botsWorkingText, mainText } from '../app/i18n'
 import type { DaemonManager } from '../daemon/manager'
 import { appPaths } from '../daemon/paths'
 import { menuTemplate } from './template'
 
-export async function confirmAndStopService(daemon: DaemonManager, language: Language): Promise<void> {
+export async function confirmAndStopService(
+  daemon: DaemonManager,
+  language: Language,
+  busyBots: number,
+): Promise<void> {
+  const detail = mainText(language, 'stopServiceDetail')
   const { response } = await dialog.showMessageBox({
     type: 'warning',
     message: mainText(language, 'stopServiceTitle'),
-    detail: mainText(language, 'stopServiceDetail'),
+    detail: busyBots > 0 ? `${botsWorkingText(language, busyBots)} ${detail}` : detail,
     buttons: [mainText(language, 'stopServiceConfirm'), mainText(language, 'stopServiceCancel')],
     defaultId: 1,
     cancelId: 1,
@@ -35,11 +40,13 @@ export function showLogs(): void {
 }
 
 /** Idempotent: the menu is rebuilt when the app language changes. */
-export function installAppMenu(daemon: DaemonManager, language: Language): void {
+export function installAppMenu(daemon: DaemonManager, language: Language, busyBots: () => number): void {
   Menu.setApplicationMenu(
     Menu.buildFromTemplate(
       menuTemplate(process.platform, language, app.name, {
-        stopService: daemon.external ? undefined : () => void confirmAndStopService(daemon, language),
+        stopService: daemon.external
+          ? undefined
+          : () => void confirmAndStopService(daemon, language, busyBots()),
         showLogs,
         devTools: !app.isPackaged,
       }),

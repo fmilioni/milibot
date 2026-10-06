@@ -2,7 +2,7 @@ import { appLoginItem } from '../platform/login-item'
 import type { InvokeHandlers } from './handle'
 import type { IpcDeps } from './register'
 
-export function systemInvokes({ settings, keepAwake }: IpcDeps) {
+export function systemInvokes({ settings, keepAwake, appUpdate }: IpcDeps) {
   return {
     setThemeSource: (_event, [theme]) => settings.setTheme(theme),
 
@@ -14,5 +14,9 @@ export function systemInvokes({ settings, keepAwake }: IpcDeps) {
     setLoginItem: (_event, [enabled]) => appLoginItem().set(enabled),
 
     getKeepAwake: () => keepAwake.state,
+
+    getAppUpdate: () => appUpdate.state,
+
+    installAppUpdate: () => appUpdate.install(),
   } satisfies Partial<InvokeHandlers>
 }

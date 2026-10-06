@@ -33,6 +33,14 @@ describe('IPC contract', () => {
     )
   })
 
+  it("keeps the app's update in the workspace windows only", () => {
+    for (const name of ['getAppUpdate', 'installAppUpdate', 'appUpdateChanged'] as const) {
+      expect(allowedChannels('workspace').has(name), name).toBe(true)
+      expect(allowedChannels('canvas').has(name), name).toBe(false)
+      expect(allowedChannels('vm').has(name), name).toBe(false)
+    }
+  })
+
   it('reads the window kind the main process passes to the preload', () => {
     expect(windowKindFromArgv(['electron', '--milibot-window-kind=canvas'])).toBe('canvas')
     expect(windowKindFromArgv(['--milibot-window-kind=other'])).toBeNull()

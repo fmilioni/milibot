@@ -139,8 +139,8 @@ export class AppLifecycle {
   }
 
   /**
-   * The updater quits the app right after this and starts the new version itself: bot screens go back
-   * now (`before-quit` won't hold the quit), and the single-instance lock is released so the new version,
+   * The updater quits the app right after this and starts the new version: bot screens go back now
+   * (`before-quit` won't hold the quit), and the single-instance lock is released so the new version,
    * which may start before this process exits, isn't turned away as a second instance.
    */
   async prepareUpdateQuit(): Promise<void> {

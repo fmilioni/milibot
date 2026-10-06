@@ -7,6 +7,7 @@ import { AppImageUpdater, DebUpdater, type Logger, MacUpdater, NsisUpdater } fro
 import { appPaths } from '../daemon/paths'
 import { appendRotating } from '../services/logging/log-file'
 import type { UpdaterEngine } from './app-updater'
+import { startDetachedClean } from './appimage-launch'
 import { type InstallKind, installKind } from './install-kind'
 
 const MAX_LOG_BYTES = 2 * 1024 * 1024
@@ -32,12 +33,14 @@ function buildAllows(): boolean {
   }
 }
 
+const updateLogFile = () => join(appPaths().logsDir, 'updater.log')
+
 /** Appends to `logs/updater.log` (and the console). */
 export function logUpdate(message: string): void {
   const line = `[${new Date().toISOString()}] ${message}\n`
   console.log(`[update] ${message}`)
   try {
-    appendRotating(join(appPaths().logsDir, 'updater.log'), line, MAX_LOG_BYTES)
+    appendRotating(updateLogFile(), line, MAX_LOG_BYTES)
   } catch {
     // The log is a convenience: never let it stop an update.
   }
@@ -49,6 +52,31 @@ const logger: Logger = {
   error: (message: unknown) => logUpdate(`error: ${String(message)}`),
 }
 
+/**
+ * electron-updater would start the new AppImage with the descriptors this process holds (see
+ * `startDetachedClean`), so it only puts the new file in place and the new version is started here.
+ */
+function startCleanAfterInstall(updater: AppImageUpdater): AppImageUpdater {
+  let target = process.env.APPIMAGE
+  updater.on('appimage-filename-updated', (path) => (target = path))
+  const quitAndInstall = updater.quitAndInstall.bind(updater)
+  updater.quitAndInstall = (isSilent = false) => {
+    let failed = false
+    const onError = () => (failed = true)
+    updater.on('error', onError)
+    try {
+      quitAndInstall(isSilent, false)
+    } finally {
+      updater.off('error', onError)
+    }
+    // The quit runs on the next tick, after the new version is on its way.
+    if (failed || !target) return
+    logUpdate(`starting ${target}`)
+    startDetachedClean(target, process.argv.slice(1), updateLogFile())
+  }
+  return updater
+}
+
 function create(kind: InstallKind) {
   switch (kind) {
     case 'mac':
@@ -56,7 +84,7 @@ function create(kind: InstallKind) {
     case 'nsis':
       return new NsisUpdater()
     case 'appimage':
-      return new AppImageUpdater()
+      return startCleanAfterInstall(new AppImageUpdater())
     case 'deb':
       return new DebUpdater()
   }

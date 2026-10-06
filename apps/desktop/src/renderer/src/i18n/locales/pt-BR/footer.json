@@ -50,5 +50,15 @@
     "title": "Atualização do sistema",
     "link": "Ver o que há de novo",
     "dismiss": "Dispensar"
+  },
+  "appUpdate": {
+    "title": "Atualização pronta",
+    "link": "Reiniciar para atualizar para a v{{version}}",
+    "installing": "Reiniciando…",
+    "dismiss": "Dispensar",
+    "confirmTitle": "Atualizar para a v{{version}} agora?",
+    "confirmBody_one": "Há {{count}} bot trabalhando. Atualizar agora interrompe o que ele está fazendo.",
+    "confirmBody_other": "Há {{count}} bots trabalhando. Atualizar agora interrompe o que eles estão fazendo.",
+    "confirm": "Atualizar agora"
   }
 }

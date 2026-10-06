@@ -1,9 +1,8 @@
-import type { Bot } from '@milibot/shared'
+import { type Bot, isBusyStatus } from '@milibot/shared'
 import { PenTool } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
-import { isBusyStatus } from '@/features/bots/lib/bot-status'
 import { useDesignStore } from '@/features/canvas/store'
 import { screenIs, toastOnError, useAppStore } from '@/features/workspace/store'
 import { useNow } from '@/hooks/use-now'

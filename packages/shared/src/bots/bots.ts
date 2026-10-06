@@ -8,6 +8,13 @@ import { Avatar } from './avatar'
 export const BotStatus = z.enum(['idle', 'thinking', 'working', 'talking', 'paused', 'effort'])
 export type BotStatus = z.infer<typeof BotStatus>
 
+/** Statuses in which the bot is busy on a turn (`paused` is not). */
+const BUSY_STATUSES: ReadonlySet<string> = new Set(['thinking', 'working', 'talking', 'effort'])
+
+export function isBusyStatus(status: string | null | undefined): boolean {
+  return BUSY_STATUSES.has(status ?? '')
+}
+
 export const Bot = z.object({
   id: z.string(),
   name: z.string().min(1).max(48),

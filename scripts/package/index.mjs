@@ -9,17 +9,20 @@ import { Arch, build, Platform } from 'electron-builder'
 
 import { HostToolsError, installHostTools } from '../../vm/host/src/tools/host-tools.ts'
 import { checkTarget, hasWine, PackageError, packagePaths, parseArgs, USAGE } from './args.mjs'
-import { appPackageJson, buildConfig, windowsSigningNotice } from './config.mjs'
+import { appPackageJson, autoUpdateEnabled, buildConfig, windowsSigningNotice } from './config.mjs'
 import { resolveNatives } from './natives.mjs'
 import { nodeBinary } from './node-runtime.mjs'
 
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'))
 
-function stageApp({ stage, desktop }, rootPackage) {
+function stageApp({ stage, desktop }, rootPackage, autoUpdate) {
   rmSync(stage, { recursive: true, force: true })
   const app = join(stage, 'app')
   mkdirSync(app, { recursive: true })
-  writeFileSync(join(app, 'package.json'), JSON.stringify(appPackageJson(rootPackage), null, 2))
+  writeFileSync(
+    join(app, 'package.json'),
+    JSON.stringify(appPackageJson(rootPackage, { autoUpdate }), null, 2),
+  )
   cpSync(join(desktop, 'out'), join(app, 'out'), { recursive: true })
   writeFileSync(join(stage, 'daemon-package.json'), JSON.stringify({ type: 'module', private: true }))
   return app
@@ -81,7 +84,7 @@ async function stageHostTools({ platform, arch, stage }) {
 
 function targets({ platform, arch, dirOnly }) {
   const archOf = arch === 'x64' ? Arch.x64 : Arch.arm64
-  if (platform === 'darwin') return Platform.MAC.createTarget(dirOnly ? ['dir'] : ['dmg'], archOf)
+  if (platform === 'darwin') return Platform.MAC.createTarget(dirOnly ? ['dir'] : ['dmg', 'zip'], archOf)
   if (platform === 'win32') return Platform.WINDOWS.createTarget(dirOnly ? ['dir'] : ['nsis'], archOf)
   return Platform.LINUX.createTarget(dirOnly ? ['dir'] : ['AppImage', 'deb'], archOf)
 }
@@ -122,7 +125,9 @@ async function main() {
 
   assertElectronExternal(ctx)
 
-  const appDir = stageApp(ctx, rootPackage)
+  const autoUpdate = autoUpdateEnabled(ctx)
+  console.log(`package: auto update ${autoUpdate ? 'on' : 'off (macOS without a Developer ID)'}`)
+  const appDir = stageApp(ctx, rootPackage, autoUpdate)
   const vmScripts = await bundleVmScripts(ctx)
   const vmBin = await stageHostTools(ctx)
   const natives = resolveNatives(ctx)
@@ -139,7 +144,7 @@ async function main() {
 
   windowsSigningNotice(ctx, config)
   try {
-    const artifacts = await build({ projectDir: ctx.root, targets: targets(ctx), config })
+    const artifacts = await build({ projectDir: ctx.root, targets: targets(ctx), config, publish: 'never' })
     for (const artifact of artifacts) {
       console.log(`package: ${artifact} (${(statSync(artifact).size / 1024 ** 2).toFixed(1)} MB)`)
     }

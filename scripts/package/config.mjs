@@ -3,8 +3,24 @@ import { join } from 'node:path'
 
 import { APP_ID } from '../../apps/desktop/src/main/platform/app-id.ts'
 
-/** The staged app's package.json (main and preload bundle their dependencies: no node_modules). */
-export function appPackageJson({ version, homepage }) {
+/** Where installed apps look for new versions: the repository's published (non-draft) GitHub releases. */
+export const UPDATE_FEED = { provider: 'github', owner: 'fmilioni', repo: 'milibot' }
+
+const isSigned = (env) => Boolean(env.CSC_LINK || env.CSC_NAME)
+
+/**
+ * Whether the packaged app updates itself. Squirrel.Mac refuses to swap an ad-hoc signed app (its code
+ * requirement fails), so on macOS it needs a Developer ID build; Windows and Linux need no signature.
+ */
+export function autoUpdateEnabled({ platform, env }) {
+  return platform !== 'darwin' || isSigned(env)
+}
+
+/**
+ * The staged app's package.json (main and preload bundle their dependencies: no node_modules). Main reads
+ * `milibot.autoUpdate` to decide whether to start the updater.
+ */
+export function appPackageJson({ version, homepage }, { autoUpdate }) {
   return {
     name: 'milibot',
     productName: 'Milibot',
@@ -15,6 +31,7 @@ export function appPackageJson({ version, homepage }) {
     // Linux: the window's app_id/WM_CLASS, so desktops match windows to milibot.desktop.
     desktopName: 'milibot.desktop',
     main: 'out/main/index.js',
+    milibot: { autoUpdate },
   }
 }
 
@@ -34,7 +51,7 @@ export const DMG_LAYOUT = {
 }
 
 function signingConfig({ env, desktop }) {
-  const signing = Boolean(env.CSC_LINK || env.CSC_NAME)
+  const signing = isSigned(env)
   // Every nested binary gets the app's entitlements, so the bundled QEMU keeps the hypervisor one.
   const entitlements = join(desktop, 'build/entitlements.mac.plist')
   if (!signing) {
@@ -130,7 +147,9 @@ export function buildConfig({
     asar: true,
     npmRebuild: false,
     nodeGypRebuild: false,
-    publish: null,
+    // Writes app-update.yml into the app and the latest*.yml feed next to the installers; the release
+    // workflow uploads them (electron-builder itself never publishes: `publish: 'never'` in index.mjs).
+    publish: UPDATE_FEED,
     afterPack: afterPack(platform),
     // Flipped by electron-builder right before signing. The daemon and the VM scripts run on the bundled
     // Node, never on Electron as Node, so the binary never needs ELECTRON_RUN_AS_NODE. The asar header hash
@@ -211,6 +230,8 @@ export function buildConfig({
       darkModeSupport: true,
       ...signingConfig(ctx),
     },
+    // The updater installs macOS updates from the zip (the dmg is for the first install).
+    zip: { artifactName: 'Milibot-${version}-${arch}-mac.${ext}' },
     dmg: {
       artifactName: 'Milibot-${version}-${arch}.${ext}',
       title: 'Milibot ${version}',

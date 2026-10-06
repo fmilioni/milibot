@@ -72,6 +72,19 @@ export function BoardView({ board }: { board: Board }) {
   // The cards while a drag crosses columns: the dragged one already sits where it would land.
   const [preview, setPreview] = useState<BoardCard[] | null>(null)
   const [openCard, setOpenCard] = useState<string | null>(null)
+  // A link to a card opens its dialog once: the request is taken here and then dropped from the screen.
+  const requestedCard = useAppStore((s) =>
+    s.screen.kind === 'boards' && s.screen.boardId === board.id ? (s.screen.cardId ?? null) : null,
+  )
+  const navigate = useAppStore((s) => s.navigate)
+  const [takenCard, setTakenCard] = useState<string | null>(null)
+  if (requestedCard !== takenCard) {
+    setTakenCard(requestedCard)
+    if (requestedCard) setOpenCard(requestedCard)
+  }
+  useEffect(() => {
+    if (requestedCard) navigate({ kind: 'boards', boardId: board.id })
+  }, [requestedCard, board.id, navigate])
   const [moving, setMoving] = useState<BoardCard | null>(null)
   const [deleting, setDeleting] = useState<BoardCard | null>(null)
   const [droppedChoice, setDroppedChoice] = useState<boolean | null>(null)

@@ -58,6 +58,9 @@ export const queryKeys = {
   design: (workspaceId: string, designId: string) => workspaceKey(workspaceId, 'designs', designId),
   plan: (workspaceId: string, planId: string) => workspaceKey(workspaceId, 'plans', planId),
   session: (workspaceId: string, sessionId: string) => workspaceKey(workspaceId, 'sessions', sessionId),
+  /** An id written in text, by kind (`RefKind`): its current name or null when it doesn't exist. */
+  ref: (workspaceId: string, kind: string, id: string) => workspaceKey(workspaceId, 'refs', kind, id),
+  refs: (workspaceId: string, kind: string) => workspaceKey(workspaceId, 'refs', kind),
   boardCard: (workspaceId: string, boardId: string, cardId: string) =>
     workspaceKey(workspaceId, 'boards', boardId, 'cards', cardId),
 

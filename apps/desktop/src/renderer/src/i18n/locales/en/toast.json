@@ -30,5 +30,9 @@
   "designImportFailed": "The design could not be imported.",
   "boardImageType": "Only PNG and JPEG images can go on a card.",
   "idCopied": "ID copied",
-  "cardMoved": "Card moved"
+  "cardMoved": "Card moved",
+  "fileNeedsVmToOpen": "Turn on the VM to open this file.",
+  "fileMissing": "This file no longer exists in the VM.",
+  "notAFile": "This path is not a file.",
+  "fileTooLargeToOpen": "This file is too large to open from the app."
 }

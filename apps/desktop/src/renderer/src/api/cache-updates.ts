@@ -1,4 +1,4 @@
-import type { AppEvent, Routine, WorkspaceEvent } from '@milibot/shared'
+import type { AppEvent, RefInfo, RefKind, Routine, WorkspaceEvent } from '@milibot/shared'
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 
 import { subscribeAppEvents, subscribeWorkspaceEvents } from './daemon'
@@ -20,8 +20,86 @@ function patchRoutines(key: QueryKey, change: (routines: Routine[]) => Routine[]
   }
 }
 
+/** A renamed item shows its new name wherever its id is linked in text. */
+function renameRef(workspaceId: string, kind: RefKind, id: string, name: string): CacheUpdate {
+  return {
+    kind: 'update',
+    key: queryKeys.ref(workspaceId, kind, id),
+    update: (current) => (current ? { ...(current as RefInfo), name } : current),
+  }
+}
+
+const goneRef = (workspaceId: string, kind: RefKind, id: string) =>
+  replace(queryKeys.ref(workspaceId, kind, id), null)
+
+/** What an event changes in the names of the ids linked in text (`features/refs`). */
+function refUpdates(workspaceId: string, event: WorkspaceEvent): CacheUpdate[] {
+  const ws = workspaceId
+  switch (event.type) {
+    case 'board.updated':
+      return [renameRef(ws, 'board', event.payload.board.id, event.payload.board.title)]
+    case 'board.deleted':
+      return [goneRef(ws, 'board', event.payload.boardId), invalidate(queryKeys.refs(ws, 'card'))]
+    // Cards removed or moved to another board aren't named in the event: the cards on screen ask again.
+    case 'board.cards.updated':
+      return [invalidate(queryKeys.refs(ws, 'card'))]
+    case 'design.updated':
+      return [renameRef(ws, 'design', event.payload.design.id, event.payload.design.name)]
+    case 'design.deleted':
+      return [goneRef(ws, 'design', event.payload.designId), invalidate(queryKeys.refs(ws, 'frame'))]
+    case 'design.frame.updated': {
+      const { frame, deleted } = event.payload
+      return [deleted ? goneRef(ws, 'frame', frame.id) : renameRef(ws, 'frame', frame.id, frame.name)]
+    }
+    case 'plan.updated':
+      return [renameRef(ws, 'plan', event.payload.plan.id, event.payload.plan.title)]
+    case 'plan.deleted':
+      return [goneRef(ws, 'plan', event.payload.planId)]
+    case 'work_session.updated':
+      return [renameRef(ws, 'session', event.payload.session.id, event.payload.session.title)]
+    case 'work_session.deleted':
+      return [goneRef(ws, 'session', event.payload.sessionId)]
+    case 'knowledge.doc.updated':
+      return [renameRef(ws, 'doc', event.payload.doc.id, event.payload.doc.title)]
+    case 'knowledge.doc.deleted':
+      return [goneRef(ws, 'doc', event.payload.docId)]
+    case 'project.updated':
+      return [renameRef(ws, 'project', event.payload.project.id, event.payload.project.name)]
+    case 'project.deleted':
+      return [goneRef(ws, 'project', event.payload.projectId)]
+    case 'skill.updated':
+      return [renameRef(ws, 'skill', event.payload.skill.id, event.payload.skill.slug)]
+    case 'skill.deleted':
+      return [goneRef(ws, 'skill', event.payload.skillId)]
+    case 'routine.updated':
+      return [renameRef(ws, 'routine', event.payload.routine.id, event.payload.routine.name)]
+    case 'routine.deleted':
+      return [goneRef(ws, 'routine', event.payload.routineId)]
+    // Conversations without a title are named after their bots.
+    case 'bot.updated':
+      return [
+        renameRef(ws, 'bot', event.payload.bot.id, event.payload.bot.name),
+        invalidate(queryKeys.refs(ws, 'conversation')),
+      ]
+    case 'bot.deleted':
+      return [goneRef(ws, 'bot', event.payload.botId), invalidate(queryKeys.refs(ws, 'conversation'))]
+    case 'conversation.updated': {
+      const { id, title } = event.payload.conversation
+      return title ? [renameRef(ws, 'conversation', id, title)] : []
+    }
+    case 'conversation.deleted':
+      return [goneRef(ws, 'conversation', event.payload.conversationId)]
+    default:
+      return []
+  }
+}
+
 /** The WS invalidation map: the queries a workspace event makes stale (stores follow their own events). */
 export function workspaceCacheUpdates(workspaceId: string, event: WorkspaceEvent): CacheUpdate[] {
+  return [...ownUpdates(workspaceId, event), ...refUpdates(workspaceId, event)]
+}
+
+function ownUpdates(workspaceId: string, event: WorkspaceEvent): CacheUpdate[] {
   switch (event.type) {
     case 'routine.updated': {
       const { routine } = event.payload

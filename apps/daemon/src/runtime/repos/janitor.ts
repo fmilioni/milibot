@@ -60,6 +60,8 @@ export class WorktreeJanitor {
   private debounce: NodeJS.Timeout | null = null
   private running: Promise<void> | null = null
   private again = false
+  /** What the last sweep that removed nothing logged, per repository. */
+  private readonly lastKept = new Map<string, string>()
   private unsubscribe = () => {}
 
   constructor(private readonly deps: WorktreeJanitorDeps) {}
@@ -197,7 +199,17 @@ export class WorktreeJanitor {
       this.released(entry.row, result.branch)
       if (result.outcome === 'removed') removed.push(result.path)
     }
-    if (removed.length)
+    if (removed.length) {
+      this.lastKept.delete(repoName)
       this.deps.log?.('info', 'worktrees removed', { repo: repoName, removed, kept, fetchFailed })
+      return
+    }
+    // Once per change: the same worktrees kept for the same reasons every sweep are logged the first time.
+    const note = JSON.stringify([fetchFailed, kept])
+    if (this.lastKept.get(repoName) === note) return
+    this.lastKept.set(repoName, note)
+    if (fetchFailed)
+      this.deps.log?.('warn', 'worktree cleanup skipped: fetch failed', { repo: repoName, kept: kept.length })
+    else this.deps.log?.('info', 'no worktree removed', { repo: repoName, kept })
   }
 }

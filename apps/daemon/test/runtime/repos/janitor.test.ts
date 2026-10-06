@@ -18,6 +18,7 @@ let listed: Map<string, string>
 /** What the cleanup script answers for each path (default: removed). */
 let outcomes: Map<string, string>
 let vmRunning: boolean
+let fetchFailed: boolean
 let removedSessions: string[]
 let prStatus: Map<string, TaskStatus>
 let doneSessions: Set<string>
@@ -41,7 +42,8 @@ const guest = {
           const [path = '', branch = ''] = line.split('|')
           return `RESULT=${path}|${outcomes.get(path) ?? 'removed'}|${listed.get(path) ?? branch}|0`
         })
-      return Promise.resolve({ code: 0, stdout: `${lines.join('\n')}\n`, stderr: '' })
+      const fetch = fetchFailed ? 'FETCH=failed\n' : ''
+      return Promise.resolve({ code: 0, stdout: `${fetch}${lines.join('\n')}\n`, stderr: '' })
     }
     return Promise.resolve({ code: 1, stdout: '', stderr: 'unexpected' })
   },
@@ -94,6 +96,7 @@ beforeEach(() => {
   listed = new Map()
   outcomes = new Map()
   vmRunning = true
+  fetchFailed = false
   removedSessions = []
   prStatus = new Map()
   doneSessions = new Set()
@@ -238,5 +241,32 @@ describe('worktree janitor', () => {
 
     expect(status(row.id)).toBe('active')
     expect(execs).toEqual([])
+  })
+
+  it('logs a sweep that removed nothing once per change, and a failed fetch as a warning', async () => {
+    const logs: Array<[string, string, unknown]> = []
+    const j = janitor({ log: (level, msg, data) => logs.push([level, msg, data]) })
+    const dirty = worktree('dirty', 'ws_dirty')
+    doneSessions.add('ws_dirty')
+    outcomes.set(dirty.worktreePath, 'kept:dirty')
+
+    await j.run()
+    await j.run()
+    expect(logs).toEqual([
+      ['info', 'no worktree removed', { repo: 'app', kept: [`${dirty.worktreePath} (dirty)`] }],
+    ])
+
+    fetchFailed = true
+    outcomes.set(dirty.worktreePath, 'kept:fetch_failed')
+    await j.run()
+    await j.run()
+    expect(logs.slice(1)).toEqual([
+      ['warn', 'worktree cleanup skipped: fetch failed', { repo: 'app', kept: 1 }],
+    ])
+
+    fetchFailed = false
+    outcomes.delete(dirty.worktreePath)
+    await j.run()
+    expect(logs.slice(2).map(([, msg]) => msg)).toEqual(['worktrees removed'])
   })
 })

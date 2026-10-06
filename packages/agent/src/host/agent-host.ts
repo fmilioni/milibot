@@ -229,6 +229,11 @@ export class DefaultAgentHost implements AgentHost {
     return this.ctx.helpers.get(laneKey)?.readOnly === true
   }
 
+  laneBusy(laneKey: string): boolean {
+    const lane = this.ctx.lanes.findLane(laneKey)
+    return !!lane && (lane.running || lane.queue.length > 0)
+  }
+
   runTool(
     botId: string,
     conversationId: string | null,

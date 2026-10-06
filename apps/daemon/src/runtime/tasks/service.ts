@@ -38,7 +38,7 @@ export const STATUS_WORDS: Record<TaskStatus, string> = {
 }
 
 export interface TaskCardServiceDeps {
-  messages: Pick<MessageStore, 'latestCard' | 'cards'>
+  messages: Pick<MessageStore, 'latestCard' | 'cards' | 'cardsWith'>
   getBot(id: string): Bot | null
   directConversationId(botId: string): string | null
   appendMessage(message: NewAgentMessage): Message
@@ -271,14 +271,32 @@ export class TaskCardService {
     return this.pullRequestCards().map((card) => card.payload.url as string)
   }
 
-  /** Statuses read from GitHub (by `pullRequestKey`) applied to every card of those pull requests. */
-  applyPullRequestStatuses(statuses: Map<string, TaskStatus>): void {
+  /**
+   * Statuses read from GitHub (by `pullRequestKey`) applied to every card of those pull requests. True when a
+   * card turned merged or closed.
+   */
+  applyPullRequestStatuses(statuses: Map<string, TaskStatus>): boolean {
+    let ended = false
     for (const card of this.pullRequestCards()) {
       const status = statuses.get(pullRequestKey(card.payload.url) as string)
       if (!status || status === card.payload.status) continue
       const payload: TaskPayload = { ...card.payload, status }
       this.deps.updateMessage(card.id, { content: cardContent(payload), payload })
+      if (status === 'done' || status === 'failed') ended = true
     }
+    return ended
+  }
+
+  /** Status of the newest pull request card of a branch in a repository (its folder name); null: none. */
+  pullRequestOfBranch(repoName: string, branch: string): TaskStatus | null {
+    const name = repoName.toLowerCase()
+    for (const row of this.deps.messages.cardsWith('task', { branch }, 50)) {
+      const parsed = TaskPayload.safeParse(row.payload)
+      if (!parsed.success || !pullRequestKey(parsed.data.url)) continue
+      const repo = parsed.data.repo ?? repoOf(parsed.data.url)
+      if (repo?.split('/').pop()?.toLowerCase() === name) return parsed.data.status
+    }
+    return null
   }
 
   private pullRequestCards(): Array<{ id: string; payload: TaskPayload }> {

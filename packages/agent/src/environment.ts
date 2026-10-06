@@ -592,6 +592,8 @@ export interface AgentHost {
   runTool(botId: string, conversationId: string | null, call: ToolCall, laneKey?: string): Promise<ToolResult>
   /** Whether the lane is a read-only helper's (its tool set is `READ_ONLY_HELPER_TOOLS`). */
   isReadOnlyLane(laneKey: string): boolean
+  /** Whether a turn of the lane is running or queued. */
+  laneBusy(laneKey: string): boolean
   /** Resolves when the bot has no running or queued turn nor pending compaction (tests, graceful restarts). */
   idle(botId?: string): Promise<void>
   /** Stops the bot's work and its CLI processes (the bot was deleted). */
@@ -618,6 +620,7 @@ export function createNoopAgentHost(): AgentHost {
     screenState: () => ({ paused: false, control: 'idle', busy: false }),
     runTool: async () => ({ content: [{ type: 'text', text: 'agent runtime unavailable' }], isError: true }),
     isReadOnlyLane: () => false,
+    laneBusy: () => false,
     idle: async () => {},
     forgetBot: async () => {},
     closeLane: async () => {},

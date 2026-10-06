@@ -199,13 +199,14 @@ describe('pull request statuses read on GitHub', () => {
       'https://github.com/acme/app/pull/18',
     ])
 
-    service.applyPullRequestStatuses(
+    const ended = service.applyPullRequestStatuses(
       new Map([
         ['https://github.com/acme/app/pull/18', 'done'],
         ['https://github.com/acme/app/pull/20', 'review'],
         ['https://github.com/acme/app/pull/19', 'failed'],
       ]),
     )
+    expect(ended).toBe(true)
     const byTitle = Object.fromEntries(cards().map((m) => [m.payload.title, m]))
     expect(byTitle['Fix login']?.payload.status).toBe('done')
     expect(byTitle['Fix login']?.content).toBe('Fix login — done (https://github.com/acme/app/pull/18)')
@@ -213,5 +214,33 @@ describe('pull request statuses read on GitHub', () => {
     expect(byTitle['Fix logout']?.payload.status).toBe('done')
     expect(byTitle['Deploy']?.payload.status).toBe('open')
     expect(service.trackedPullRequests()).toEqual(['https://github.com/acme/app/pull/20'])
+  })
+
+  it('says nothing ended when no card turned merged or closed', () => {
+    card('https://github.com/acme/app/pull/18', 'open')
+    expect(
+      service.applyPullRequestStatuses(new Map([['https://github.com/acme/app/pull/18', 'review']])),
+    ).toBe(false)
+  })
+
+  it("finds the status of a branch's pull request in a repository", () => {
+    const withBranch = (url: string, status: TaskPayload['status'], branch: string) =>
+      service.report(nina, dm, null, {
+        title: 'PR',
+        status,
+        url,
+        repo: null,
+        prNumber: null,
+        branch,
+        botId: nina.id,
+      })
+    withBranch('https://github.com/acme/app/pull/30', 'review', 'bot/nina/fix')
+    withBranch('https://github.com/acme/app/pull/31', 'done', 'bot/nina/fix')
+    withBranch('https://github.com/acme/other/pull/2', 'failed', 'bot/nina/other')
+
+    expect(service.pullRequestOfBranch('app', 'bot/nina/fix')).toBe('done')
+    expect(service.pullRequestOfBranch('App', 'bot/nina/other')).toBeNull()
+    expect(service.pullRequestOfBranch('other', 'bot/nina/other')).toBe('failed')
+    expect(service.pullRequestOfBranch('app', 'bot/nina/none')).toBeNull()
   })
 })

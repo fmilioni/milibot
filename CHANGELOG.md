@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.4.0](https://github.com/fmilioni/milibot/compare/v0.3.0...v0.4.0) (2026-10-06)
+
+### Features
+
+* close a session handed off to another bot and the one a new session for the same work replaces ([#44](https://github.com/fmilioni/milibot/issues/44)) ([f8a1819](https://github.com/fmilioni/milibot/commit/f8a1819801238aabcbb90fa74e7014400020e924))
+* **daemon:** remove worktrees of finished work automatically ([#55](https://github.com/fmilioni/milibot/issues/55)) ([446294d](https://github.com/fmilioni/milibot/commit/446294d7656d0dd8f677330c9f0434108ea2e011))
+* **desktop:** highlight changed elements and comment on one with Alt + click ([#42](https://github.com/fmilioni/milibot/issues/42)) ([cf9e859](https://github.com/fmilioni/milibot/commit/cf9e859d8785b4cf63df11a04cedefea0d971cd1))
+* **desktop:** keep the computer from sleeping while bots work ([#51](https://github.com/fmilioni/milibot/issues/51)) ([1c89a18](https://github.com/fmilioni/milibot/commit/1c89a180d98622529c315795cb1bb24f7a03a584))
+* **desktop:** update the app by itself from GitHub releases ([#59](https://github.com/fmilioni/milibot/issues/59)) ([797da1f](https://github.com/fmilioni/milibot/commit/797da1f827e6aba7016d029cec71a7c2a2ace941))
+* let bots read the VM status ([#50](https://github.com/fmilioni/milibot/issues/50)) ([58b6078](https://github.com/fmilioni/milibot/commit/58b60789991712a5f605cc76e313eeda231b6471))
+* let bots read their daemon log and log turns and status changes ([#45](https://github.com/fmilioni/milibot/issues/45)) ([66c4e7f](https://github.com/fmilioni/milibot/commit/66c4e7f6fc941aa17510223ec7c0c1351b696efc))
+* let bots recolor, rename and add board labels and label new board cards ([#49](https://github.com/fmilioni/milibot/issues/49)) ([a98709b](https://github.com/fmilioni/milibot/commit/a98709bedec923868908021d79eeecdc27d2c68e))
+* let team managers import skills and switch bot skills and MCP servers with confirmation ([#54](https://github.com/fmilioni/milibot/issues/54)) ([fbf203f](https://github.com/fmilioni/milibot/commit/fbf203f4cbeb4a712cc060038ff64221a81d9268))
+* let the team manager read a bot's whole prompt and edit it in parts ([#53](https://github.com/fmilioni/milibot/issues/53)) ([eb4333a](https://github.com/fmilioni/milibot/commit/eb4333a761c4b049b113594bf8cca2f7f6d5c0c5))
+* open ids and /workspace paths written in text from anywhere in the app ([#52](https://github.com/fmilioni/milibot/issues/52)) ([3faf6bf](https://github.com/fmilioni/milibot/commit/3faf6bf7959add1472ffd363dfb8ccaafb9fef64))
+* redesign boards with filters, a Doing limit, a stable order and moving cards ([#41](https://github.com/fmilioni/milibot/issues/41)) ([87a10d5](https://github.com/fmilioni/milibot/commit/87a10d5df26e9ed6c117d039bc2defdb91e24b16))
+
+### Bug Fixes
+
+* **agent:** show the bot as available once no lane works ([#43](https://github.com/fmilioni/milibot/issues/43)) ([1fafdc5](https://github.com/fmilioni/milibot/commit/1fafdc513e9c46cb8b0848df1942b6d3f7acc7bb))
+* **agent:** show the working row in internal conversations while a session runs ([#58](https://github.com/fmilioni/milibot/issues/58)) ([7d24f28](https://github.com/fmilioni/milibot/commit/7d24f2867c240dccbf6beb8786338c9c044861a0))
+* **daemon:** match board label names ignoring the case of accented letters ([#57](https://github.com/fmilioni/milibot/issues/57)) ([06a7f83](https://github.com/fmilioni/milibot/commit/06a7f833032dc892b8fffcc8185a6ecc8b3f56d1))
+* **desktop:** keep the diff file header opaque on hover and space the file filter ([#46](https://github.com/fmilioni/milibot/issues/46)) ([e1f8c6c](https://github.com/fmilioni/milibot/commit/e1f8c6cc101c8d1db38ad98083e6cb221793dea2))
+* **desktop:** keep the DM working row steady while sessions run in parallel ([#48](https://github.com/fmilioni/milibot/issues/48)) ([1900de8](https://github.com/fmilioni/milibot/commit/1900de8fd5cdfe26ee4dc10d5d6f3220de0aa5a9))
+* **desktop:** make URLs clickable in chat cards ([#39](https://github.com/fmilioni/milibot/issues/39)) ([5c0d237](https://github.com/fmilioni/milibot/commit/5c0d2371f87a0e8475a1ed3d61a82b6279c76f12))
+* **desktop:** never show a negative VM uptime right after it starts ([#56](https://github.com/fmilioni/milibot/issues/56)) ([84d25ce](https://github.com/fmilioni/milibot/commit/84d25ce67de4d0b10c11a88af5d4590942e183f4))
+* **desktop:** open only http(s) URLs from the app ([#47](https://github.com/fmilioni/milibot/issues/47)) ([dc92386](https://github.com/fmilioni/milibot/commit/dc9238631e971889663148dc5501d2c8e45f23b4))
+* **desktop:** update the VM panel as soon as the screen is given back ([#40](https://github.com/fmilioni/milibot/issues/40)) ([030b6b6](https://github.com/fmilioni/milibot/commit/030b6b63b7e7d2904329825d9321d5452bad76a5))
+
 ## [0.3.0](https://github.com/fmilioni/milibot/compare/v0.2.2...v0.3.0) (2026-10-05)
 
 ### Features

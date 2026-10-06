@@ -381,11 +381,9 @@ export class BoardTools extends ToolSwitch {
     })
   }
 
-  /** A board label by id or name, folded like every other name. */
+  /** A board label by id or name. */
   private findLabel(boardId: string, ref: string): BoardLabel | null {
-    const labels = this.store.labels(boardId)
-    const key = foldKey(ref)
-    return labels.find((l) => l.id === ref) ?? labels.find((l) => foldKey(l.name) === key) ?? null
+    return this.store.labels(boardId).find((l) => l.id === ref) ?? this.store.labelByName(boardId, ref)
   }
 
   private writeLabel(a: ToolArgs): ToolResult {

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { KeepAwakeState } from '../../../bridge/contract'
 import type { WorkspaceEventSubscriber } from '../workspace-events'
-import { KeepAwakeGuard, RESYNC_INTERVAL_MS, SYNC_TIMEOUT_MS } from './guard'
+import { KeepAwakeGuard, RESYNC_INTERVAL_MS, SYNC_RETRY_MS, SYNC_TIMEOUT_MS } from './guard'
 
 type ListBots = (
   workspaceId: string,
@@ -198,7 +198,7 @@ describe('KeepAwakeGuard', () => {
     expect(t.held.size).toBe(0)
   })
 
-  it('forgets a workspace whose snapshot times out', async () => {
+  it('drops the statuses of a workspace whose snapshot times out', async () => {
     const t = setup({
       listBots: (_ws, signal) =>
         new Promise((resolve, reject) => {
@@ -213,8 +213,55 @@ describe('KeepAwakeGuard', () => {
     expect(t.held.size).toBe(1)
     await vi.advanceTimersByTimeAsync(SYNC_TIMEOUT_MS)
     expect(t.held.size).toBe(0)
-    // No resync left running once the lock is released.
-    await vi.advanceTimersByTimeAsync(RESYNC_INTERVAL_MS * 2)
+    expect(t.guard.state).toEqual({ active: false, busyBots: 0 })
+  })
+
+  it('keeps following a workspace after a failed snapshot', async () => {
+    const answers: Array<() => Promise<Array<{ id: string; status: BotStatus }>>> = [
+      () => Promise.resolve([{ id: 'bot_1', status: 'working' }]),
+      () => Promise.reject(new Error('timed out')),
+    ]
+    const t = setup({ listBots: () => (answers.shift() ?? (() => Promise.resolve([])))() })
+    t.running('ws_a')
+    await flush()
+    await vi.advanceTimersByTimeAsync(RESYNC_INTERVAL_MS)
+    expect(t.held.size).toBe(0)
+    t.status('ws_a', 'bot_2', 'thinking')
+    expect(t.held.size).toBe(1)
+    expect(t.guard.state).toEqual({ active: true, busyBots: 1 })
+  })
+
+  it('asks for the snapshot again after a failure and takes back a bot still working', async () => {
+    const answers: Array<() => Promise<Array<{ id: string; status: BotStatus }>>> = [
+      () => Promise.resolve([{ id: 'bot_1', status: 'working' }]),
+      () => Promise.reject(new Error('timed out')),
+      () => Promise.reject(new Error('timed out')),
+      () => Promise.resolve([{ id: 'bot_1', status: 'working' }]),
+    ]
+    const t = setup({ listBots: () => (answers.shift() ?? (() => Promise.resolve([])))() })
+    t.running('ws_a')
+    await flush()
+    await vi.advanceTimersByTimeAsync(RESYNC_INTERVAL_MS)
+    expect(t.held.size).toBe(0)
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MS)
+    expect(t.listBots).toHaveBeenCalledTimes(3)
+    expect(t.held.size).toBe(0)
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MS)
+    expect(t.listBots).toHaveBeenCalledTimes(4)
+    expect(t.guard.state).toEqual({ active: true, busyBots: 1 })
+  })
+
+  it('stops asking again once the workspace is forgotten', async () => {
+    const answers: Array<() => Promise<Array<{ id: string; status: BotStatus }>>> = [
+      () => Promise.resolve([{ id: 'bot_1', status: 'working' }]),
+      () => Promise.reject(new Error('timed out')),
+    ]
+    const t = setup({ listBots: () => (answers.shift() ?? (() => Promise.resolve([])))() })
+    t.running('ws_a')
+    await flush()
+    await vi.advanceTimersByTimeAsync(RESYNC_INTERVAL_MS)
+    t.disconnect('ws_a')
+    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MS * 2 + RESYNC_INTERVAL_MS)
     expect(t.listBots).toHaveBeenCalledTimes(2)
   })
 })

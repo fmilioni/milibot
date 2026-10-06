@@ -6,8 +6,10 @@ import { BusyBots } from './busy-bots'
 
 /** While the lock is held, statuses are read again this often, in case an event was lost. */
 export const RESYNC_INTERVAL_MS = 60_000
-/** A snapshot that takes longer counts as failed: the workspace is forgotten rather than kept busy. */
+/** A snapshot that takes longer counts as failed: its statuses are dropped rather than kept busy. */
 export const SYNC_TIMEOUT_MS = 10_000
+/** After a failed snapshot, the statuses are asked again this soon, while the socket stays open. */
+export const SYNC_RETRY_MS = 15_000
 
 /** Electron's `powerSaveBlocker`, narrowed to what the guard uses. */
 interface PowerBlocker {
@@ -39,6 +41,7 @@ export class KeepAwakeGuard {
   private readonly running = new Set<string>()
   private blockerId: number | null = null
   private resyncTimer: ReturnType<typeof setInterval> | null = null
+  private readonly retryTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private current: KeepAwakeState = { active: false, busyBots: 0 }
   private readonly listeners = new Set<(state: KeepAwakeState) => void>()
 
@@ -74,14 +77,23 @@ export class KeepAwakeGuard {
 
   private forget(workspaceId: string): void {
     this.running.delete(workspaceId)
+    this.cancelRetry(workspaceId)
     this.bots.clear(workspaceId)
     this.update()
+  }
+
+  private cancelRetry(workspaceId: string): void {
+    const timer = this.retryTimers.get(workspaceId)
+    if (timer === undefined) return
+    clearTimeout(timer)
+    this.retryTimers.delete(workspaceId)
   }
 
   /** Statuses stored while the runtime was down may be stale, so only a running runtime is asked. */
   private async sync(workspaceId: string): Promise<void> {
     const client = this.deps.feed.client
     if (!client) return
+    this.cancelRetry(workspaceId)
     const token = this.bots.beginSync(workspaceId)
     const abort = new AbortController()
     const timer = setTimeout(() => abort.abort(new Error('timed out')), SYNC_TIMEOUT_MS)
@@ -92,8 +104,20 @@ export class KeepAwakeGuard {
       this.update()
     } catch (err) {
       console.warn('[keep-awake] bot statuses unavailable', err instanceof Error ? err.message : err)
-      // Only this snapshot's failure forgets the workspace; a newer one may already be out.
-      if (this.bots.isPending(workspaceId, token)) this.forget(workspaceId)
+      // Only this snapshot's failure counts; a newer one may already be out. The statuses are
+      // dropped so a lost event cannot keep the lock, but the socket is still open: its events keep
+      // being applied and the snapshot is asked again.
+      if (this.bots.isPending(workspaceId, token) && this.running.has(workspaceId)) {
+        this.bots.clear(workspaceId)
+        this.update()
+        this.retryTimers.set(
+          workspaceId,
+          setTimeout(() => {
+            this.retryTimers.delete(workspaceId)
+            if (this.running.has(workspaceId)) void this.sync(workspaceId)
+          }, SYNC_RETRY_MS),
+        )
+      }
     } finally {
       clearTimeout(timer)
     }

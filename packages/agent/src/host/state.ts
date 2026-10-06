@@ -65,6 +65,8 @@ export interface LaneState {
   current: TurnState | null
   /** The user stopped the lane and no turn started since: late tool calls (CLI engines via MCP) are refused. */
   stopped: boolean
+  /** Its work session ended: it is forgotten once its turn ends, and tool calls outside a turn are refused. */
+  closed: boolean
   /** Tool calls of the running turn waiting without its parallel slot (see `detached`). */
   detached: number
   status: BotStatus

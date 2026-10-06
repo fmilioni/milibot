@@ -29,6 +29,8 @@ export class Scheduler {
     const request = this.redirectEnded(original)
     const lane = this.ctx.lanes.lane(this.laneKeyFor(request))
     request.laneKey = lane.info.key
+    // A session reopened while the turn that closed its lane still runs keeps the lane.
+    lane.closed = false
     if (this.joinRunningTurn(lane, request)) return
     const duplicate = lane.queue.find(
       (q) =>
@@ -213,6 +215,7 @@ export class Scheduler {
         this.ctx.screen.release(lane)
         this.ctx.lanes.setStatus(lane, lane.queue.length ? 'thinking' : 'idle')
         if (lane.info.kind === 'subagent' && lane.queue.length === 0) this.forgetEphemeralLane(lane)
+        else if (lane.closed && lane.queue.length === 0) this.ctx.lanes.removeLane(lane)
         this.ctx.otherWork.turnEnded(lane)
         this.pump()
         this.notifyIdle()
@@ -246,6 +249,8 @@ export class Scheduler {
       return await wait
     } finally {
       if (holdsSlot && --lane.detached === 0) this.active++
+      // Outside a turn (or past its end) nothing else takes the lane out of 'working'.
+      if (kind && !(turn && lane.current === turn)) this.ctx.lanes.settle(lane)
     }
   }
 

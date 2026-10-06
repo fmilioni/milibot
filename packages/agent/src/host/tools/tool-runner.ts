@@ -31,12 +31,15 @@ export class ToolRunner {
     call: ToolCall,
     laneKey?: string,
   ): Promise<ToolResult> {
-    const lane = this.ctx.lanes.lane(laneKey && isBotLane(laneKey, botId) ? laneKey : botId)
+    const key = laneKey && isBotLane(laneKey, botId) ? laneKey : botId
+    // A late call from the process of a lane already closed must not bring the lane back.
+    if (this.ctx.lanes.isGone(key)) return Promise.resolve(toolError(CANCELLED))
+    const lane = this.ctx.lanes.lane(key)
     const turn =
       lane.current && (conversationId === null || lane.current.conversationId === conversationId)
         ? lane.current
         : null
-    if (!turn && lane.stopped) return Promise.resolve(toolError(CANCELLED))
+    if (!turn && (lane.stopped || lane.closed)) return Promise.resolve(toolError(CANCELLED))
     const signal = turn?.abort.signal ?? new AbortController().signal
     return this.execute(botId, turn, turn?.conversationId ?? conversationId, call, signal, lane)
   }
@@ -52,7 +55,7 @@ export class ToolRunner {
     const env = this.ctx.env()
     const { lanes, activity } = this.ctx
     const state = lanes.bot(botId)
-    const lane = turn ? lanes.lane(turn.laneKey) : (toolLane ?? lanes.lane(botId))
+    const lane = toolLane ?? lanes.lane(turn ? turn.laneKey : botId)
     const bot = env.getBot(botId)
     if (!bot) return toolError(`unknown bot ${botId}`)
     const describe = { mcpServerName: activity.mcpServerName }
@@ -172,6 +175,8 @@ export class ToolRunner {
     })
     if (turn && shown) activity.syncActivity(turn, 'running')
     if (shown) activity.emitAction(step, turn, botId, conversationId)
+    // Inside its turn the next step sets the status; outside it, nothing would take the lane out of 'working'.
+    if (!turn || lane.current !== turn) lanes.settle(lane)
     return result
   }
 }

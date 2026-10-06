@@ -14,16 +14,35 @@ import {
 } from '@milibot/agent'
 import type { ContentPart } from '@milibot/agent/llm'
 import { formatProcedure } from '@milibot/agent/prompts'
-import { rawTextArg, textArg, type ToolArgs, toolError, ToolInputError } from '@milibot/agent/tools'
-import { type Bot, type CliEngine, type Message, SKILL_LIMITS } from '@milibot/shared'
+import {
+  optionalString,
+  rawTextArg,
+  stringListArg,
+  textArg,
+  type ToolArgs,
+  toolError,
+  ToolInputError,
+  toolText,
+} from '@milibot/agent/tools'
+import {
+  type Bot,
+  type BotScope,
+  type CliEngine,
+  type Message,
+  parseGithubSkillUrl,
+  SKILL_LIMITS,
+} from '@milibot/shared'
 
 import type { FileBlobStore } from '../blobs'
 import { imageMediaType, isThumbnailable, jpegSize } from '../files'
 import type { ProcedureService } from '../procedures'
-import { foldKey, type ToolHandlers, ToolSwitch } from '../tools-core'
+import { foldKey, resolveByRef, type ToolHandlers, ToolSwitch } from '../tools-core'
 import type { VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
+import type { SkillAdmin } from './admin'
 import { type NewSkillFile, skillFilesProblem } from './folders'
+import type { BotImportSource } from './import'
+import { readVmZip } from './import/vm-zip'
 import type { ScannedSkill } from './library'
 import { LIST_FOLDER_SCRIPT } from './scripts/list-folder.generated'
 import { type SkillEntry, type SkillService, vmPathOf } from './service'
@@ -52,6 +71,9 @@ export interface SkillToolsDeps {
   notes?: (slug: string) => string | null
   /** Posts the `skill_created` card of `skill_save`. */
   appendMessage?: (message: NewAgentMessage) => Message
+  /** `skill_import` and `bot_skills_set` (bots that manage the team). */
+  admin?: Pick<SkillAdmin, 'assertManager' | 'proposeImport' | 'proposeBotSkills'>
+  listBots?: () => Bot[]
 }
 
 /** The bots' skill tools: load and read a skill of their catalog, save and delete their own. */
@@ -62,10 +84,73 @@ export class SkillTools extends ToolSwitch {
     skill_read: (c, a) => this.read(c.bot, skillName(a), rawTextArg(a, 'path')),
     skill_save: (c, a) => this.save(c, skillName(a), a),
     skill_delete: (c, a) => this.delete(c.bot, skillName(a)),
+    skill_import: (c, a) => this.import(c, a),
+    bot_skills_set: async (c, a) => {
+      const admin = this.admin(c.bot)
+      const text = await admin.proposeBotSkills(c, {
+        bot: this.bot(c, optionalString(a, 'bot')),
+        enable: stringListArg(a, 'enable'),
+        disable: stringListArg(a, 'disable'),
+        reason: reasonArg(a),
+      })
+      return toolText(text)
+    },
   }
 
   constructor(private readonly deps: SkillToolsDeps) {
     super()
+  }
+
+  private admin(bot: Bot): NonNullable<SkillToolsDeps['admin']> {
+    const admin = this.deps.admin
+    if (!admin) throw new ToolInputError('Not available here.')
+    admin.assertManager(bot)
+    return admin
+  }
+
+  private bots(): Bot[] {
+    return this.deps.listBots?.() ?? this.deps.store.bots.list()
+  }
+
+  private bot(ctx: ToolExecContext, ref: string | undefined): Bot {
+    if (!ref?.trim()) return ctx.bot
+    const match = resolveByRef(this.bots(), ref.trim(), {
+      id: (b) => b.id,
+      names: (b) => [b.name, b.slug],
+      ambiguous: { exact: 'first', partial: 'report' },
+    })
+    if ('found' in match) return match.found
+    throw new ToolInputError(`No single bot matches "${ref}" (use list_bots)`)
+  }
+
+  /** `skill_import`: a GitHub address or a zip under /workspace, imported once the user approves the card. */
+  private async import(ctx: ToolExecContext, a: ToolArgs): Promise<ToolResult> {
+    const admin = this.admin(ctx.bot)
+    const raw = textArg(a, 'source')
+    if (!raw)
+      throw new ToolInputError('"source" is required: a GitHub address or a .zip/.skill under /workspace')
+    let source: BotImportSource
+    if (raw.startsWith('/')) {
+      const zip = await readVmZip(await this.deps.vm.guest(), raw)
+      source = { kind: 'vm_zip', vmPath: zip.path, data: zip.data }
+    } else if (parseGithubSkillUrl(raw)) {
+      source = { kind: 'github', url: raw }
+    } else {
+      throw new ToolInputError(
+        '"source" must be a GitHub address (owner/repo, optionally /tree/<ref>/<folder>) or a .zip/.skill path under /workspace',
+      )
+    }
+    const refs = stringListArg(a, 'bots')
+    let allowedBots: BotScope = 'all'
+    if (refs.length && !refs.some((r) => /^(all|everyone)$/i.test(r)))
+      allowedBots = [...new Set(refs.map((ref) => this.bot(ctx, ref).id))]
+    const text = await admin.proposeImport(ctx, {
+      source,
+      names: stringListArg(a, 'skills'),
+      allowedBots,
+      reason: reasonArg(a),
+    })
+    return toolText(text)
   }
 
   /** A skill of the bot's catalog by name (its slug, or a taught procedure's own name). */
@@ -333,6 +418,10 @@ export class SkillTools extends ToolSwitch {
     this.deps.skills.remove(entry.id, { bot })
     return { content: [{ type: 'text', text: `Deleted the skill "${name}".` }], activity: { detail: name } }
   }
+}
+
+function reasonArg(a: ToolArgs): string {
+  return optionalString(a, 'reason')?.slice(0, 300) ?? ''
 }
 
 function skillName(a: ToolArgs): string {

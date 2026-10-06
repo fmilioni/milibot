@@ -22,10 +22,10 @@ interface McpDetails {
   enabled?: boolean
 }
 
-function parseDetails(json: string): McpDetails | null {
+function parseJson<T>(json: string): T | null {
   try {
     const value: unknown = JSON.parse(json)
-    return value && typeof value === 'object' ? (value as McpDetails) : null
+    return value && typeof value === 'object' ? (value as T) : null
   } catch {
     return null
   }
@@ -37,7 +37,7 @@ const isKeyValue = (item: unknown): item is KeyValue =>
 /** What an MCP confirmation card asks the user to approve; secret references show their names, never values. */
 export function McpChangeDetails({ details }: { details: string }) {
   const { t } = useTranslation()
-  const parsed = parseDetails(details)
+  const parsed = parseJson<McpDetails>(details)
   if (!parsed) return null
   const shownValue = (value: string | undefined) =>
     value === undefined
@@ -81,6 +81,46 @@ export function McpChangeDetails({ details }: { details: string }) {
         </div>
       ))}
     </dl>
+  )
+}
+
+/** The `details` param of a `bot_mcp` confirmation. */
+interface BotMcpDetailsJson {
+  changes?: Array<{ server: string; on: boolean; tools: string[]; allow: boolean }>
+}
+
+const SHOWN_TOOLS = 8
+
+/** What a change of a bot's MCP servers asks to approve: each switch and the tools the server brings. */
+export function BotMcpDetails({ details, botName }: { details: string; botName: string }) {
+  const { t } = useTranslation()
+  const parsed = parseJson<BotMcpDetailsJson>(details)
+  if (!Array.isArray(parsed?.changes) || parsed.changes.length === 0) return null
+  return (
+    <ul className="flex flex-col gap-2 rounded-lg bg-surface-3 px-3 py-2 text-sm">
+      {parsed.changes.map((change) => {
+        const tools = Array.isArray(change.tools) ? change.tools : []
+        const names = tools.slice(0, SHOWN_TOOLS).join(', ') + (tools.length > SHOWN_TOOLS ? ', …' : '')
+        return (
+          <li key={change.server} className="flex flex-col gap-0.5">
+            <span className="text-fg">
+              <span className="text-fg-muted">
+                {t(change.on ? 'chat.confirmation.mcp.turnOn' : 'chat.confirmation.mcp.turnOff')}
+              </span>{' '}
+              <span className="font-semibold">{change.server}</span>
+            </span>
+            <span className="break-words text-fg-secondary">
+              {tools.length
+                ? t('chat.confirmation.mcp.tools', { count: tools.length, names })
+                : t('chat.confirmation.mcp.noTools')}
+            </span>
+            {change.allow && (
+              <span className="text-warning">{t('chat.confirmation.mcp.allow', { botName })}</span>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

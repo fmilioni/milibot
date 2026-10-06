@@ -9,7 +9,7 @@ import {
 
 import { describeCliTool } from '../../cli/tools'
 import { milibotToolName } from '../../mcp/names'
-import { activityLine } from '../../tools/describe'
+import { activityLine, type DescribeOptions } from '../../tools/describe'
 import { DRAFT_TOOLS } from '../../tools/families/design'
 import type { HostContext } from '../context'
 import type { TurnState } from '../state'
@@ -26,6 +26,17 @@ export class TurnActivity {
   constructor(private readonly ctx: HostContext) {}
 
   readonly mcpServerName = (slug: string): string | null => this.ctx.env().mcpServerName(slug)
+
+  /** How steps of `botId`'s calls name MCP servers and target bots. */
+  describeOptions(botId: string): DescribeOptions {
+    return {
+      mcpServerName: this.mcpServerName,
+      botName: (ref) => {
+        const bot = this.ctx.messaging.findBotRef(ref.trim())
+        return bot && (bot.id === botId ? '' : bot.name)
+      },
+    }
+  }
 
   setFullDetail(toolCallId: string, detail: string): void {
     this.fullDetails.set(toolCallId, detail)
@@ -176,7 +187,7 @@ export class TurnActivity {
       arguments: input,
       startedAt,
     })
-    const describe = { mcpServerName: this.mcpServerName }
+    const describe = this.describeOptions(turn.botId)
     const view = describeCliTool(tool, input, describe)
     if (view.hidden) return null
     this.acting(turn)

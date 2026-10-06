@@ -244,6 +244,8 @@ export interface SkillOrigin {
   pathSha?: string | null
   /** Folder, SKILL.md or zip on the host. */
   localPath?: string | null
+  /** Zip in the VM a bot imported (`skill_import`). */
+  vmPath?: string | null
   workspaceId?: string | null
   importedAt?: number | null
   /** Newest commit that changed the skill's folder, when newer than the imported one. */

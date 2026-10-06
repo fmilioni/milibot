@@ -4,6 +4,8 @@ import { defineTools, scalarText } from './kit'
 
 /** `{shape, color, eyes}`, values listed in the team-management skill; random when omitted. */
 const avatarSchema = { type: 'object' }
+const STR = { type: 'string' } as const
+const NAMES = { type: 'array', items: STR } as const
 
 /** Exact replacements in a role section (`update_own_prompt`, `update_bot`), applied in order, all or none. */
 const personaPatchSchema = {
@@ -127,6 +129,34 @@ const definitions = {
       },
     },
   },
+  skill_import: {
+    name: 'skill_import',
+    description:
+      'Import skills from a GitHub repository or a .zip/.skill file under /workspace after the user confirms ' +
+      'it in the chat. Load the team-management skill first.',
+    inputSchema: {
+      type: 'object',
+      properties: { source: STR, skills: NAMES, bots: NAMES, reason: STR },
+      required: ['source'],
+    },
+  },
+  bot_skills_set: {
+    name: 'bot_skills_set',
+    description: 'Turn skills on or off for a bot (yours by default) after the user confirms it in the chat.',
+    inputSchema: {
+      type: 'object',
+      properties: { bot: STR, enable: NAMES, disable: NAMES, reason: STR },
+    },
+  },
+  bot_mcp_set: {
+    name: 'bot_mcp_set',
+    description:
+      'Turn MCP servers on or off for a bot (yours by default) after the user confirms it in the chat.',
+    inputSchema: {
+      type: 'object',
+      properties: { bot: STR, enable: NAMES, disable: NAMES, reason: STR },
+    },
+  },
 } satisfies Record<string, ToolDefinition>
 
 export const teamTools = defineTools({
@@ -147,11 +177,21 @@ export const teamTools = defineTools({
           kind: name,
           detail: [scalarText(a.bot), scalarText(a.model), scalarText(a.effort)].filter(Boolean).join(' · '),
         }
+      case 'skill_import':
+        return { kind: name, detail: view.clip(scalarText(a.source), 60) }
+      case 'bot_skills_set':
+      case 'bot_mcp_set': {
+        const ref = scalarText(a.bot)
+        return { kind: name, detail: view.clip(ref && (view.botName?.(ref) ?? ref), 40) }
+      }
     }
   },
   labels: {
     get_bot: "read a bot's role section",
     update_own_prompt: 'updated own prompt',
     set_model: 'changed model',
+    skill_import: 'skill import',
+    bot_skills_set: 'bot skills change',
+    bot_mcp_set: 'bot MCP servers change',
   },
 })

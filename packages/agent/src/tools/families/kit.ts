@@ -13,6 +13,8 @@ export interface ToolStep {
 export interface StepView {
   full: boolean
   clip(text: string, max?: number): string
+  /** See `DescribeOptions.botName`. */
+  botName?: ((ref: string) => string | null | undefined) | undefined
 }
 
 export interface ToolFamilySpec<D extends Record<string, ToolDefinition>> {

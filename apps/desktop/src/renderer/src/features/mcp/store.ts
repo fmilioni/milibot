@@ -157,6 +157,14 @@ export const useMcpStore = create<McpState>()((set, get) => {
         set({ servers: upsertById(get().servers, event.payload.server) })
       } else if (event.type === 'mcp.server.deleted') {
         set({ servers: removeById(get().servers, event.payload.serverId), botServers: {} })
+      } else if (event.type === 'mcp.bot_server.updated') {
+        const { botId, server } = event.payload
+        const list = get().botServers[botId]
+        if (!list) return
+        const next = list.some((p) => p.serverId === server.serverId)
+          ? list.map((p) => (p.serverId === server.serverId ? server : p))
+          : [...list, server]
+        set({ botServers: { ...get().botServers, [botId]: next } })
       }
     },
   }

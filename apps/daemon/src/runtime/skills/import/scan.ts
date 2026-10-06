@@ -103,7 +103,7 @@ function sameOrigin(a: SkillOrigin | null, b: SkillOrigin): boolean {
   if (!a || a.kind !== b.kind || (a.path ?? '') !== (b.path ?? '')) return false
   if (a.kind === 'github') return a.repo === b.repo
   if (a.kind === 'workspace') return a.workspaceId === b.workspaceId
-  return a.localPath === b.localPath
+  return (a.localPath ?? null) === (b.localPath ?? null) && (a.vmPath ?? null) === (b.vmPath ?? null)
 }
 
 /** Files of a zip: unsafe names (absolute, `..`, backslashes, drive letters) and symlinks are left out. */
@@ -130,7 +130,8 @@ export function zipFiles(
       size: entry.size,
       executable: (entry.mode & 0o111) !== 0,
       read: async () => {
-        const data = await reader.read(entry.name)
+        // The declared size bounds inflation: a forged small size cannot expand into a zip bomb.
+        const data = await reader.read(entry.name, { maxBytes: entry.size })
         if (data.length !== entry.size) throw new Error(`${path} is corrupted`)
         return data
       },
@@ -175,21 +176,7 @@ export async function fromPaths(paths: string[], log?: LogFn): Promise<Found[]> 
           origin: { kind: 'path', localPath: path, path: dir },
         })
     } else if (info.isFile() && isArchive(path)) {
-      let reader: ZipReader
-      try {
-        reader = await ZipReader.open(path)
-      } catch {
-        throw validation(`Not a zip file: ${path}`, 'not_a_zip', { path })
-      }
-      const { files, rejected } = zipFiles(reader, false)
-      if (rejected.length) log?.('warn', 'skill import: unsafe zip entries skipped', { rejected })
-      for (const dir of discoverSkillDirs(files.map((f) => f.path)))
-        found.push({
-          key: `${path}#${dir || '.'}`,
-          folderName: dir ? basename(dir) : basename(path, extname(path)),
-          files: under(files, dir),
-          origin: { kind: 'zip', localPath: path, path: dir },
-        })
+      found.push(...(await zipSkills(path, { kind: 'zip', localPath: path }, log)))
     } else if (info.isFile() && /\.md$/i.test(path)) {
       found.push({
         key: path,
@@ -205,6 +192,32 @@ export async function fromPaths(paths: string[], log?: LogFn): Promise<Found[]> 
     }
   }
   return found
+}
+
+/**
+ * Skills in a zip on the host. `source` says where it came from (the host path, or the VM path of a copy);
+ * keys are `<source path>#<folder>`.
+ */
+export async function zipSkills(
+  file: string,
+  source: { kind: 'zip'; localPath: string } | { kind: 'zip'; vmPath: string },
+  log?: LogFn,
+): Promise<Found[]> {
+  const shown = 'localPath' in source ? source.localPath : source.vmPath
+  let reader: ZipReader
+  try {
+    reader = await ZipReader.open(file)
+  } catch {
+    throw validation(`Not a zip file: ${shown}`, 'not_a_zip', { path: shown })
+  }
+  const { files, rejected } = zipFiles(reader, false)
+  if (rejected.length) log?.('warn', 'skill import: unsafe zip entries skipped', { rejected })
+  return discoverSkillDirs(files.map((f) => f.path)).map((dir) => ({
+    key: `${shown}#${dir || '.'}`,
+    folderName: dir ? basename(dir) : basename(shown, extname(shown)),
+    files: under(files, dir),
+    origin: { ...source, path: dir },
+  }))
 }
 
 /** Skills of another workspace's skills folder (`workspaceDir` is this workspace's own). */

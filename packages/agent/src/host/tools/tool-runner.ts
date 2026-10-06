@@ -58,7 +58,7 @@ export class ToolRunner {
     const lane = toolLane ?? lanes.lane(turn ? turn.laneKey : botId)
     const bot = env.getBot(botId)
     if (!bot) return toolError(`unknown bot ${botId}`)
-    const describe = { mcpServerName: activity.mcpServerName }
+    const describe = activity.describeOptions(botId)
     const { kind, detail } = describeToolCall(call.name, call.arguments, describe)
     const toolCallId = newId('toolCall')
     activity.setFullDetail(

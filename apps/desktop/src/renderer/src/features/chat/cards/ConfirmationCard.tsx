@@ -8,9 +8,13 @@ import { Button } from '@/ui/Button'
 import { LinkifiedText } from '@/ui/LinkifiedText'
 import { Tooltip } from '@/ui/Tooltip'
 
-import { McpChangeDetails } from './McpCards'
+import { BotMcpDetails, McpChangeDetails } from './McpCards'
 import { ProposedPromptDiff } from './PromptCards'
 import { ProposedSettingChanges } from './SettingsCards'
+import { BotSkillsDetails, importHasScripts, SkillImportDetails } from './SkillCards'
+
+/** Actions a bot can take on itself: the card then reads "its own". */
+const OWN_ACTIONS = new Set(['update_prompt', 'bot_skills', 'bot_mcp'])
 
 export function ConfirmationCard({
   payload,
@@ -30,11 +34,15 @@ export function ConfirmationCard({
     payload.action === 'continue_bot_exchange' ||
     payload.action === 'workspace_settings' ||
     payload.action === 'mcp_add' ||
-    payload.action === 'mcp_update'
+    payload.action === 'mcp_update' ||
+    payload.action === 'bot_skills' ||
+    payload.action === 'bot_mcp' ||
+    (payload.action === 'skill_import' && !importHasScripts(payload.params?.details))
   const action =
-    payload.action === 'update_prompt' && author && payload.params?.botId === author.id
-      ? 'update_prompt_own'
+    OWN_ACTIONS.has(payload.action) && author && payload.params?.botId === author.id
+      ? `${payload.action}_own`
       : payload.action
+  const botName = payload.params?.botName ?? ''
   const resolve = (approved: boolean) => {
     if (!onResolve || busy) return
     setBusy(true)
@@ -52,7 +60,8 @@ export function ConfirmationCard({
         <span className="text-base font-semibold text-fg">
           {t(`chat.confirmation.actions.${action}`, {
             name: author?.name ?? '',
-            botName: payload.params?.botName ?? '',
+            botName,
+            source: payload.params?.source ?? '',
             groupName: payload.params?.groupName ?? '',
             serverName: payload.params?.serverName ?? '',
             defaultValue: t('chat.confirmation.generic', { name: author?.name ?? '' }),
@@ -76,6 +85,15 @@ export function ConfirmationCard({
       )}
       {payload.action.startsWith('mcp_') && payload.params?.details && (
         <McpChangeDetails details={payload.params.details} />
+      )}
+      {payload.action === 'skill_import' && payload.params?.details && (
+        <SkillImportDetails details={payload.params.details} />
+      )}
+      {payload.action === 'bot_skills' && payload.params?.details && (
+        <BotSkillsDetails details={payload.params.details} botName={botName} />
+      )}
+      {payload.action === 'bot_mcp' && payload.params?.details && (
+        <BotMcpDetails details={payload.params.details} botName={botName} />
       )}
       {pending ? (
         <div className="flex gap-2">

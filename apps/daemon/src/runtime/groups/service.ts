@@ -55,6 +55,39 @@ export interface GroupServiceDeps {
   now: () => number
 }
 
+/** The card's text fallback (the app shows its own, translated). */
+function confirmationTitle(bot: Bot, action: ConfirmationAction, params: ConfirmationParams): string {
+  const own = params.botId === bot.id
+  switch (action) {
+    case 'remove_member':
+      return `${bot.name} wants to remove ${params.botName} from ${params.groupName ?? 'the group'}`
+    case 'update_prompt':
+      return `${bot.name} wants to update the prompt of ${params.botName}`
+    case 'continue_bot_exchange':
+      return `${bot.name} and ${params.botName} have been going back and forth without you`
+    case 'workspace_settings':
+      return `${bot.name} wants to change workspace settings`
+    case 'mcp_add':
+      return `${bot.name} wants to add the MCP server ${params.serverName}`
+    case 'mcp_update':
+      return `${bot.name} wants to change the MCP server ${params.serverName}`
+    case 'mcp_remove':
+      return `${bot.name} wants to remove the MCP server ${params.serverName}`
+    case 'skill_import':
+      return `${bot.name} wants to import skills from ${params.source}`
+    case 'bot_skills':
+      return own
+        ? `${bot.name} wants to change its own skills`
+        : `${bot.name} wants to change the skills of ${params.botName}`
+    case 'bot_mcp':
+      return own
+        ? `${bot.name} wants to change its own MCP servers`
+        : `${bot.name} wants to change the MCP servers of ${params.botName}`
+    case 'delete_bot':
+      return `${bot.name} wants to delete ${params.botName}`
+  }
+}
+
 /** Groups, their members and settings, and the confirmation cards of destructive bot requests. */
 export class GroupService {
   private readonly confirmationHandlers = new Map<ConfirmationAction, ConfirmationHandler>()
@@ -239,22 +272,7 @@ export class GroupService {
   }): Message {
     const id = newId('confirmation')
     const conversationId = this.cardConversation(input.bot, input.conversationId)
-    const title =
-      input.action === 'remove_member'
-        ? `${input.bot.name} wants to remove ${input.params.botName} from ${input.params.groupName ?? 'the group'}`
-        : input.action === 'update_prompt'
-          ? `${input.bot.name} wants to update the prompt of ${input.params.botName}`
-          : input.action === 'continue_bot_exchange'
-            ? `${input.bot.name} and ${input.params.botName} have been going back and forth without you`
-            : input.action === 'workspace_settings'
-              ? `${input.bot.name} wants to change workspace settings`
-              : input.action === 'mcp_add'
-                ? `${input.bot.name} wants to add the MCP server ${input.params.serverName}`
-                : input.action === 'mcp_update'
-                  ? `${input.bot.name} wants to change the MCP server ${input.params.serverName}`
-                  : input.action === 'mcp_remove'
-                    ? `${input.bot.name} wants to remove the MCP server ${input.params.serverName}`
-                    : `${input.bot.name} wants to delete ${input.params.botName}`
+    const title = confirmationTitle(input.bot, input.action, input.params)
     const payload: ConfirmationPayload = {
       type: 'confirmation',
       confirmationId: id,
@@ -333,6 +351,16 @@ export class GroupService {
     const payload = card.payload?.type === 'confirmation' ? card.payload : null
     if (!payload) return card
     return this.deps.updateMessage(card.id, { payload: { ...payload, status } })
+  }
+
+  /** Marks a card expired when its handler finds, after the approval, that the action cannot run. */
+  expireConfirmation(id: string): void {
+    const row = this.confirmations.find(id)
+    if (!row?.message_id) return
+    this.confirmations.setStatus(id, 'expired')
+    const card = this.deps.store.messages.get(row.message_id)
+    const payload = card.payload?.type === 'confirmation' ? card.payload : null
+    if (payload) this.deps.updateMessage(card.id, { payload: { ...payload, status: 'expired' } })
   }
 
   /** Whether a bot's request of `action` needs the user's confirmation first. */

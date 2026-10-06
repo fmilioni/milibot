@@ -335,7 +335,13 @@
       "daemon_logs": "Read the Milibot log: {{detail}}",
       "daemon_logs_empty": "Read the Milibot log",
       "vm_status": "Checked the VM status",
-      "vm_status_empty": "Checked the VM status"
+      "vm_status_empty": "Checked the VM status",
+      "skill_import": "Asked to import skills from {{detail}}",
+      "skill_import_empty": "Asked to import skills",
+      "bot_skills_set": "Asked to change the skills of {{detail}}",
+      "bot_skills_set_empty": "Asked to change its own skills",
+      "bot_mcp_set": "Asked to change the MCP servers of {{detail}}",
+      "bot_mcp_set_empty": "Asked to change its own MCP servers"
     },
     "showDesign": "See design",
     "openDesign": "Open the design"
@@ -370,7 +376,12 @@
       "workspace_settings": "{{name}} wants to change workspace settings",
       "mcp_add": "{{name}} wants to add the MCP server {{serverName}}",
       "mcp_update": "{{name}} wants to change the MCP server {{serverName}}",
-      "mcp_remove": "{{name}} wants to remove the MCP server {{serverName}}"
+      "mcp_remove": "{{name}} wants to remove the MCP server {{serverName}}",
+      "skill_import": "{{name}} wants to import skills from {{source}}",
+      "bot_skills": "{{name}} wants to change the skills of {{botName}}",
+      "bot_skills_own": "{{name}} wants to change its own skills",
+      "bot_mcp": "{{name}} wants to change the MCP servers of {{botName}}",
+      "bot_mcp_own": "{{name}} wants to change its own MCP servers"
     },
     "status": {
       "pending": "Waiting",
@@ -386,12 +397,18 @@
       "workspace_settings": "Apply",
       "mcp_add": "Add",
       "mcp_update": "Change",
-      "mcp_remove": "Remove"
+      "mcp_remove": "Remove",
+      "skill_import": "Import",
+      "bot_skills": "Apply",
+      "bot_mcp": "Apply"
     },
     "rejectActions": {
       "continue_bot_exchange": "Stop",
       "mcp_add": "Decline",
-      "mcp_update": "Decline"
+      "mcp_update": "Decline",
+      "skill_import": "Decline",
+      "bot_skills": "Decline",
+      "bot_mcp": "Decline"
     },
     "statusActions": {
       "continue_bot_exchange": {
@@ -409,6 +426,18 @@
       "mcp_remove": {
         "approved": "You removed it",
         "rejected": "You kept it"
+      },
+      "skill_import": {
+        "approved": "You approved the import",
+        "rejected": "You declined"
+      },
+      "bot_skills": {
+        "approved": "You applied it",
+        "rejected": "You declined"
+      },
+      "bot_mcp": {
+        "approved": "You applied it",
+        "rejected": "You declined"
       }
     },
     "settings": {
@@ -439,7 +468,37 @@
       "on": "Yes",
       "off": "No",
       "keep": "keeps the saved value",
-      "secret": "secret {{name}}"
+      "secret": "secret {{name}}",
+      "tools_one": "{{count}} tool: {{names}}",
+      "tools_other": "{{count}} tools: {{names}}",
+      "noTools": "No tools listed yet",
+      "allow": "Also gives {{botName}} access to the server",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off"
+    },
+    "skills": {
+      "source": "Source",
+      "githubSource": "{{repo}} at commit {{sha}} ({{ref}})",
+      "skills": "Skills",
+      "bots": "For",
+      "allBots": "All bots",
+      "files_one": "{{count}} file · {{size}}",
+      "files_other": "{{count}} files · {{size}}",
+      "update": "updates the skill imported before",
+      "renamed": "comes in as {{name}}, since the name is taken",
+      "scripts": "Has scripts the bots can run in the VM",
+      "unlocks": "Tools unlocked",
+      "none": "none",
+      "declared": "Its SKILL.md asks for {{families}}, but imported skills never unlock tools",
+      "on": "Turn on",
+      "off": "Turn off",
+      "families_one": "Unlocks {{families}} ({{count}} tool)",
+      "families_other": "Unlocks {{families}} ({{count}} tools)",
+      "noFamilies": "Unlocks no tools",
+      "removes_one": "Removes {{families}} ({{count}} tool)",
+      "removes_other": "Removes {{families}} ({{count}} tools)",
+      "noRemoves": "Removes no tools",
+      "allow": "Also gives {{botName}} access to the skill"
     }
   },
   "error": {

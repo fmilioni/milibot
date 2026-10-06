@@ -113,7 +113,8 @@ export class SkillService {
   private readonly folders: SkillFolders
   private readonly library: SkillLibrary
   private readonly mirror: SkillVmMirror
-  private readonly importer: SkillImporter
+  /** Also used by `SkillAdmin` for the bots' imports. */
+  readonly importer: SkillImporter
   private known = new Map<string, string>()
   private initialized = false
 
@@ -553,7 +554,21 @@ export class SkillService {
     return this.toSkill(this.entry(id))
   }
 
-  private setBotSkill(botId: string, skillId: string, enabled: boolean): BotSkill {
+  /** Every skill with its state for the bot. */
+  botSkills(bot: Bot): BotSkill[] {
+    const prefs = this.rows.prefs(bot.id)
+    return this.entries().map((e) => this.botSkill(e, bot, prefs))
+  }
+
+  /** Adds a bot to a skill's access list (no change when it already has access). */
+  allowBot(skillId: string, botId: string): void {
+    const entry = this.entry(skillId)
+    if (entry.allowed === 'all' || entry.allowed.includes(botId)) return
+    this.update(skillId, { allowedBots: [...entry.allowed, botId] })
+  }
+
+  /** A bot's own switch of a skill (the bot settings screen, an approved `bot_skills_set`). */
+  setBotSkill(botId: string, skillId: string, enabled: boolean): BotSkill {
     const bot = this.deps.store.bots.get(botId)
     this.ensureRow(this.entry(skillId))
     this.rows.setPref({ botId: bot.id, skillId, enabled })
@@ -642,11 +657,7 @@ export class SkillService {
         return { ok: true as const }
       },
       duplicateSkill: ({ params }) => this.duplicate(params.skillId),
-      listBotSkills: ({ params }) => {
-        const bot = this.deps.store.bots.get(params.botId)
-        const prefs = this.rows.prefs(bot.id)
-        return this.entries().map((e) => this.botSkill(e, bot, prefs))
-      },
+      listBotSkills: ({ params }) => this.botSkills(this.deps.store.bots.get(params.botId)),
       updateBotSkill: ({ params, body }) => this.setBotSkill(params.botId, params.skillId, body.enabled),
       scanSkillImport: ({ body }) => this.importer.scan(body.source),
       commitSkillImport: ({ body }) => this.importer.commit(body),

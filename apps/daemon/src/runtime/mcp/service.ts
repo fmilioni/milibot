@@ -13,6 +13,7 @@ import {
 import { CLI_ENGINE_DRIVERS, type CliMcpConfig } from '@milibot/agent/cli'
 import {
   type Bot,
+  type BotMcpServer,
   type CliEngine,
   type CreateMcpServerBody,
   type LogFn,
@@ -21,6 +22,7 @@ import {
   type McpServerState,
   type McpTestResult,
   redactSecrets,
+  type UpdateBotMcpServerBody,
   type UpdateMcpServerBody,
   type WorkspaceEvent,
 } from '@milibot/shared'
@@ -367,6 +369,18 @@ export class McpService {
     this.deps.emit({ type: 'mcp.server.deleted', payload: { serverId } })
   }
 
+  /** A bot's switches of a server (it must be allowed on it), announced to the app. */
+  setBotServer(botId: string, serverId: string, body: UpdateBotMcpServerBody): BotMcpServer {
+    const server = this.store.updateBotServer(botId, serverId, body)
+    this.deps.emit({ type: 'mcp.bot_server.updated', payload: { botId, server } })
+    return server
+  }
+
+  /** The servers a bot is allowed on, with its switches. */
+  botServers(botId: string): BotMcpServer[] {
+    return this.store.botServers(botId)
+  }
+
   /** Reconnects, lists the tools and refreshes the cached list (a disabled server is only tried). */
   async testServer(serverId: string): Promise<McpTestResult> {
     const config = await this.requireConfig(serverId)
@@ -430,7 +444,7 @@ export class McpService {
       },
       updateBotMcpServer: ({ params, body }) => {
         this.requireBot(params.botId)
-        return this.store.updateBotServer(params.botId, params.serverId, body)
+        return this.setBotServer(params.botId, params.serverId, body)
       },
       startMcpOAuth: async ({ params }) => {
         const authorizationUrl = await this.startSignIn(params.serverId)

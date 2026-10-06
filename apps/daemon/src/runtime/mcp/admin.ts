@@ -13,7 +13,7 @@ import {
   secretRefRegex,
 } from '@milibot/shared'
 
-import { errorMessage } from '../../errors'
+import { DaemonError, errorMessage } from '../../errors'
 import type { ConfirmationAction, ConfirmationHandler, ConfirmationParams } from '../groups'
 import { stopped } from '../tools-core'
 import type { McpSignInOutcome } from './oauth'
@@ -56,6 +56,8 @@ export type Proposal =
   | { kind: 'add'; server: ProposedServer }
   | { kind: 'update'; serverId: string; changes: ProposedChanges }
   | { kind: 'remove'; serverId: string }
+  /** A bot's own switches (`bot_mcp_set`); `allow`: the bot joins the server's access list. */
+  | { kind: 'bot'; botId: string; changes: Array<{ serverId: string; on: boolean; allow: boolean }> }
 
 /** The confirmation card's `details` param (JSON): what the user is asked to approve, without secret values. */
 export interface McpCardDetails {
@@ -70,11 +72,26 @@ export interface McpCardDetails {
   enabled?: boolean
 }
 
+/** The `bot_mcp` card's `details` param (JSON). */
+interface BotMcpCardDetails {
+  changes: Array<{
+    server: string
+    on: boolean
+    /** Names of the server's tools the bot gets (or loses). */
+    tools: string[]
+    /** The bot is not on the server's access list: approving also gives it access. */
+    allow: boolean
+  }>
+}
+
 const ACTION: Record<Proposal['kind'], ConfirmationAction> = {
   add: 'mcp_add',
   update: 'mcp_update',
   remove: 'mcp_remove',
+  bot: 'bot_mcp',
 }
+
+const NOT_MANAGER = 'Only a bot that manages the team (team-management skill on) can do this.'
 
 export interface McpAdminDeps {
   mcp: Pick<
@@ -87,6 +104,7 @@ export interface McpAdminDeps {
     | 'testServer'
     | 'startSignIn'
     | 'signInOutcome'
+    | 'setBotServer'
   >
   confirmations: {
     request(input: {
@@ -103,6 +121,8 @@ export interface McpAdminDeps {
   host: Pick<AgentHost, 'enqueueTurn'>
   findBot: (id: string) => Bot | null
   listBots: () => Bot[]
+  /** The bot has the team-management skill active (`bot_mcp_set`). */
+  managesTeam: (bot: Bot) => boolean
   cardConversation: (bot: Bot, conversationId: string | null) => string
   /** `{{secret:NAME}}` → the value among the bot's secrets (throws for a name it cannot use). */
   resolveSecretRefs: (bot: Bot, text: string) => string
@@ -128,7 +148,7 @@ export class McpAdmin {
   private signIns = 0
 
   constructor(private readonly deps: McpAdminDeps) {
-    for (const kind of ['add', 'update', 'remove'] as const) {
+    for (const kind of ['add', 'update', 'remove', 'bot'] as const) {
       deps.confirmations.onConfirmed(ACTION[kind], (input) => this.approved(input))
       deps.confirmations.onRejected(ACTION[kind], (input) => this.rejected(input))
     }
@@ -170,6 +190,44 @@ export class McpAdmin {
         details: JSON.stringify(card.details),
       },
       reason: card.reason,
+      data: { proposal },
+    })
+    const { confirmationId } = message.payload as ConfirmationPayload
+    return this.wait(ctx, confirmationId)
+  }
+
+  /** Asks the user to approve turning servers on or off for a bot (`bot` is the bot changed). */
+  proposeBot(
+    ctx: ToolExecContext,
+    bot: Bot,
+    changes: Array<{ server: McpServer; on: boolean; allow: boolean }>,
+    reason: string,
+  ): Promise<string> {
+    if (!this.deps.managesTeam(ctx.bot)) throw new DaemonError('validation_failed', NOT_MANAGER)
+    const details: BotMcpCardDetails = {
+      changes: changes.map((c) => ({
+        server: c.server.name,
+        on: c.on,
+        tools: c.server.tools.map((t) => t.name),
+        allow: c.allow,
+      })),
+    }
+    const proposal: Proposal = {
+      kind: 'bot',
+      botId: bot.id,
+      changes: changes.map((c) => ({ serverId: c.server.id, on: c.on, allow: c.allow })),
+    }
+    const message = this.deps.confirmations.request({
+      bot: ctx.bot,
+      conversationId: ctx.conversationId,
+      action: ACTION.bot,
+      params: {
+        botId: bot.id,
+        botName: bot.name,
+        serverName: changes.map((c) => c.server.name).join(', '),
+        details: JSON.stringify(details),
+      },
+      reason,
       data: { proposal },
     })
     const { confirmationId } = message.payload as ConfirmationPayload
@@ -251,7 +309,9 @@ export class McpAdmin {
       input.confirmationId,
       input.requesterId,
       input.conversationId,
-      rejectedText(proposal.kind, name),
+      proposal.kind === 'bot'
+        ? `The user declined changing the MCP servers of ${input.params.botName}. Nothing changed.`
+        : rejectedText(proposal.kind, name),
     )
   }
 
@@ -259,6 +319,10 @@ export class McpAdmin {
     const proposal = this.proposalOf(input.data)
     const bot = this.deps.findBot(input.requesterId)
     if (!proposal || !bot) return
+    if (proposal.kind === 'bot') {
+      this.approvedBot(input, bot, proposal)
+      return
+    }
     if (proposal.kind !== 'add') {
       try {
         this.deps.mcp.getServer(proposal.serverId)
@@ -276,6 +340,49 @@ export class McpAdmin {
       .then((text) => this.settle(input.confirmationId, bot.id, input.conversationId, text))
   }
 
+  private approvedBot(
+    input: Parameters<ConfirmationHandler>[0],
+    requester: Bot,
+    proposal: Extract<Proposal, { kind: 'bot' }>,
+  ): void {
+    const settle = (text: string) =>
+      this.settle(input.confirmationId, requester.id, input.conversationId, text)
+    const target = this.deps.findBot(proposal.botId)
+    const servers = new Set(this.deps.mcp.listServers().map((s) => s.id))
+    const live = proposal.changes.filter((c) => servers.has(c.serverId))
+    const problem = !this.deps.managesTeam(requester)
+      ? `you no longer manage the team. ${NOT_MANAGER}`
+      : !target
+        ? `${input.params.botName} no longer exists.`
+        : live.length === 0
+          ? 'the MCP servers no longer exist.'
+          : null
+    if (problem || !target) {
+      settle(`Not applied: ${problem}`)
+      throw new DaemonError('conflict', problem ?? 'gone')
+    }
+    void this.applyBot(target, live)
+      .catch((err: unknown) => `It did not work: ${errorMessage(err)}`)
+      .then(settle)
+  }
+
+  private async applyBot(
+    target: Bot,
+    changes: Array<{ serverId: string; on: boolean; allow: boolean }>,
+  ): Promise<string> {
+    const { mcp } = this.deps
+    const done: string[] = []
+    for (const change of changes) {
+      let server = mcp.getServer(change.serverId)
+      if (change.allow && server.allowedBots !== 'all' && !server.allowedBots.includes(target.id))
+        server = await mcp.updateServer(server.id, { allowedBots: [...server.allowedBots, target.id] })
+      mcp.setBotServer(target.id, server.id, { enabled: change.on })
+      const off = change.on && !server.enabled ? ' (the server itself is turned off)' : ''
+      done.push(`${server.name} ${change.on ? 'on' : 'off'}${off}`)
+    }
+    return `The user approved. MCP servers of ${target.name}: ${done.join(', ')}. It takes effect from ${target.name}'s next turn.`
+  }
+
   private keyValues(bot: Bot, items: ProposedKeyValue[]): McpKeyValueInput[] {
     return items.map((item) =>
       item.value === undefined
@@ -286,7 +393,11 @@ export class McpAdmin {
     )
   }
 
-  private async apply(bot: Bot, conversationId: string, proposal: Proposal): Promise<string> {
+  private async apply(
+    bot: Bot,
+    conversationId: string,
+    proposal: Exclude<Proposal, { kind: 'bot' }>,
+  ): Promise<string> {
     const { mcp } = this.deps
     if (proposal.kind === 'remove') {
       const server = mcp.getServer(proposal.serverId)

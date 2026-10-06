@@ -213,7 +213,7 @@ export function themeKey(
 }
 
 /** Short FNV-1a hash (cache keys). */
-function hashString(value: string): string {
+export function hashString(value: string): string {
   let hash = 0x811c9dc5
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i)

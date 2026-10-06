@@ -631,8 +631,34 @@
   animation: canvas-read-scan 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
+/* An element the last page change touched, outlined over its frame (CHANGE_FLASH_MS in lib/change-flash.ts). */
+@keyframes canvas-change-flash {
+  from {
+    opacity: 1;
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.canvas-change-flash {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  animation: canvas-change-flash 1000ms ease-out;
+}
+
 [data-reduced-motion] .canvas-skeleton,
 [data-reduced-motion] .canvas-shimmer {
+  animation: none;
+}
+
+/* Shown still for the same time instead (Stage removes it). */
+[data-reduced-motion] .canvas-change-flash {
+  opacity: 1;
   animation: none;
 }
 
@@ -646,6 +672,11 @@
 @media (prefers-reduced-motion: reduce) {
   .canvas-skeleton,
   .canvas-shimmer {
+    animation: none;
+  }
+
+  .canvas-change-flash {
+    opacity: 1;
     animation: none;
   }
 

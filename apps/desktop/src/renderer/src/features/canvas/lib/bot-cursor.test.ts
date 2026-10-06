@@ -15,6 +15,7 @@ import {
 const shot = (signature: string, x: number, y: number, width = 100, height = 20): ElementShot => ({
   signature,
   box: { x, y, width, height },
+  parent: -1,
 })
 
 describe('changedRegion', () => {

@@ -3,7 +3,8 @@ import { ImageOff } from 'lucide-react'
 import { memo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { type Box, changedRegion, type ElementShot, snapshotPage } from '@/features/canvas/lib/bot-cursor'
+import { type Box, changedRegion, snapshotPage } from '@/features/canvas/lib/bot-cursor'
+import { pageChanged, shownPage } from '@/features/canvas/lib/change-flash'
 
 import { docKey, useDesignStore } from './store'
 
@@ -18,21 +19,27 @@ export const FramePage = memo(function FramePage({
   frame,
   theme,
   version,
+  look,
   height,
   background,
   watch = false,
   onChange,
+  onFlash,
 }: {
   workspaceId: string
   designId: string
   frame: DesignFrame
   theme: string
   version: string
+  /** Key of the theme's values: a page loaded in another look is restyled, not changed. */
+  look?: string
   height: number
   background: string | null
   /** A bot is changing this frame: report where each new version differs from the one shown before. */
   watch?: boolean
   onChange?: (frameId: string, box: Box) => void
+  /** The elements that changed since the page shown before (frame pixels); the canvas's frames only. */
+  onFlash?: (frameId: string, boxes: Box[]) => void
 }) {
   const { t } = useTranslation()
   const doc = useDesignStore((s) => s.docs[docKey(frame.id, theme)])
@@ -40,12 +47,6 @@ export const FramePage = memo(function FramePage({
   const setMeasured = useDesignStore((s) => s.setMeasured)
   const iframe = useRef<HTMLIFrameElement>(null)
   const auto = frame.height === null
-  const shots = useRef<ElementShot[] | null>(null)
-
-  useEffect(() => {
-    const doc = iframe.current?.contentDocument
-    shots.current = watch && doc?.body ? snapshotPage(doc) : null
-  }, [watch])
 
   useEffect(() => {
     ensureDoc(workspaceId, designId, frame.id, theme, version)
@@ -54,10 +55,14 @@ export const FramePage = memo(function FramePage({
   const loaded = () => {
     measure()
     const doc = iframe.current?.contentDocument
-    if (!watch || !doc) return
+    if (!doc?.body) return
     const next = snapshotPage(doc)
-    const box = shots.current && changedRegion(shots.current, next)
-    shots.current = next
+    const before = shownPage(frame.id)
+    if (onFlash && look !== undefined) {
+      const boxes = pageChanged(frame.id, look, next)
+      if (boxes.length) onFlash(frame.id, boxes)
+    }
+    const box = watch && before ? changedRegion(before, next) : null
     if (box) onChange?.(frame.id, box)
   }
 

@@ -26,6 +26,40 @@ import { type Size, type Viewport } from '@/lib/viewport'
 import { DraftPage } from './DraftPage'
 import type { FrameDrag } from './use-stage-gestures'
 
+/**
+ * Outlines over a frame's page, in frame pixels (`2 / zoom` keeps them 2px on screen). Drawn inside each box
+ * and outside the iframe: nothing moves, and nothing reaches the saved page or an export.
+ */
+export function ElementOutlines({
+  boxes,
+  zoom,
+  className,
+}: {
+  boxes: readonly Box[]
+  zoom: number
+  className?: string
+}) {
+  const width = 2 / zoom
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {boxes.map((box, i) => (
+        <div
+          key={i}
+          className={cn('absolute', className)}
+          style={{
+            left: box.x,
+            top: box.y,
+            width: box.width,
+            height: box.height,
+            outline: `${width}px solid var(--color-accent)`,
+            outlineOffset: -width,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 /** Frames being written, in world coordinates: the partial page inside a dashed outline in the bot's color. */
 export function DraftLayer({
   design,

@@ -23,9 +23,18 @@ import { ZoomControls } from '@/ui/ZoomControls'
 import { BotCursors } from './BotCursor'
 import { FramePage } from './FramePage'
 import { PenCursors, usePenTrails } from './PenCursors'
-import { botColor, DraftLabels, DraftLayer, DragOverlay, FrameLabels, PresencePill } from './StageLayers'
+import {
+  botColor,
+  DraftLabels,
+  DraftLayer,
+  DragOverlay,
+  ElementOutlines,
+  FrameLabels,
+  PresencePill,
+} from './StageLayers'
 import { type Presence, useDesignStore } from './store'
 import { useBotCursors } from './use-bot-cursors'
+import { useChangeFlashes } from './use-change-flashes'
 import { useStageGestures } from './use-stage-gestures'
 
 const IDENTITY: Viewport = { x: 0, y: 0, zoom: 1 }
@@ -130,6 +139,7 @@ export function Stage({
   const writtenDrafts = useMemo(() => draftList.filter((d) => !d.art), [draftList])
   const cursors = useBotCursors({ bots, presences, drafts: writtenDrafts, draftRects, rects, colorOf })
   const pens = usePenTrails()
+  const { flashes, flash } = useChangeFlashes()
   const penEntries = draftList.flatMap((d) =>
     d.art ? [{ draftId: d.draftId, name: bots[d.botId]?.name ?? '…', color: colorOf(d.botId) }] : [],
   )
@@ -211,10 +221,20 @@ export function Stage({
                     frame={frame}
                     theme={theme}
                     version={`${frame.updatedAt}:${themeKeys[theme] ?? ''}`}
+                    look={themeKeys[theme] ?? theme}
                     height={rect.height}
                     background={background}
                     watch={cursors.writers.has(frame.id)}
                     onChange={cursors.markFrame}
+                    onFlash={flash}
+                  />
+                )}
+                {flashes[frame.id] && (
+                  <ElementOutlines
+                    key={flashes[frame.id]?.id}
+                    boxes={flashes[frame.id]?.boxes ?? []}
+                    zoom={v.zoom}
+                    className="canvas-change-flash"
                   />
                 )}
                 {scan && (

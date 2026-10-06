@@ -98,9 +98,9 @@ export function formatDuration(ms: number, locale: string): string {
   return `${minutes}min ${Math.round(seconds - minutes * 60)}s`
 }
 
-/** Stopwatch time: "02:14". */
+/** Stopwatch time: "02:14"; negative (a start after a stale `now`) shows as "00:00". */
 export function formatElapsed(ms: number): string {
-  const seconds = Math.floor(ms / 1000)
+  const seconds = Math.floor(Math.max(0, ms) / 1000)
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }
 

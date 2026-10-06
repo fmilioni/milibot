@@ -1,8 +1,9 @@
 #!/bin/bash
 # Removes worktrees of finished work when nothing in them would be lost: no changes or untracked files (ignored
-# ones go), no rebase/merge/cherry-pick/revert/bisect going on, no stash of its branch or HEAD, and every commit
-# of HEAD and of its branch on the remote, in a branch or a pull request head (so a squash-merged PR whose branch
-# was deleted still counts). A failed fetch keeps everything; `git worktree remove` runs without --force.
+# ones go, but not another repository inside them outside node_modules), no rebase/merge/cherry-pick/revert/
+# bisect going on, no stash of its branch (or of its commit when detached), and every commit of HEAD and of its
+# branch on the remote, in a branch or a pull request head (so a squash-merged PR whose branch was deleted still
+# counts). A failed fetch keeps everything; `git worktree remove` runs without --force.
 # Candidates on stdin, one per line: `<path>|<registered branch>|<policy>`, policy `pr_done` when the pull
 # request of its branch was merged or closed, else `-`. A branch goes with its worktree when it has no commits
 # of its own against the base, or when `pr_done` and all of it is on the remote.
@@ -53,13 +54,18 @@ BASE="$BASE_BRANCH"
 # Commits of the refs given that are on no remote branch and in no pull request head.
 unpushed() { git rev-list --count "$@" --not --remotes --glob="$PR_REFS/*" 2>/dev/null; }
 
+# A stash of the worktree's branch, or, for a detached worktree, one made in detached HEAD on its commit (stashes
+# live in the repository and stay; this keeps work parked for the worktree from being forgotten).
 has_stash() {
   local branch=$1 head=$2 subject parents
   while IFS=$'\t' read -r subject parents; do
     if [ -n "$branch" ]; then
       case "$subject" in "WIP on $branch:"* | "On $branch:"*) return 0 ;; esac
+    else
+      case "$subject" in "WIP on (no branch):"* | "On (no branch):"*)
+        [ "${parents%% *}" = "$head" ] && return 0 ;;
+      esac
     fi
-    [ "${parents%% *}" = "$head" ] && return 0
   done < <(git stash list --format='%gs%x09%P' 2>/dev/null)
   return 1
 }
@@ -81,6 +87,9 @@ keep_reason() {
   [ -n "$head" ] || { echo no_head; return; }
   in_progress "$path" && { echo in_progress; return; }
   [ -z "$(git -C "$path" status --porcelain 2>/dev/null || echo error)" ] || { echo dirty; return; }
+  # Another repository inside an ignored folder may hold commits of its own (dependencies aside).
+  [ -z "$(find "$path" \( -name node_modules -o -path "$path/.git" \) -prune -o -name .git -print -quit 2>/dev/null)" ] ||
+    { echo nested_repo; return; }
   has_stash "$branch" "$head" && { echo stash; return; }
   count=$(unpushed "$head" ${branch:+"refs/heads/$branch"}) || { echo unknown; return; }
   [ "$count" = 0 ] || echo unpushed

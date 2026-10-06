@@ -142,6 +142,27 @@ describe('worktree cleanup script', () => {
     for (const dir of [changed, untracked, unpushed]) expect(existsSync(dir)).toBe(true)
   })
 
+  it('keeps a worktree with another repository in an ignored folder, unless it is a dependency', () => {
+    const nested = worktree('nested')
+    const dependency = worktree('dependency')
+    writeFileSync(join(clone(), '.git/info/exclude'), 'tools/\n')
+    for (const dir of [join(nested, 'tools/lib'), join(dependency, 'node_modules/lib')]) {
+      mkdirSync(dir, { recursive: true })
+      run('git init -q && git config user.name A && git config user.email a@x', dir)
+      commit(dir, 'local.txt')
+    }
+
+    const { results } = cleanup([
+      { path: nested, prDone: true },
+      { path: dependency, prDone: true },
+    ])
+    expect(results.map((r) => [r.outcome, r.reason])).toEqual([
+      ['kept', 'nested_repo'],
+      ['removed', null],
+    ])
+    expect(existsSync(nested)).toBe(true)
+  })
+
   it('counts commits in a pull request head as pushed after a squash merge deleted the branch', () => {
     const dir = worktree('squashed')
     commit(dir, 'work.txt')
@@ -208,6 +229,23 @@ describe('worktree cleanup script', () => {
 
     const { results } = cleanup([{ path: stashed }, { path: rebasing }])
     expect(results.map((r) => r.reason)).toEqual(['stash', 'in_progress'])
+  })
+
+  it('holds only detached worktrees on its commit for a stash made in detached HEAD', () => {
+    const parked = worktree('parked')
+    run('git checkout -q --detach', parked)
+    writeFileSync(join(parked, 'first.txt'), 'later')
+    run('git stash -q', parked)
+    const detached = worktree('detached')
+    run('git checkout -q --detach', detached)
+    const onBranch = worktree('on-branch')
+
+    const { results } = cleanup([{ path: parked }, { path: detached }, { path: onBranch }])
+    expect(results.map((r) => [r.outcome, r.reason])).toEqual([
+      ['kept', 'stash'],
+      ['kept', 'stash'],
+      ['removed', null],
+    ])
   })
 
   it('keeps everything when the fetch fails', () => {

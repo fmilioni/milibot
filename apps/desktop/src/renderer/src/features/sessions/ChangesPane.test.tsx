@@ -192,4 +192,21 @@ describe('ChangesPane', () => {
     await act(async () => slow.resolve(changesOf([file('src/a.ts'), file('src/b.ts')])))
     expect(screen.getByText('1 file')).toBeTruthy()
   })
+
+  it("says a changed image is no longer available once the session's folder is gone, without a retry", async () => {
+    const shot: SessionChangedFile = { ...file('src/shot.png'), binary: true }
+    changes = () => Promise.resolve(changesOf([shot]))
+    diffs['src/shot.png'] = () => Promise.resolve({ ...diffOf('src/shot.png', ''), binary: true })
+    const fallback = daemon.call.getMockImplementation()
+    daemon.call.mockImplementation((endpoint: string, input: unknown) =>
+      endpoint === 'getWorkSessionFileImages'
+        ? Promise.resolve({ before: null, after: null, unavailable: true })
+        : fallback?.(endpoint, input),
+    )
+    render(<ChangesPane sessionId={SESSION} />)
+    fireEvent.click(await screen.findByRole('button', { name: /shot\.png/ }))
+
+    expect(await screen.findByText(/The image is no longer available/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+  })
 })

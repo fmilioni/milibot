@@ -389,6 +389,49 @@ describe('work sessions', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM repo_worktrees').get()).toEqual({ n: 1 })
   })
 
+  it('reads the images of a session whose worktree was cleaned up from its saved tree, else says they are gone', async () => {
+    await boot((request) => {
+      const { text, tools } = lastInput(request)
+      if (inSession(request))
+        return tools === 0
+          ? { toolCalls: [{ name: 'session_finish', arguments: { summary: 'Done.', status: 'done' } }] }
+          : { text: 'Closed.' }
+      if (text.includes('draw it') && tools === 0)
+        return {
+          toolCalls: [{ name: 'session_start', arguments: { title: 'Shots', goal: 'Draw.', repo: 'app' } }],
+        }
+      return { text: 'ok' }
+    })
+    await call('postMessage', { conversationId: chiefDm }, { content: 'draw it' })
+    const session = await onlySession()
+    await host.idle()
+    const shot = { path: 'shot.png', status: 'modified', additions: 0, deletions: 0, binary: true }
+    const tree = { tree: 'a'.repeat(40), gitDir: '/workspace/repos/app/.git', prefix: '' }
+    db.prepare(
+      "UPDATE work_sessions SET status = 'done', base_commit = ?, patches_at = 1, patches_tree = ?, changes_json = ? WHERE id = ?",
+    ).run(
+      'b'.repeat(40),
+      JSON.stringify(tree),
+      JSON.stringify({ totals: { files: 1, additions: 0, deletions: 0 }, files: [shot], computedAt: 1 }),
+      session.id,
+    )
+    let answer = 'GONE\n'
+    guest.state.execResult = () => ({ code: 0, signal: null, stdout: answer, stderr: '' })
+    const images = () =>
+      call('getWorkSessionFileImages', { sessionId: session.id }, undefined, { path: 'shot.png' })
+
+    expect(await images()).toEqual({ before: null, after: null, unavailable: true })
+    expect(guest.state.execs.at(-1)?.env).toMatchObject({
+      SAVED_TREE: tree.tree,
+      SAVED_GIT_DIR: tree.gitDir,
+      SAVED_PREFIX: '',
+      BEFORE_PATH: 'shot.png',
+      AFTER_PATH: 'shot.png',
+    })
+    answer = `BEFORE 3 ${Buffer.from('one').toString('base64')}\nAFTER 99999999 -\n`
+    expect(await images()).toEqual({ before: null, after: { bytes: 99999999 } })
+  })
+
   it('leaves sessions idle after a restart, until the user writes in them', async () => {
     await boot((request) => {
       const { text, tools } = lastInput(request)

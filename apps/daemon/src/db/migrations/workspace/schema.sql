@@ -1103,7 +1103,7 @@ created_at INTEGER NOT NULL,
 updated_at INTEGER NOT NULL,
 finished_at INTEGER,
 deleted_at INTEGER
-, replaced_by TEXT);
+, replaced_by TEXT, patches_tree TEXT);
 
 -- trigger board_cards_fts_delete on board_cards
 CREATE TRIGGER board_cards_fts_delete AFTER DELETE ON board_cards BEGIN

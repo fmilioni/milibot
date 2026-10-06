@@ -8,6 +8,7 @@ import {
 import { modelSpecJson } from '../../db/model-spec'
 import type { Db } from '../../db/sqlite'
 import { notFound } from '../../errors'
+import type { SavedTree } from './diff'
 
 export interface SessionRow {
   id: string
@@ -36,6 +37,8 @@ export interface SessionRow {
   deleted_at: number | null
   changes_json: string | null
   patches_at: number | null
+  /** JSON `SavedTree`: where the files can be read once the folder is gone. */
+  patches_tree: string | null
   baseline_error: string | null
 }
 
@@ -215,14 +218,16 @@ export class SessionStore {
   }
 
   /** Replaces the saved patches of a finished session. */
-  savePatches(id: string, patches: readonly SavedPatch[]): void {
+  savePatches(id: string, patches: readonly SavedPatch[], tree: SavedTree | null = null): void {
     this.db.transaction(() => {
       this.db.prepare('DELETE FROM work_session_patches WHERE session_id = ?').run(id)
       const insert = this.db.prepare(
         'INSERT OR REPLACE INTO work_session_patches (session_id, path, patch, truncated) VALUES (?, ?, ?, ?)',
       )
       for (const p of patches) insert.run(id, p.path, p.patch, p.truncated ? 1 : 0)
-      this.db.prepare('UPDATE work_sessions SET patches_at = ? WHERE id = ?').run(this.now(), id)
+      this.db
+        .prepare('UPDATE work_sessions SET patches_at = ?, patches_tree = ? WHERE id = ?')
+        .run(this.now(), tree ? JSON.stringify(tree) : null, id)
     })()
   }
 

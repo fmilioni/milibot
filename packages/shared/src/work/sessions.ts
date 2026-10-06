@@ -90,6 +90,8 @@ export type SessionImage = z.infer<typeof SessionImage>
 export const SessionFileImages = z.object({
   before: SessionImage.nullable(),
   after: SessionImage.nullable(),
+  /** The session's folder is gone and the images could not be read from the repository either. */
+  unavailable: z.boolean().optional(),
 })
 export type SessionFileImages = z.infer<typeof SessionFileImages>
 

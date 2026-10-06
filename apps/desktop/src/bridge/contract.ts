@@ -10,6 +10,7 @@ import {
   type SendName,
   type WindowKind,
 } from './channels'
+import { isWebUrl } from './web-url'
 
 export type DaemonConnection = Pick<ApiClientOptions, 'baseUrl' | 'token'>
 
@@ -121,7 +122,7 @@ const invokeEntries = {
     result: result<string | null>(),
   },
   /** Opens an http(s) URL in the default browser. */
-  openExternal: { args: z.tuple([z.string().regex(/^https?:\/\//)]), result: result<void>() },
+  openExternal: { args: z.tuple([z.string().refine(isWebUrl)]), result: result<void>() },
   /** Opens a file with its default app (scripts and apps are shown in the file manager instead). */
   openPath: { args: z.tuple([z.string()]), result: result<void>() },
   /** A bot's desktop, sized to show `VM_DESKTOP` 1:1 when the screen has room. */

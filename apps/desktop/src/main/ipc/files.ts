@@ -4,6 +4,7 @@ import { extname, join, resolve } from 'node:path'
 
 import { app, clipboard, shell } from 'electron'
 
+import { isWebUrl } from '../../bridge/web-url'
 import { mainText } from '../app/i18n'
 import type { DaemonManager } from '../daemon/manager'
 import { dataRoot } from '../daemon/paths'
@@ -89,6 +90,7 @@ export function fileInvokes({ daemon, settings }: IpcDeps) {
     },
 
     openExternal: async (_event, [url]) => {
+      if (!isWebUrl(url)) throw new Error('URL not allowed')
       await shell.openExternal(url)
     },
   } satisfies Partial<InvokeHandlers>

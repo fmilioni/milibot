@@ -113,6 +113,13 @@ describe('tokenize', () => {
       expect(of('/workspace/milibot/ /workspace/../etc/passwd /home/agent/x.md /tmp/workspace/x')).toEqual([])
     })
 
+    it('leaves an id in inline code as text, as markdown keeps code as code', () => {
+      expect(of(`run \`${card}\` or \`see ${card} too\``)).toEqual([])
+      expect(of(`\`${card}\` and ${card}`)).toEqual([`ref:${card}`])
+      expect(of(`a \` before ${card}`)).toEqual([`ref:${card}`])
+      expect(of('open `/workspace/x.md`')).toEqual(['path:/workspace/x.md'])
+    })
+
     it('mixes URLs, ids and paths in order', () => {
       expect(of(`https://a.example.com/x ${card} /workspace/x.md`)).toEqual([
         'url:https://a.example.com/x',

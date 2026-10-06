@@ -18,6 +18,8 @@ interface Matcher {
   pattern: RegExp
   /** The link a raw match stands for (its `text` a prefix of the match), or null to skip the match. */
   toToken: (raw: string) => { text: string; href: string } | null
+  /** Its matches inside inline code (`…`) stay text, as markdown keeps code as code. */
+  notInCode?: boolean
 }
 
 const TRAILING_PUNCTUATION = /[.,;:!?'"»”’]$/
@@ -49,6 +51,7 @@ const refMatcher: Matcher = {
   kind: 'ref',
   pattern: REF_ID_PATTERN,
   toToken: (raw) => ({ text: raw, href: raw }),
+  notInCode: true,
 }
 
 const pathMatcher: Matcher = {
@@ -70,10 +73,21 @@ interface Found {
   token: LinkToken
 }
 
-function firstMatch(text: string, from: number, matcher: Matcher): Found | null {
+type Span = readonly [start: number, end: number]
+
+/** The inline code spans (`…`) of a text. */
+function codeSpans(text: string): Span[] {
+  return [...text.matchAll(/`[^`\n]+`/g)].map(
+    (match) => [match.index, match.index + match[0].length] as const,
+  )
+}
+
+function firstMatch(text: string, from: number, matcher: Matcher, code: readonly Span[]): Found | null {
   const pattern = new RegExp(matcher.pattern.source, matcher.pattern.flags)
   pattern.lastIndex = from
   for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
+    const at = match.index
+    if (matcher.notInCode && code.some(([start, end]) => at > start && at < end)) continue
     const link = match[0] ? matcher.toToken(match[0]) : null
     if (link?.text) return { index: match.index, token: { type: 'link', kind: matcher.kind, ...link } }
     if (!match[0]) pattern.lastIndex++
@@ -87,11 +101,12 @@ function firstMatch(text: string, from: number, matcher: Matcher): Found | null 
  */
 export function tokenize(text: string, matchers: readonly Matcher[] = DEFAULT_MATCHERS): Token[] {
   const tokens: Token[] = []
+  const code = text.includes('`') ? codeSpans(text) : []
   let cursor = 0
   for (;;) {
     let best: Found | null = null
     for (const matcher of matchers) {
-      const found = firstMatch(text, cursor, matcher)
+      const found = firstMatch(text, cursor, matcher, code)
       if (
         found &&
         (!best ||

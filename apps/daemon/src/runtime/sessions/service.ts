@@ -620,6 +620,12 @@ export class WorkSessionService {
     this.emitNow(row.id)
   }
 
+  /** Whether the session exists and has not ended. */
+  isOpen(sessionId: string): boolean {
+    const row = this.store.row(sessionId)
+    return !!row && !isFinished(row.status)
+  }
+
   /**
    * Whether the worktree of a session may be removed: the session ended, its lane is idle and not closing, its
    * patches are saved (the changes screen reads them once the folder is gone) and no open session works in the

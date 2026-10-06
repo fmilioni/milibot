@@ -829,7 +829,8 @@ export function createContainer(options: ContainerOptions) {
       sessionDone: (sessionId) => workSessions.worktreeDone(sessionId),
       sessionWorktreeRemoved: (sessionId) => workSessions.worktreeRemoved(sessionId),
       pullRequestStatus: (repoName, branch) => taskCards.pullRequestOfBranch(repoName, branch),
-      laneBusy: (laneKey) => host.laneBusy(laneKey),
+      sessionOpen: (sessionId) => workSessions.isOpen(sessionId),
+      botBusy: (botId) => host.botBusy(botId),
       log,
     }),
   )

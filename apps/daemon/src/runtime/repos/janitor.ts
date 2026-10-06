@@ -19,8 +19,10 @@ export interface WorktreeJanitorDeps {
   sessionWorktreeRemoved(sessionId: string): void
   /** Status of the newest pull request of a branch in a repository; null when none is known. */
   pullRequestStatus(repoName: string, branch: string): TaskStatus | null
-  /** Whether a turn of the lane is running or queued. */
-  laneBusy(laneKey: string): boolean
+  /** Whether the session is still open (not ended); false for one that no longer exists. */
+  sessionOpen(sessionId: string): boolean
+  /** Whether a turn of any of the bot's lanes (chat, requests, sessions, helpers) is running or queued. */
+  botBusy(botId: string): boolean
   sweepMs?: number
   debounceMs?: number
   log?: LogFn
@@ -156,14 +158,21 @@ export class WorktreeJanitor {
     return present
   }
 
+  /**
+   * A chat worktree is shared by every lane of its bot: a session may work in it (`repo_checkout`) without
+   * owning it, so it stays while any lane of the bot works and while a session that checked it out is open.
+   */
+  private chatIdle(row: WorktreeRow): boolean {
+    if (this.deps.botBusy(row.botId)) return false
+    return !this.deps.worktrees.sessionsUsing(row.id).some((id) => this.deps.sessionOpen(id))
+  }
+
   private async sweepRepo(guest: GuestClient, repoName: string, all: WorktreeRow[]): Promise<void> {
     const rows = await this.reconcile(guest, repoName, all)
     const candidates = new Map<string, { row: WorktreeRow; candidate: CleanupCandidate }>()
     for (const row of rows) {
       const prDone = ended(this.deps.pullRequestStatus(repoName, row.branch))
-      const done = row.sessionId
-        ? this.deps.sessionDone(row.sessionId)
-        : prDone && !this.deps.laneBusy(row.botId)
+      const done = row.sessionId ? this.deps.sessionDone(row.sessionId) : prDone && this.chatIdle(row)
       if (done)
         candidates.set(row.worktreePath, {
           row,

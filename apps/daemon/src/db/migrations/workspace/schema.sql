@@ -872,6 +872,13 @@ created_at INTEGER NOT NULL,
 updated_at INTEGER NOT NULL
 );
 
+-- table repo_worktree_sessions
+CREATE TABLE repo_worktree_sessions (
+worktree_id TEXT NOT NULL REFERENCES repo_worktrees (id) ON DELETE CASCADE,
+session_id TEXT NOT NULL,
+PRIMARY KEY (worktree_id, session_id)
+);
+
 -- table repo_worktrees
 CREATE TABLE repo_worktrees (
 id TEXT PRIMARY KEY,

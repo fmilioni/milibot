@@ -228,17 +228,17 @@ describe('bot lanes', () => {
     expect(env.statuses.at(-1)).toEqual({ botId: bot.id, status: 'idle' })
   })
 
-  it('tells whether a lane has a turn running', async () => {
-    const { bot, chat, host, gate, say } = await setup()
-    const g = gate(chat.id)
-    expect(host.laneBusy(bot.id)).toBe(false)
-    say(chat.id, 'tool:bash')
+  it('tells whether any lane of the bot has a turn running, a session one included', async () => {
+    const { bot, session, host, gate, say } = await setup()
+    const g = gate(session.id)
+    expect(host.botBusy(bot.id)).toBe(false)
+    say(session.id, 'tool:bash')
     await until(() => g.started)
-    expect(host.laneBusy(bot.id)).toBe(true)
-    expect(host.laneBusy(sessionLaneKey(bot.id, SESSION))).toBe(false)
+    expect(host.botBusy(bot.id)).toBe(true)
+    expect(host.botBusy('bot_other')).toBe(false)
     g.release()
     await host.idle(bot.id)
-    expect(host.laneBusy(bot.id)).toBe(false)
+    expect(host.botBusy(bot.id)).toBe(false)
   })
 
   it('sends what reaches an ended session to the conversation it started from', async () => {

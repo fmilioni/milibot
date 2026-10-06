@@ -1,4 +1,4 @@
-import type { ToolExecContext, ToolResult } from '@milibot/agent'
+import { laneInfo, type ToolExecContext, type ToolResult } from '@milibot/agent'
 import { repoInstructionTexts } from '@milibot/agent/prompts'
 import { optionalString, requireString, type ToolArgs, toolText } from '@milibot/agent/tools'
 import type { Bot, LogFn } from '@milibot/shared'
@@ -55,6 +55,9 @@ function repoHandlers(deps: RepoToolsDeps): ToolHandlers {
         branch: info.BRANCH || branch,
         baseBranch: info.BASE || null,
       })
+    // A session working in the bot's chat worktree keeps it from being cleaned up until the session ends.
+    const sessionId = ctx.laneKey ? laneInfo(ctx.laneKey).sessionId : null
+    if (sessionId) worktreeStore.usedBySession(row.id, sessionId)
     const base = info.BASE ?? row.baseBranch ?? '?'
     const reply = toolText(
       [

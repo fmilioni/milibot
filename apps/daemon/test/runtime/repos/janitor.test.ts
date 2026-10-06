@@ -21,7 +21,8 @@ let vmRunning: boolean
 let removedSessions: string[]
 let prStatus: Map<string, TaskStatus>
 let doneSessions: Set<string>
-let busyLanes: Set<string>
+let busyBots: Set<string>
+let openSessions: Set<string>
 
 const guest = {
   exec: (req: GuestExecRequest) => {
@@ -60,7 +61,8 @@ function janitor(overrides: Partial<WorktreeJanitorDeps> = {}): WorktreeJanitor 
     sessionDone: (id) => doneSessions.has(id),
     sessionWorktreeRemoved: (id) => removedSessions.push(id),
     pullRequestStatus: (_repo, branch) => prStatus.get(branch) ?? null,
-    laneBusy: (key) => busyLanes.has(key),
+    sessionOpen: (id) => openSessions.has(id),
+    botBusy: (id) => busyBots.has(id),
     ...overrides,
   })
 }
@@ -95,7 +97,8 @@ beforeEach(() => {
   removedSessions = []
   prStatus = new Map()
   doneSessions = new Set()
-  busyLanes = new Set()
+  busyBots = new Set()
+  openSessions = new Set()
 })
 
 describe('worktree janitor', () => {
@@ -128,14 +131,51 @@ describe('worktree janitor', () => {
     ])
   })
 
-  it('leaves a chat worktree alone while the bot works in its chat', async () => {
+  it('leaves a chat worktree alone while any lane of its bot works', async () => {
     const row = worktree('merged')
     prStatus.set('bot/ana/merged', 'done')
-    busyLanes.add(row.botId)
+    busyBots.add(row.botId)
 
     await janitor().run()
 
     expect(cleanupInput()).toBeNull()
+  })
+
+  it('keeps a chat worktree a session checked out until that session ends, even between its turns', async () => {
+    // A session ran repo_checkout (the bot's chat worktree), pushed and reported its pull request done while
+    // its turn went on.
+    const row = worktree('shared')
+    worktrees.usedBySession(row.id, 'ws_using')
+    openSessions.add('ws_using')
+    prStatus.set('bot/ana/shared', 'done')
+    busyBots.add(row.botId)
+    await janitor().run()
+    expect(cleanupInput()).toBeNull()
+
+    busyBots.delete(row.botId)
+    await janitor().run()
+    expect(cleanupInput()).toBeNull()
+
+    openSessions.delete('ws_using')
+    await janitor().run()
+    expect(cleanupInput()).toBe(`${WT}/shared|bot/ana/shared|pr_done\n`)
+    expect(status(row.id)).toBe('released')
+    expect(worktrees.sessionsUsing(row.id)).toEqual([])
+  })
+
+  it('keeps a chat worktree in detached HEAD (a pull request under test) while the session that made it is open', async () => {
+    const row = worktree('qa', null, 'bot/marco/qa')
+    listed.set(row.worktreePath, '')
+    worktrees.usedBySession(row.id, 'ws_qa')
+    openSessions.add('ws_qa')
+    prStatus.set('bot/marco/qa', 'failed')
+
+    await janitor().run()
+    expect(cleanupInput()).toBeNull()
+
+    openSessions.delete('ws_qa')
+    await janitor().run()
+    expect(cleanupInput()).toBe(`${WT}/qa|bot/marco/qa|pr_done\n`)
   })
 
   it('keeps the row of a worktree the script kept, and finds a pull request by the branch it was renamed to', async () => {

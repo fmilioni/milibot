@@ -302,6 +302,8 @@
       "board_delete_empty": "Excluiu um quadro",
       "board_card_write": "Escreveu o card “{{detail}}”",
       "board_card_write_empty": "Escreveu um card",
+      "board_label_write": "Alterou a etiqueta “{{detail}}”",
+      "board_label_write_empty": "Alterou uma etiqueta",
       "board_card_get": "Leu o card “{{detail}}”",
       "board_card_get_empty": "Leu um card",
       "board_comment": "Comentou no card “{{detail}}”",

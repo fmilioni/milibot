@@ -532,3 +532,53 @@ describe('moving a card to another board', () => {
     expect(await tool('board_card_write', { card: card.id, board: c.id })).toMatch(/archived/)
   })
 })
+
+describe('board labels', () => {
+  it('creates cards with labels and lets bots recolor, rename and add labels', async () => {
+    await boot()
+    await tool('board_create', {
+      title: 'Release 0.5',
+      summary: 'Everything that ships in 0.5.',
+      cards: [
+        { title: 'Crash on start', labels: ['Bug', 'High priority'] },
+        { title: 'Dark mode', labels: ['front', 'high priority'] },
+      ],
+    })
+    const [board] = (await h.call<Board[]>('listBoards', {}, undefined, {})) as [Board]
+    let detail = await h.call<BoardDetail>('getBoard', { boardId: board.id })
+    expect(detail.labels.map((l) => l.name)).toEqual(['Bug', 'High priority', 'front'])
+    const name = (id: string) => detail.labels.find((l) => l.id === id)?.name
+    expect(byTitle(detail.cards, 'Dark mode').labelIds.map(name)).toEqual(['High priority', 'front'])
+
+    h.events.length = 0
+    expect(await tool('board_label_write', { board: 'Release 0.5', label: 'bug', color: 'Red' })).toMatch(
+      /Updated the label "Bug" \(red\)/,
+    )
+    expect(
+      h.events.some(
+        (e) => e.type === 'board.updated' && e.payload.board.labels.some((l) => l.color === 'red'),
+      ),
+    ).toBe(true)
+    const front = detail.labels.find((l) => l.name === 'front')!
+    expect(await tool('board_label_write', { board: board.id, label: front.id, name: 'Front' })).toMatch(
+      /renamed to "Front"/,
+    )
+    expect(await tool('board_label_write', { board: 'Release 0.5', label: 'Docs', color: 'teal' })).toMatch(
+      /Added the label "Docs" \(teal\)/,
+    )
+    expect(await tool('board_label_write', { board: 'Release 0.5', label: 'Bug', color: 'purple' })).toMatch(
+      /"color" must be one of: gray, red, orange, yellow, green, teal, blue, violet, pink/,
+    )
+    expect(await tool('board_label_write', { board: 'Release 0.5', label: 'Nope', name: 'Other' })).toMatch(
+      /has no label "Nope" to rename/,
+    )
+    expect(await tool('board_label_write', { board: 'Release 0.5', label: 'Docs', name: 'bug' })).toMatch(
+      /already has a label "bug"/,
+    )
+    expect(await tool('board_get', { board: 'Release 0.5' })).toMatch(
+      /Labels: Bug \(red\), High priority \(\w+\), Front \(\w+\), Docs \(teal\)/,
+    )
+    detail = await h.call<BoardDetail>('getBoard', { boardId: board.id })
+    expect(detail.labels.find((l) => l.id === front.id)).toMatchObject({ name: 'Front', color: front.color })
+  })
+})

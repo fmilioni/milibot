@@ -115,6 +115,7 @@ export const ACTIVITY_STEP_KINDS = [
   'board_update',
   'board_delete',
   'board_card_write',
+  'board_label_write',
   'board_card_get',
   'board_comment',
   'board_link',

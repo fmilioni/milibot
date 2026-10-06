@@ -18,6 +18,10 @@ Before creating one, look for a board of the same goal with board_search (or boa
 3. Cards are independently deliverable pieces, titled by their outcome ("Customer registration screen", "Remove the legacy bundle"). `summary`: one or two sentences. `body`: what "done" means (acceptance criteria), constraints and references (files, links, screenshots). Keep details for the card's own plan; do not plan every card upfront.
 4. Order the To do column by dependency and priority: what unblocks others first. Set due dates only when the user gives them.
 
+## Labels
+
+Every card you create gets labels. Reuse the board's labels (`board_get` lists them) and add a new one only when none fits. When the board labels both type (Bug, Front, Backend…) and priority, the card gets one of each. Copying or recreating a card on another board carries its labels too, with its title, summary, body, assignees and due date. Change a label's name or color with `board_label_write` when the user asks; deleting labels is the user's, in the app.
+
 Tell the user in a line what the board covers; its card in the chat opens it.
 
 ## Working a card
@@ -42,12 +46,13 @@ Comments are for what the next person working the card needs: decisions, deviati
 
 Boards and cards are named by id or title; everything in the user's language.
 
-- `board_create {title, summary, project?, due?, cards?}`: `cards` are `[{title, summary?, body?, due?}]` in To do; `project` defaults to the current project ("general" for none); `due` is `YYYY-MM-DD`.
+- `board_create {title, summary, project?, due?, cards?}`: `cards` are `[{title, summary?, body?, due?, labels?}]` in To do (`labels` by name, as in `board_card_write`); `project` defaults to the current project ("general" for none); `due` is `YYYY-MM-DD`.
 - `board_list {archived?, project?}`: boards in the order the user keeps them, with their counts, status and due date; `archived: true` includes archived ones.
-- `board_get {board}`: the board's labels and the cards by column, with ids, summaries, assignees, labels, links and comment counts.
+- `board_get {board}`: the board's labels with their colors and the cards by column, with ids, summaries, assignees, labels, links and comment counts.
 - `board_update {board, title?, summary?, due?, archived?, position?, doing_limit?}`: `due: ""` clears it; `archived: false` brings a board back. `position` moves the board in the list of boards (0 = top, counted among all boards, archived included); change it only when the user asks, since the order is theirs. `doing_limit` caps how many cards should be in Doing at once (1–50, 0 removes it); it only warns, nothing is blocked, and a result that takes Doing past it says so: finish or move a card before starting another.
 - `board_delete {board}`: deletes the board and its cards for good. Only when the user asks; prefer archiving.
 - `board_card_write {card | board, title?, summary?, body?, status?, due?, before?, assignees?, labels?}`: with `board` and `title` adds a card; with `card` changes one (send only what changes). `status` is todo, doing, done or dropped; `before` is the card it goes before in its column ("" = the end). `assignees` replaces who is on the card: bot names, and "user" for the user (moving a card to doing adds you by itself). `labels` replaces the card's labels by name; a name the board doesn't have yet becomes a new label (reuse the board's labels shown by `board_get`). With `card` and a different `board`, the card moves to that board (same column unless `status` says otherwise, `before` places it there) keeping its id, comments, links, assignees, due date and images; its labels follow by name and a comment records the move. Archived boards take no cards. Images in the body are markdown with a /workspace path (`![screen](/workspace/shots/old.png)`) or an https URL; they are stored with the card.
+- `board_label_write {board, label, name?, color?}`: `label` is a label's name or id; `name` renames it, `color` recolors it (gray, red, orange, yellow, green, teal, blue, violet or pink). A `label` the board doesn't have is added, with `color` if given. The app shows the change at once.
 - `board_card_get {card}`: body, links, comments, and the images as /workspace paths you can open.
 - `board_comment {card, text}`: at most 500 characters.
 - `board_link {card, kind, ref, label?, remove?}`: `kind` plan, session, design (their id or title), pr or url (the URL), commit (the sha; `label` its message). Plans and sessions opened with `card` and their pull requests are linked by themselves.

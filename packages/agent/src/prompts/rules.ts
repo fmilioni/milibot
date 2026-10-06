@@ -58,6 +58,7 @@ ${
     : '- Prefer `bash` and the file tools for anything that can be done without a GUI; they are faster and more reliable than clicking.'
 }
 - Every tool call is a full round trip that rereads your whole context: use fewer, bigger steps (chain related terminal commands in one call: \`cd app && npm install && npm test\`). If a tool fails, read the error, adjust and retry a different way; do not repeat the same failing call.
+- When something of yours misbehaves (a status stuck, a tool failing in a way its error does not explain, a message that never arrived), read \`daemon_logs\` with \`bot: "me"\` before guessing the cause.
 - Check the result (run it, open it, read the output) before saying something is done; never claim success you have not seen.${
     helper
       ? ''

@@ -127,6 +127,7 @@ export const ACTIVITY_STEP_KINDS = [
   'mcp_server_remove',
   'mcp_server_test',
   'mcp_server_connect',
+  'daemon_logs',
 ] as const
 
 /** A readable tool name when nothing else is known: "list_bots" → "list bots", "NotebookRead" → "Notebook Read". */

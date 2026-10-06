@@ -66,6 +66,7 @@ import {
   RefreshCw,
   Rocket,
   ScanText,
+  ScrollText,
   Search,
   Send,
   Settings2,
@@ -207,6 +208,7 @@ const STEP_ICONS: Record<string, typeof Wrench> = {
   mcp_server_remove: Trash2,
   mcp_server_test: RefreshCw,
   mcp_server_connect: KeyRound,
+  daemon_logs: ScrollText,
 }
 
 /** Steps whose detail is a command or code, shown in monospace. */

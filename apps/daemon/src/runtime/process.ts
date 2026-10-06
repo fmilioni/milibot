@@ -5,7 +5,7 @@ import { fakeGenerateImages } from '@milibot/agent/images'
 import { type CloseBehavior, DEFAULT_VM_CONFIG, type LogFn, type WorkspaceEvent } from '@milibot/shared'
 
 import type { RuntimeConfig } from '../config/env'
-import { DAEMON_VERSION, workspacePaths } from '../config/paths'
+import { dataPaths, DAEMON_VERSION, workspacePaths } from '../config/paths'
 import type { Db } from '../db/sqlite'
 import { errorMessage } from '../errors'
 import { resolveGoldenImage } from '../golden/resolve'
@@ -126,6 +126,7 @@ export function createRuntimeFromConfig(
       closeBehavior: vmEnabled ? () => closeBehavior : undefined,
       version: DAEMON_VERSION,
       log,
+      daemonLogPath: dataPaths(config.dataRoot).daemonLog,
       overrides: {
         embeddings: {
           modelsDir,

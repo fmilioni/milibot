@@ -27,6 +27,10 @@ describe('global rules', () => {
     expect(prompt(true)).not.toContain('your own Linux user `bot-iris`')
   })
 
+  it('tells every bot to read its own daemon log before guessing why something of its misbehaved', () => {
+    for (const cc of [false, true]) expect(prompt(cc)).toContain('read `daemon_logs` with `bot: "me"`')
+  })
+
   it('keeps guidance for specific kinds of work in built-in skills, not in the core', () => {
     for (const cc of [false, true]) {
       for (const topic of ['browser_snapshot', 'screenshot_after', 'repo_checkout', 'plan_write', 'routine_'])

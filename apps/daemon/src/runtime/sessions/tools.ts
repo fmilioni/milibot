@@ -59,7 +59,8 @@ export class SessionTools extends ToolSwitch {
     if (plan && plan.status !== 'approved' && plan.status !== 'executing')
       return toolError(`The plan "${plan.title}" is not approved: submit it with plan_submit first.`)
     const planSession = plan?.sessionId ? this.deps.sessions.find(plan.sessionId) : null
-    if (plan && planSession && planSession.status !== 'idle')
+    // Only its own session left waiting gives way to a new one (start replaces it); another bot's stays.
+    if (plan && planSession && (planSession.status !== 'idle' || planSession.bot_id !== ctx.bot.id))
       return toolError(`The plan "${plan.title}" already runs in the work session ${plan.sessionId}.`)
     let projectId: string | null
     if (trimmedString(a.project)) {

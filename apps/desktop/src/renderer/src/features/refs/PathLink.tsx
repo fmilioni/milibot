@@ -49,7 +49,7 @@ export function PathLink({
       href={path}
       title={path}
       onClick={open}
-      className="focus-ring rounded-sm break-all text-accent underline underline-offset-2"
+      className="focus-ring rounded-sm text-accent underline underline-offset-2"
     >
       {label ?? path}
     </a>

@@ -35,18 +35,19 @@ const LINKS: Record<LinkKind, (props: LinkProps) => ReactNode> = {
   path: ({ token }) => <PathText path={token.href} variant="text" />,
 }
 
+/** The text split into strings and link elements (to combine with other passes such as `withMentions`). */
+export function linkifiedNodes(text: string): ReactNode[] {
+  return tokenize(text).map((token, i) => {
+    if (token.type === 'text') return token.text
+    const Link = LINKS[token.kind]
+    return <Link key={i} token={token} />
+  })
+}
+
 /**
  * Plain text with its links made clickable. Renders a fragment, so the caller's `truncate`,
  * `line-clamp` and `whitespace-pre-wrap` keep working.
  */
 export function LinkifiedText({ text }: { text: string }) {
-  return (
-    <>
-      {tokenize(text).map((token, i) => {
-        if (token.type === 'text') return token.text
-        const Link = LINKS[token.kind]
-        return <Link key={i} token={token} />
-      })}
-    </>
-  )
+  return <>{linkifiedNodes(text)}</>
 }

@@ -1,1 +1,1 @@
-export { type RefLookups, RefService } from './service'
+export { RefService } from './service'

@@ -27,7 +27,7 @@ function count(text: string, char: string): number {
 }
 
 /** Drops the sentence's punctuation after a URL or path, and a `)` that closes none of its own. */
-export function trimTrailing(raw: string): string {
+function trimTrailing(raw: string): string {
   let value = raw
   for (;;) {
     if (TRAILING_PUNCTUATION.test(value)) value = value.slice(0, -1)

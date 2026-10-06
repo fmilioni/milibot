@@ -8,7 +8,7 @@ interface Named {
 }
 
 /** Each domain's batch lookup of the items among `ids` that exist (one `IN (…)` query each). */
-export interface RefLookups {
+interface RefLookups {
   card(ids: readonly string[]): Array<Named & { boardId: string }>
   board(ids: readonly string[]): Named[]
   design(ids: readonly string[]): Named[]

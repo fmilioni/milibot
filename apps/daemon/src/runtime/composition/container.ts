@@ -88,8 +88,8 @@ import {
   resolveBotModelChange,
   resolveBotModelRequest,
 } from '../providers'
-import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
 import { RefService } from '../refs'
+import { readRepoInstructions, RepoTools, WorktreeStore } from '../repos'
 import { RoutineService, RoutineTools, routineVmGate } from '../routines'
 import { mergeAllowedForLane, SessionTools, WorkSessionService } from '../sessions'
 import { SetAsideService } from '../set-aside'

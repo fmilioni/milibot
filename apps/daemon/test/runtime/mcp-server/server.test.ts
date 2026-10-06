@@ -83,6 +83,7 @@ describe('McpToolServer', () => {
     expect(names).toContain('computer')
     expect(names).toContain('repo_checkout')
     expect(names).toContain('daemon_logs')
+    expect(names).toContain('vm_status')
     expect(names).not.toContain('bash')
     expect(names).not.toContain('create_bot')
 
@@ -153,6 +154,7 @@ describe('McpToolServer', () => {
     }
     const readOnly = await list(`${bot.id}:chat:sub:1`)
     expect(readOnly).toContain('daemon_logs')
+    expect(readOnly).toContain('vm_status')
     expect(readOnly.filter((name) => !(READ_ONLY_HELPER_TOOLS as readonly string[]).includes(name))).toEqual(
       [],
     )

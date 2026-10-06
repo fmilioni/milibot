@@ -135,19 +135,27 @@ describe('toolsForLane main', () => {
       'mcp_server_test',
       'mcp_server_connect',
       'daemon_logs',
+      'vm_status',
     ])
   })
 
-  it('offers daemon_logs in every lane, to read-only helpers and whatever skills are off', () => {
-    const names = (tools: Array<{ name: string }>) => tools.map((t) => t.name)
-    for (const lane of ['main', 'internal', 'session', 'subagent'] as const) {
-      expect(names(toolsForLane(lane, { enabledFamilies: new Set() }))).toContain('daemon_logs')
-      expect(names(toolsForLane(lane, { native: claudeCodeNative }))).toContain('daemon_logs')
-    }
-    expect(names(toolsForLane('subagent', { readOnly: true, native: claudeCodeNative }))).toContain(
-      'daemon_logs',
-    )
-    expect(toolFamily('daemon_logs')).toBeNull()
+  it.each(['daemon_logs', 'vm_status'])(
+    'offers %s in every lane, to read-only helpers and whatever skills are off',
+    (tool) => {
+      const names = (tools: Array<{ name: string }>) => tools.map((t) => t.name)
+      for (const lane of ['main', 'internal', 'session', 'subagent'] as const) {
+        expect(names(toolsForLane(lane, { enabledFamilies: new Set() }))).toContain(tool)
+        expect(names(toolsForLane(lane, { native: claudeCodeNative }))).toContain(tool)
+      }
+      expect(names(toolsForLane('subagent', { readOnly: true, native: claudeCodeNative }))).toContain(tool)
+      expect(toolFamily(tool)).toBeNull()
+    },
+  )
+
+  it('lets bots read the VM but never act on it', () => {
+    expect(TOOL_DEFINITIONS.vm_status.inputSchema.properties).toEqual({})
+    const vmActions = Object.keys(TOOL_DEFINITIONS).filter((name) => /(^|_)vm(_|$)/.test(name))
+    expect(vmActions).toEqual(['vm_status'])
   })
 
   it('gives each lane its own session tools', () => {

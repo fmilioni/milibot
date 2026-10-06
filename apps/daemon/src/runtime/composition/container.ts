@@ -64,6 +64,7 @@ import {
   LlmCallStore,
   ObservabilityRoutes,
   ToolCallStore,
+  VmStatusTools,
 } from '../observability'
 import { PlanService, PlanTools } from '../plans'
 import { ProcedureService } from '../procedures'
@@ -922,6 +923,12 @@ export function createContainer(options: ContainerOptions) {
       botName: (id) => store.bots.find(id)?.name ?? null,
       now,
       redact,
+    }),
+    new VmStatusTools({
+      admin: vmAdmin,
+      stats: vmStats,
+      botName: (id) => store.bots.find(id)?.name ?? null,
+      now,
     }),
   ]
   const tools = new ToolRegistry(toolProviders, redact)

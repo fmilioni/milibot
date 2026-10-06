@@ -331,7 +331,9 @@
       "mcp_server_connect": "Pediu login no servidor MCP “{{detail}}”",
       "mcp_server_connect_empty": "Pediu login em um servidor MCP",
       "daemon_logs": "Leu o log do Milibot: {{detail}}",
-      "daemon_logs_empty": "Leu o log do Milibot"
+      "daemon_logs_empty": "Leu o log do Milibot",
+      "vm_status": "Consultou o status da VM",
+      "vm_status_empty": "Consultou o status da VM"
     },
     "showDesign": "Ver design",
     "openDesign": "Abrir o design"

@@ -100,7 +100,7 @@ import {
   WorkspaceSettingsTools,
 } from '../settings'
 import { SetupRoutes } from '../setup'
-import { defaultBuiltinSkillsDir, SkillService, SkillTools } from '../skills'
+import { defaultBuiltinSkillsDir, readVmZip, SkillAdmin, SkillService, SkillTools } from '../skills'
 import { SpendGuard, SpendRoutes } from '../spend'
 import { githubGraphql, PullRequestStatusWatcher, TaskCardService, TaskCardTools } from '../tasks'
 import { TodoStore } from '../todos'
@@ -430,13 +430,14 @@ export function createContainer(options: ContainerOptions) {
     if (off.size === 0) return context
     return { ...context, families: new Set([...context.families].filter((f) => !off.has(f))) }
   }
+  const managesTeam = (bot: Bot) => skills.skillContext(bot).families.has('team')
   const groups = new GroupService({
     store,
     emit,
     appendMessage: append,
     updateMessage: update,
     deleteBot: (botId) => botsRef.get().delete(botId),
-    managesTeam: (bot) => skills.skillContext(bot).families.has('team'),
+    managesTeam,
     now,
   })
   groups.onConfirmed('continue_bot_exchange', ({ data }) => {
@@ -550,6 +551,7 @@ export function createContainer(options: ContainerOptions) {
 
   const mcpAdmin = new McpAdmin({
     mcp: externalMcp,
+    managesTeam,
     confirmations: {
       request: (input) => groups.requestConfirmation(input),
       onConfirmed: (action, handler) => groups.onConfirmed(action, handler),
@@ -563,6 +565,23 @@ export function createContainer(options: ContainerOptions) {
     appendMessage: append,
     updateMessage: update,
     pendingSignInCards: () => store.messages.cardsWith('mcp_sign_in', { status: 'pending' }),
+    timeoutSeconds: () => userRequests.timeoutSeconds(),
+    log,
+  })
+
+  const skillAdmin = new SkillAdmin({
+    skills,
+    confirmations: {
+      request: (input) => groups.requestConfirmation(input),
+      onConfirmed: (action, handler) => groups.onConfirmed(action, handler),
+      onRejected: (action, handler) => groups.onRejected(action, handler),
+      expire: (id) => groups.expireConfirmation(id),
+    },
+    host,
+    findBot: (id) => store.bots.find(id),
+    listBots: () => store.bots.list(),
+    managesTeam,
+    readVmZip: async (path) => (await readVmZip(await vm.guest(), path)).data,
     timeoutSeconds: () => userRequests.timeoutSeconds(),
     log,
   })
@@ -896,6 +915,8 @@ export function createContainer(options: ContainerOptions) {
       admin: mcpAdmin,
       store: externalMcp.store,
       listBots: () => store.bots.list(),
+      botServers: (botId) => externalMcp.botServers(botId),
+      managesTeam,
       secretNames: (bot) => credentials.secretsFor(bot).map((s) => s.name),
       secretValues: () => credentials.secretValues(),
     }),
@@ -908,6 +929,8 @@ export function createContainer(options: ContainerOptions) {
       engine: (bot, laneKey) => catalog.cliEngine(bot, sessionsRef.get().modelOfLane(laneKey)),
       notes: (slug) => (slug === 'code-and-repos' ? settings.pullRequestNote() : null),
       appendMessage: append,
+      admin: skillAdmin,
+      listBots: () => store.bots.list(),
     }),
     new RoutineTools({ routines, store, appendMessage: append, now }),
     new ProjectTools({ projects }),
@@ -1079,6 +1102,7 @@ export function createContainer(options: ContainerOptions) {
     { name: 'external MCP', start: () => externalMcp.start(), stop: () => externalMcp.stop() },
     { name: 'setting changes', stop: () => settingChanges.stop() },
     { name: 'MCP admin', start: () => mcpAdmin.start(), stop: () => mcpAdmin.stop() },
+    { name: 'skill admin', start: () => undefined, stop: () => skillAdmin.stop() },
     { name: 'credentials', start: () => credentials.start(), stop: () => credentials.stop() },
     { name: 'spend', start: () => spend.start(), stop: () => spend.stop() },
     { name: 'vm admin', stop: () => vmAdmin.close() },

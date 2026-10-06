@@ -246,7 +246,7 @@ export function originLines(
   return [
     {
       text: shortPath(
-        `${origin.localPath ?? ''}${origin.kind === 'zip' ? `#${origin.path || '.'}` : ''}`,
+        `${origin.localPath ?? origin.vmPath ?? ''}${origin.kind === 'zip' ? `#${origin.path || '.'}` : ''}`,
         platform,
       ),
       mono: true,

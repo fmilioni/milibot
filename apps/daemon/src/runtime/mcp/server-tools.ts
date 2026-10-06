@@ -9,7 +9,14 @@ import {
   ToolInputError,
   toolText,
 } from '@milibot/agent/tools'
-import { type Bot, type BotScope, type McpServer, type McpTransport, secretRefRegex } from '@milibot/shared'
+import {
+  type Bot,
+  type BotMcpServer,
+  type BotScope,
+  type McpServer,
+  type McpTransport,
+  secretRefRegex,
+} from '@milibot/shared'
 
 import { DaemonError } from '../../errors'
 import { resolveByRef, type ToolHandlers, ToolSwitch } from '../tools-core'
@@ -22,9 +29,13 @@ import { listText } from './texts'
 const MIN_KNOWN_SECRET = 8
 
 export interface McpServerToolsDeps {
-  admin: Pick<McpAdmin, 'list' | 'propose' | 'test' | 'connect'>
+  admin: Pick<McpAdmin, 'list' | 'propose' | 'proposeBot' | 'test' | 'connect'>
   store: Pick<McpStore, 'validate'>
   listBots: () => Bot[]
+  /** A bot's switches of the servers it is allowed on. */
+  botServers: (botId: string) => BotMcpServer[]
+  /** The bot has the team-management skill active (`bot_mcp_set`). */
+  managesTeam: (bot: Bot) => boolean
   /** Names of the secrets the bot can use by reference. */
   secretNames: (bot: Bot) => string[]
   /** Every secret value the workspace holds (plain values must not carry one). */
@@ -57,6 +68,7 @@ export class McpServerTools extends ToolSwitch {
         throw new ToolInputError(`${server.name} runs in the VM: only remote servers sign in`)
       return toolText(await this.deps.admin.connect(ctx, server.id))
     },
+    bot_mcp_set: (ctx, a) => this.botSet(ctx, a),
   }
 
   constructor(private readonly deps: McpServerToolsDeps) {
@@ -246,6 +258,56 @@ export class McpServerTools extends ToolSwitch {
       if (err instanceof TypeError) throw new ToolInputError('"url" is not a valid URL')
       throw err
     }
+  }
+
+  private bot(ctx: ToolExecContext, a: ToolArgs): Bot {
+    const ref = optionalString(a, 'bot')?.trim()
+    if (!ref) return ctx.bot
+    const match = resolveByRef(this.deps.listBots(), ref, {
+      id: (b) => b.id,
+      names: (b) => [b.name, b.slug],
+      ambiguous: { exact: 'first', partial: 'report' },
+    })
+    if ('found' in match) return match.found
+    throw new ToolInputError(`No single bot matches "${ref}" (use list_bots)`)
+  }
+
+  /** `bot_mcp_set`: a bot's own server switches, confirmed by the user (also for the caller itself). */
+  private async botSet(ctx: ToolExecContext, a: ToolArgs): Promise<ToolResult> {
+    if (!this.deps.managesTeam(ctx.bot))
+      throw new ToolInputError('Only a bot that manages the team (team-management skill on) can do this.')
+    const target = this.bot(ctx, a)
+    const enable = stringListArg(a, 'enable').map((ref) => this.server({ server: ref }))
+    const disable = stringListArg(a, 'disable').map((ref) => this.server({ server: ref }))
+    if (enable.length + disable.length === 0)
+      throw new ToolInputError('Give the servers to turn on ("enable") or off ("disable").')
+    const both = enable.filter((s) => disable.some((d) => d.id === s.id))
+    if (both.length)
+      throw new ToolInputError(`${both.map((s) => s.name).join(', ')}: both in "enable" and "disable"`)
+    const prefs = new Map(this.deps.botServers(target.id).map((p) => [p.serverId, p]))
+    const changes: Array<{ server: McpServer; on: boolean; allow: boolean }> = []
+    const already: string[] = []
+    for (const [servers, on] of [
+      [enable, true],
+      [disable, false],
+    ] as const) {
+      for (const server of servers) {
+        if (changes.some((c) => c.server.id === server.id)) continue
+        const allowed = McpStore.allows(server.allowedBots, target.id)
+        if (!on && !allowed) {
+          already.push(server.name)
+          continue
+        }
+        if (allowed && prefs.get(server.id)?.enabled === on) {
+          already.push(server.name)
+          continue
+        }
+        changes.push({ server, on, allow: on && !allowed })
+      }
+    }
+    if (changes.length === 0)
+      return toolText(`Nothing to change: ${already.join(', ')} already as asked for ${target.name}.`)
+    return toolText(await this.deps.admin.proposeBot(ctx, target, changes, this.reason(a)))
   }
 
   private async add(ctx: ToolExecContext, a: ToolArgs): Promise<ToolResult> {

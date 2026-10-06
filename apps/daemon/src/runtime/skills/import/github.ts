@@ -13,6 +13,19 @@ import { discoverSkillDirs, type Found, under, validation, zipFiles } from './sc
 /** Largest GitHub archive downloaded for a scan. */
 const GITHUB_ZIP_MAX_BYTES = 50 * 1024 * 1024
 
+/** A scanned commit: what a later scan reads again to get the very same files. */
+export interface GithubPin {
+  repo: string
+  ref: string
+  sha: string
+  scope: string | null
+}
+
+export interface GithubScan {
+  found: Found[]
+  pin: GithubPin
+}
+
 export interface GithubSkillsDeps {
   /** REST API base (tests point it at a local server). */
   api: string
@@ -125,10 +138,7 @@ export class GithubSkills {
    * The skills at a repository address (`owner/repo[/tree/<ref>[/<path>]]`), downloaded to `target`. A ref
    * with slashes is found by moving path segments into it while GitHub answers "ref not found".
    */
-  async skills(
-    url: string,
-    target: string,
-  ): Promise<{ found: Found[]; repo: string; ref: string; sha: string }> {
+  async skills(url: string, target: string): Promise<GithubScan> {
     const location = parseGithubSkillUrl(url)
     if (!location) throw validation('Not a GitHub repository address.', 'invalid_url')
     const token = await this.deps.token()
@@ -151,7 +161,18 @@ export class GithubSkills {
         path = rest.length ? rest.join('/') : null
       }
     }
-    await this.download(repo, sha, token, target)
+    return this.skillsAt({ repo, ref, sha, scope: path }, target, { token, rootName: location.repo })
+  }
+
+  /** The skills of a commit already resolved (`scope`: the folder searched, null = the whole repo). */
+  async skillsAt(
+    pin: GithubPin,
+    target: string,
+    known: { token: string | null; rootName: string } | null = null,
+  ): Promise<GithubScan> {
+    const { repo, ref, sha, scope } = pin
+    const auth = known ? known.token : await this.deps.token()
+    await this.download(repo, sha, auth, target)
     let reader: ZipReader
     try {
       reader = await ZipReader.open(target)
@@ -160,15 +181,16 @@ export class GithubSkills {
     }
     const { files, rejected } = zipFiles(reader, true)
     if (rejected.length) this.deps.log?.('warn', 'skill import: unsafe zip entries skipped', { rejected })
+    const name = known?.rootName ?? (repo.split('/').at(-1) as string)
     const found = discoverSkillDirs(
       files.map((f) => f.path),
-      path,
+      scope,
     ).map((dir): Found => ({
       key: dir || '.',
-      folderName: dir ? basename(dir) : location.repo,
+      folderName: dir ? basename(dir) : name,
       files: under(files, dir),
       origin: { kind: 'github', repo, ref, sha, path: dir },
     }))
-    return { found, repo, ref, sha }
+    return { found, pin }
   }
 }

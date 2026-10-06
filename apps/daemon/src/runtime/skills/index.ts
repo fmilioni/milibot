@@ -1,3 +1,5 @@
+export { SkillAdmin } from './admin'
+export { readVmZip } from './import/vm-zip'
 export { defaultBuiltinSkillsDir } from './library'
 export { SkillService } from './service'
 export { SkillTools } from './tools'

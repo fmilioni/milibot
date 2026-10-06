@@ -10,7 +10,7 @@ import { SidebarSection } from '../chat/sidebar'
 import { Design, DesignFrame } from '../designs/designs'
 import { KnowledgeDoc, KnowledgeIndexStatus } from '../knowledge/knowledge'
 import { OfficeStatus } from '../knowledge/office'
-import { McpServer } from '../mcp/mcp'
+import { BotMcpServer, McpServer } from '../mcp/mcp'
 import { CliUsage } from '../models/cli'
 import { Procedure } from '../procedures/procedures'
 import { Routine } from '../routines/routines'
@@ -82,6 +82,8 @@ export const WorkspaceEvent = z.discriminatedUnion('type', [
   /** Config, tools or connection state. */
   event('mcp.server.updated', z.object({ server: McpServer })),
   event('mcp.server.deleted', z.object({ serverId: z.string() })),
+  /** A bot's switches of one server. */
+  event('mcp.bot_server.updated', z.object({ botId: z.string(), server: BotMcpServer })),
   event('procedure.updated', z.object({ procedure: Procedure })),
   event('procedure.deleted', z.object({ procedureId: z.string() })),
   event('skill.updated', z.object({ skill: Skill })),

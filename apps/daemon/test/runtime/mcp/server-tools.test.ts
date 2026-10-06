@@ -1,6 +1,6 @@
 import type { ToolExecContext, ToolResult } from '@milibot/agent'
 import { makeBot } from '@milibot/agent/testing'
-import type { ConfirmationPayload, McpServer, Message } from '@milibot/shared'
+import type { BotMcpServer, ConfirmationPayload, McpServer, Message } from '@milibot/shared'
 import { describe, expect, it, vi } from 'vitest'
 
 import { DaemonError } from '../../../src/errors'
@@ -18,18 +18,27 @@ const ctx = {
 
 const text = (result: ToolResult) => result.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
 
-function setup(servers: McpServer[] = []) {
+function setup(servers: McpServer[] = [], options: { manager?: boolean; prefs?: BotMcpServer[] } = {}) {
   const propose = vi.fn(async (..._args: unknown[]) => 'proposed')
+  const proposeBot = vi.fn(async (..._args: unknown[]) => 'proposed for a bot')
   const tools = new McpServerTools({
-    admin: { list: () => servers, propose, test: async () => 'tested', connect: async () => 'connected' },
+    admin: {
+      list: () => servers,
+      propose,
+      proposeBot,
+      test: async () => 'tested',
+      connect: async () => 'connected',
+    },
     store: { validate: () => undefined },
     listBots: () => [bot, other],
+    botServers: () => options.prefs ?? [],
+    managesTeam: () => options.manager ?? true,
     secretNames: () => ['API_KEY'],
     secretValues: () => ['s3cret-value-123', 'short'],
   })
   const run = (name: string, args: unknown) =>
     tools.execute(ctx, { id: 'c1', name, arguments: args as Record<string, unknown> })
-  return { propose, run }
+  return { propose, proposeBot, run }
 }
 
 describe('McpServerTools', () => {
@@ -301,7 +310,95 @@ describe('McpServerTools', () => {
   })
 })
 
+describe('bot_mcp_set', () => {
+  const notion = { id: 'mcp_1', name: 'Notion', slug: 'notion', allowedBots: ['bot_2'], tools: [] }
+  const linear = { id: 'mcp_2', name: 'Linear', slug: 'linear', allowedBots: 'all', tools: [] }
+  const servers = [notion, linear] as unknown as McpServer[]
+
+  it('is only for bots that manage the team, even on themselves', async () => {
+    const { run, proposeBot } = setup(servers, { manager: false })
+    expect(text(await run('bot_mcp_set', { enable: ['linear'] }))).toMatch(/manages the team/)
+    expect(proposeBot).not.toHaveBeenCalled()
+  })
+
+  it('asks for every change, marks access the approval grants and skips what is already so', async () => {
+    const prefs = [{ serverId: 'mcp_2', enabled: false, disabledTools: [] }]
+    const { run, proposeBot } = setup(servers, { prefs })
+    expect(text(await run('bot_mcp_set', { enable: ['notion', 'linear'] }))).toBe('proposed for a bot')
+    expect(proposeBot).toHaveBeenCalledWith(
+      ctx,
+      bot,
+      [
+        { server: notion, on: true, allow: true },
+        { server: linear, on: true, allow: false },
+      ],
+      '',
+    )
+    expect(text(await run('bot_mcp_set', { bot: 'iris', disable: ['notion'] }))).toBe('proposed for a bot')
+    expect(proposeBot.mock.calls[1]?.[1]).toBe(other)
+    expect(text(await run('bot_mcp_set', { disable: ['linear', 'notion'] }))).toMatch(/Nothing to change/)
+    expect(text(await run('bot_mcp_set', {}))).toMatch(/"enable"/)
+    expect(proposeBot).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('McpAdmin', () => {
+  it('applies a bot change only on approval, giving access first', async () => {
+    const handlers = new Map<string, ConfirmationHandler>()
+    const server = { id: 'mcp_1', name: 'Notion', enabled: true, allowedBots: ['bot_1'], tools: [] }
+    const updateServer = vi.fn(async (_id: string, body: { allowedBots: string[] }) => ({
+      ...server,
+      ...body,
+    }))
+    const setBotServer = vi.fn()
+    let manager = true
+    const admin = new McpAdmin({
+      mcp: {
+        listServers: () => [server],
+        getServer: () => server,
+        updateServer,
+        setBotServer,
+      } as never,
+      confirmations: {
+        request: () =>
+          ({ payload: { type: 'confirmation', confirmationId: 'cnf_1' } as ConfirmationPayload }) as Message,
+        onConfirmed: (action, handler) => handlers.set(action, handler),
+        onRejected: vi.fn(),
+      },
+      host: { enqueueTurn: vi.fn() },
+      findBot: (id) => [bot, other].find((b) => b.id === id) ?? null,
+      listBots: () => [bot, other],
+      managesTeam: () => manager,
+      cardConversation: () => 'conv_1',
+      resolveSecretRefs: (_bot, value) => value,
+      appendMessage: vi.fn(),
+      updateMessage: vi.fn(),
+      pendingSignInCards: () => [],
+      timeoutSeconds: () => 600,
+      log: () => undefined,
+    })
+    const waiting = admin.proposeBot(ctx, other, [{ server: server as unknown as McpServer, on: true, allow: true }], '')
+    expect(updateServer).not.toHaveBeenCalled()
+    expect(setBotServer).not.toHaveBeenCalled()
+    const input = {
+      confirmationId: 'cnf_1',
+      requesterId: bot.id,
+      conversationId: 'conv_1',
+      params: { botId: other.id, botName: other.name },
+      data: {
+        proposal: { kind: 'bot', botId: other.id, changes: [{ serverId: 'mcp_1', on: true, allow: true }] },
+      },
+    }
+    handlers.get('bot_mcp')?.(input)
+    await expect(waiting).resolves.toMatch(/MCP servers of Iris: Notion on/)
+    expect(updateServer).toHaveBeenCalledWith('mcp_1', { allowedBots: ['bot_1', 'bot_2'] })
+    expect(setBotServer).toHaveBeenCalledWith('bot_2', 'mcp_1', { enabled: true })
+
+    manager = false
+    expect(() => handlers.get('bot_mcp')?.(input)).toThrow(DaemonError)
+    expect(setBotServer).toHaveBeenCalledTimes(1)
+  })
+
   it('tells the waiting bot when the server of an approved change was deleted meanwhile', async () => {
     const handlers = new Map<string, ConfirmationHandler>()
     const enqueueTurn = vi.fn()
@@ -320,6 +417,7 @@ describe('McpAdmin', () => {
       host: { enqueueTurn },
       findBot: () => bot,
       listBots: () => [bot],
+      managesTeam: () => true,
       cardConversation: () => 'conv_1',
       resolveSecretRefs: (_bot, value) => value,
       appendMessage: vi.fn(),
@@ -361,6 +459,7 @@ describe('McpAdmin', () => {
       host: { enqueueTurn: vi.fn() },
       findBot: () => bot,
       listBots: () => [bot],
+      managesTeam: () => true,
       cardConversation: () => 'conv_1',
       resolveSecretRefs: (_bot, value) => value,
       appendMessage: vi.fn(),

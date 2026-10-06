@@ -11,6 +11,9 @@ export type ConfirmationAction =
   | 'mcp_update'
   | 'mcp_remove'
   | 'workspace_settings'
+  | 'skill_import'
+  | 'bot_skills'
+  | 'bot_mcp'
 
 export interface ConfirmationRow {
   id: string

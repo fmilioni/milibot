@@ -161,10 +161,7 @@ function compilesTo(source: SourceElement, el: Element): boolean {
 const indexOf = (el: Element) => Array.prototype.indexOf.call(el.parentElement?.children ?? [], el)
 
 /** The source elements along a page trail (`trailOf`), or null when they don't line up. */
-function sourceTrail(
-  source: readonly SourceElement[],
-  page: readonly Element[],
-): SourceElement[] | null {
+function sourceTrail(source: readonly SourceElement[], page: readonly Element[]): SourceElement[] | null {
   const trail: SourceElement[] = []
   let siblings = source
   for (const el of page) {

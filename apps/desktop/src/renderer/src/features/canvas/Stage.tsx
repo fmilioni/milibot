@@ -169,6 +169,13 @@ export function Stage({
     d.art ? [{ draftId: d.draftId, name: bots[d.botId]?.name ?? '…', color: colorOf(d.botId) }] : [],
   )
 
+  // The comment box is portalled out of the stage, but React still bubbles its events up to here.
+  const onStage =
+    <E extends React.SyntheticEvent<HTMLDivElement>>(handler: (event: E) => void) =>
+    (event: E) => {
+      if (event.target instanceof Node && event.currentTarget.contains(event.target)) handler(event)
+    }
+
   const onContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault()
     const hit = hitTest(rects, worldAt(event))
@@ -199,27 +206,28 @@ export function Stage({
       role="application"
       aria-label={t('canvas.stageLabel', { name: design.name })}
       aria-roledescription={t('canvas.stageRole')}
-      {...stageHandlers}
-      onPointerDown={(event) => {
+      onPointerDown={onStage((event) => {
         if (comment.onPointerDown(event, space)) return
         if (event.button === 0 && !space) comment.close()
         stageHandlers.onPointerDown(event)
-      }}
-      onPointerMove={(event) => {
+      })}
+      onPointerMove={onStage((event) => {
         comment.onPointerMove(event)
         stageHandlers.onPointerMove(event)
-      }}
+      })}
+      onPointerUp={stageHandlers.onPointerUp}
+      onPointerCancel={stageHandlers.onPointerCancel}
       onPointerLeave={comment.onPointerLeave}
       // A pick focuses the comment box; the mouse down that follows must not take the focus back.
-      onMouseDown={(event) => {
+      onMouseDown={onStage((event) => {
         if (comment.active || (onComment && event.altKey)) event.preventDefault()
-      }}
-      onContextMenu={onContextMenu}
-      onDoubleClick={(event) => {
+      })}
+      onContextMenu={onStage(onContextMenu)}
+      onDoubleClick={onStage((event) => {
         if (comment.active) return
         const hit = hitTest(rects, worldAt(event))
         if (hit) onZoomToFrame(hit)
-      }}
+      })}
       className={`relative min-h-0 flex-1 touch-none overflow-hidden bg-surface outline-none select-none ${cursor}`}
     >
       {viewport && (

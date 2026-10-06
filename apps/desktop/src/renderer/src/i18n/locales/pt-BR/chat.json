@@ -333,7 +333,13 @@
       "daemon_logs": "Leu o log do Milibot: {{detail}}",
       "daemon_logs_empty": "Leu o log do Milibot",
       "vm_status": "Consultou o status da VM",
-      "vm_status_empty": "Consultou o status da VM"
+      "vm_status_empty": "Consultou o status da VM",
+      "skill_import": "Pediu para importar skills de {{detail}}",
+      "skill_import_empty": "Pediu para importar skills",
+      "bot_skills_set": "Pediu para mudar as skills de {{detail}}",
+      "bot_skills_set_empty": "Pediu para mudar as próprias skills",
+      "bot_mcp_set": "Pediu para mudar os servidores MCP de {{detail}}",
+      "bot_mcp_set_empty": "Pediu para mudar os próprios servidores MCP"
     },
     "showDesign": "Ver design",
     "openDesign": "Abrir o design"
@@ -368,7 +374,12 @@
       "workspace_settings": "{{name}} quer alterar configurações do workspace",
       "mcp_add": "{{name}} quer adicionar o servidor MCP {{serverName}}",
       "mcp_update": "{{name}} quer alterar o servidor MCP {{serverName}}",
-      "mcp_remove": "{{name}} quer remover o servidor MCP {{serverName}}"
+      "mcp_remove": "{{name}} quer remover o servidor MCP {{serverName}}",
+      "skill_import": "{{name}} quer importar skills de {{source}}",
+      "bot_skills": "{{name}} quer mudar as skills de {{botName}}",
+      "bot_skills_own": "{{name}} quer mudar as próprias skills",
+      "bot_mcp": "{{name}} quer mudar os servidores MCP de {{botName}}",
+      "bot_mcp_own": "{{name}} quer mudar os próprios servidores MCP"
     },
     "status": {
       "pending": "Aguardando",
@@ -384,12 +395,18 @@
       "workspace_settings": "Aplicar",
       "mcp_add": "Adicionar",
       "mcp_update": "Alterar",
-      "mcp_remove": "Remover"
+      "mcp_remove": "Remover",
+      "skill_import": "Importar",
+      "bot_skills": "Aplicar",
+      "bot_mcp": "Aplicar"
     },
     "rejectActions": {
       "continue_bot_exchange": "Parar",
       "mcp_add": "Recusar",
-      "mcp_update": "Recusar"
+      "mcp_update": "Recusar",
+      "skill_import": "Recusar",
+      "bot_skills": "Recusar",
+      "bot_mcp": "Recusar"
     },
     "statusActions": {
       "continue_bot_exchange": {
@@ -407,6 +424,18 @@
       "mcp_remove": {
         "approved": "Você removeu",
         "rejected": "Você manteve"
+      },
+      "skill_import": {
+        "approved": "Você aprovou a importação",
+        "rejected": "Você recusou"
+      },
+      "bot_skills": {
+        "approved": "Você aplicou",
+        "rejected": "Você recusou"
+      },
+      "bot_mcp": {
+        "approved": "Você aplicou",
+        "rejected": "Você recusou"
       }
     },
     "settings": {
@@ -437,7 +466,34 @@
       "on": "Sim",
       "off": "Não",
       "keep": "mantém o valor salvo",
-      "secret": "segredo {{name}}"
+      "secret": "segredo {{name}}",
+      "tools_one": "{{count}} ferramenta: {{names}}",
+      "tools_other": "{{count}} ferramentas: {{names}}",
+      "noTools": "Nenhuma ferramenta listada ainda",
+      "allow": "Também dá acesso ao servidor para {{botName}}",
+      "turnOn": "Ligar",
+      "turnOff": "Desligar"
+    },
+    "skills": {
+      "source": "Origem",
+      "githubSource": "{{repo}} no commit {{sha}} ({{ref}})",
+      "skills": "Skills",
+      "bots": "Para",
+      "allBots": "Todos os bots",
+      "files_one": "{{count}} arquivo · {{size}}",
+      "files_other": "{{count}} arquivos · {{size}}",
+      "update": "atualiza a skill importada antes",
+      "renamed": "entra como {{name}}, porque o nome já existe",
+      "scripts": "Tem scripts que os bots podem rodar na VM",
+      "unlocks": "Ferramentas liberadas",
+      "none": "nenhuma",
+      "declared": "O SKILL.md pede {{families}}, mas skills importadas nunca liberam ferramentas",
+      "on": "Ligar",
+      "off": "Desligar",
+      "families_one": "Libera {{families}} ({{count}} ferramenta)",
+      "families_other": "Libera {{families}} ({{count}} ferramentas)",
+      "noFamilies": "Não libera ferramentas",
+      "allow": "Também dá acesso à skill para {{botName}}"
     }
   },
   "error": {

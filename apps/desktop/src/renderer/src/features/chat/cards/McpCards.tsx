@@ -84,6 +84,51 @@ export function McpChangeDetails({ details }: { details: string }) {
   )
 }
 
+/** The `details` param of a `bot_mcp` confirmation. */
+interface BotMcpDetailsJson {
+  changes?: Array<{ server: string; on: boolean; tools: string[]; allow: boolean }>
+}
+
+const SHOWN_TOOLS = 8
+
+/** What a change of a bot's MCP servers asks to approve: each switch and the tools the server brings. */
+export function BotMcpDetails({ details, botName }: { details: string; botName: string }) {
+  const { t } = useTranslation()
+  let parsed: BotMcpDetailsJson | null = null
+  try {
+    parsed = JSON.parse(details) as BotMcpDetailsJson
+  } catch {
+    return null
+  }
+  if (!Array.isArray(parsed?.changes) || parsed.changes.length === 0) return null
+  return (
+    <ul className="flex flex-col gap-2 rounded-lg bg-surface-3 px-3 py-2 text-sm">
+      {parsed.changes.map((change) => {
+        const tools = Array.isArray(change.tools) ? change.tools : []
+        const names = tools.slice(0, SHOWN_TOOLS).join(', ') + (tools.length > SHOWN_TOOLS ? ', …' : '')
+        return (
+          <li key={change.server} className="flex flex-col gap-0.5">
+            <span className="text-fg">
+              <span className="text-fg-muted">
+                {t(change.on ? 'chat.confirmation.mcp.turnOn' : 'chat.confirmation.mcp.turnOff')}
+              </span>{' '}
+              <span className="font-semibold">{change.server}</span>
+            </span>
+            <span className="break-words text-fg-secondary">
+              {tools.length
+                ? t('chat.confirmation.mcp.tools', { count: tools.length, names })
+                : t('chat.confirmation.mcp.noTools')}
+            </span>
+            {change.allow && (
+              <span className="text-warning">{t('chat.confirmation.mcp.allow', { botName })}</span>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 const STATUS_CLASS: Record<McpSignInPayload['status'], string> = {
   pending: 'bg-accent-soft text-accent',
   connected: 'bg-success-soft text-success',

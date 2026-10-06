@@ -1,4 +1,7 @@
-export type LinkKind = 'url'
+import { isWorkspaceFilePath, REF_ID_PATTERN, WORKSPACE_PATH_PATTERN } from '@milibot/shared'
+
+/** `ref`: an id of the app (`bcd_…`); `path`: a file under `/workspace/`. */
+export type LinkKind = 'url' | 'ref' | 'path'
 
 export interface LinkToken {
   type: 'link'
@@ -23,12 +26,13 @@ function count(text: string, char: string): number {
   return text.split(char).length - 1
 }
 
-function trimUrl(raw: string): string {
-  let url = raw
+/** Drops the sentence's punctuation after a URL or path, and a `)` that closes none of its own. */
+export function trimTrailing(raw: string): string {
+  let value = raw
   for (;;) {
-    if (TRAILING_PUNCTUATION.test(url)) url = url.slice(0, -1)
-    else if (url.endsWith(')') && count(url, ')') > count(url, '(')) url = url.slice(0, -1)
-    else return url
+    if (TRAILING_PUNCTUATION.test(value)) value = value.slice(0, -1)
+    else if (value.endsWith(')') && count(value, ')') > count(value, '(')) value = value.slice(0, -1)
+    else return value
   }
 }
 
@@ -36,12 +40,30 @@ const urlMatcher: Matcher = {
   kind: 'url',
   pattern: /(?<![\p{L}\p{N}_])https?:\/\/[^\s<>"]+/gu,
   toToken: (raw) => {
-    const url = trimUrl(raw)
+    const url = trimTrailing(raw)
     return URL.canParse(url) ? { text: url, href: url } : null
   },
 }
 
-const DEFAULT_MATCHERS: readonly Matcher[] = [urlMatcher]
+const refMatcher: Matcher = {
+  kind: 'ref',
+  pattern: REF_ID_PATTERN,
+  toToken: (raw) => ({ text: raw, href: raw }),
+}
+
+const pathMatcher: Matcher = {
+  kind: 'path',
+  pattern: WORKSPACE_PATH_PATTERN,
+  toToken: (raw) => {
+    const path = trimTrailing(raw)
+    return isWorkspaceFilePath(path) ? { text: path, href: path } : null
+  },
+}
+
+const DEFAULT_MATCHERS: readonly Matcher[] = [urlMatcher, refMatcher, pathMatcher]
+
+/** Ids and paths only (markdown finds its own URLs). */
+export const REF_MATCHERS: readonly Matcher[] = [refMatcher, pathMatcher]
 
 interface Found {
   index: number

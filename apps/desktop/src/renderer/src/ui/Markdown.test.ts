@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { Markdown } from './Markdown'
+import { RefLinkContext, type RefLinkRenderers } from './RefLinks'
 
 const bots = [
   { id: 'b1', name: 'Analyst' },
@@ -98,5 +99,80 @@ describe('Markdown reveal decorations', () => {
       createElement(Markdown, { text: 'hi', copyLabel: 'c', copiedLabel: 'd' }),
     )
     expect(html).not.toContain('stream-caret')
+  })
+})
+
+describe('Markdown ids and /workspace paths', () => {
+  const ULID = '01m41qvydqnjxef4ax623he0my'
+  const card = `bcd_${ULID}`
+  const renderers: RefLinkRenderers = {
+    renderRef: (id, label) => createElement('a', { 'data-ref': id }, label ?? `name of ${id}`),
+    renderPath: (path, variant, label) =>
+      createElement('a', { 'data-path': path, 'data-variant': variant }, label ?? path),
+  }
+  const render = (text: string, withProvider = true) => {
+    const markdown = createElement(Markdown, { text, copyLabel: 'Copy', copiedLabel: 'Copied' })
+    return renderToStaticMarkup(
+      withProvider ? createElement(RefLinkContext.Provider, { value: renderers }, markdown) : markdown,
+    )
+  }
+
+  it('links ids in text, lists, tables and emphasis', () => {
+    const html = render(`Card ${card}.\n\n- **brd_${ULID}**\n\n| a |\n|---|\n| plan_${ULID} |`)
+    expect(html).toContain(`<a data-ref="${card}">name of ${card}</a>.`)
+    expect(html).toContain(`<strong><a data-ref="brd_${ULID}">`)
+    expect(html).toContain(`<a data-ref="plan_${ULID}">`)
+  })
+
+  it('keeps ids in code as code', () => {
+    const html = render(`\`${card}\`\n\n\`\`\`\n${card}\n\`\`\``)
+    expect(html).not.toContain('data-ref')
+    expect(html).toContain(card)
+  })
+
+  it('leaves tool names and other ids as text', () => {
+    expect(render(`plan_submit and msg_${ULID}`)).not.toContain('data-ref')
+  })
+
+  it('takes a label written for an id or a path', () => {
+    const html = render(`[the card](${card}) and [notes](/workspace/a/NOTES.md)`)
+    expect(html).toContain(`<a data-ref="${card}">the card</a>`)
+    expect(html).toContain('<a data-path="/workspace/a/NOTES.md" data-variant="text">notes</a>')
+  })
+
+  it('links /workspace paths in text and in inline code', () => {
+    const html = render('Saved to /workspace/a/NOTES.md. See `/workspace/b.png` and `/home/agent/x`')
+    expect(html).toContain(
+      '<a data-path="/workspace/a/NOTES.md" data-variant="text">/workspace/a/NOTES.md</a>.',
+    )
+    expect(html).toContain('<a data-path="/workspace/b.png" data-variant="chip">')
+    expect(html).not.toContain('data-path="/home')
+    expect(html).toContain('/home/agent/x')
+  })
+
+  it('keeps external links external', () => {
+    const html = render('[site](https://example.com) https://example.org')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('href="https://example.org"')
+  })
+
+  it('shows plain text without the provider', () => {
+    const html = render(`Card ${card} at /workspace/a.md`, false)
+    expect(html).toContain(`Card ${card} at /workspace/a.md`)
+    expect(html).not.toContain('<a')
+  })
+
+  it('keeps the fade of streamed text around an id', () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        RefLinkContext.Provider,
+        { value: renderers },
+        createElement(Markdown, {
+          text: `See ${card} now`,
+          reveal: { chunks: [{ start: 34, born: 7 }], caret: false },
+        }),
+      ),
+    )
+    expect(html).toContain('<span data-reveal-born="7"> now</span>')
   })
 })

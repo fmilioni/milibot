@@ -2,6 +2,8 @@ import type { MouseEvent, ReactNode } from 'react'
 
 import { type LinkKind, type LinkToken, tokenize } from '@/lib/linkify'
 
+import { PathText, RefText } from './RefLinks'
+
 interface LinkProps {
   token: LinkToken
 }
@@ -27,7 +29,11 @@ function UrlLink({ token }: LinkProps) {
   )
 }
 
-const LINKS: Record<LinkKind, (props: LinkProps) => ReactNode> = { url: UrlLink }
+const LINKS: Record<LinkKind, (props: LinkProps) => ReactNode> = {
+  url: UrlLink,
+  ref: ({ token }) => <RefText id={token.href} />,
+  path: ({ token }) => <PathText path={token.href} variant="text" />,
+}
 
 /**
  * Plain text with its links made clickable. Renders a fragment, so the caller's `truncate`,

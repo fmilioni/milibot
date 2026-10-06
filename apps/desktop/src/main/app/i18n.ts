@@ -57,6 +57,13 @@ export const MAIN_STRINGS = {
     stopServiceConfirm: 'Parar e sair',
     stopServiceCancel: 'Cancelar',
     stopServiceFailed: 'O serviço em segundo plano não parou a tempo. Tente de novo em instantes.',
+    botsWorkingOne: '1 bot está trabalhando agora.',
+    botsWorkingOther: '{count} bots estão trabalhando agora.',
+    shutdownBusyTitle: 'Desligar com bots trabalhando?',
+    shutdownBusyDetail:
+      'Desligar agora interrompe o trabalho deles. Se você permitir, o Milibot fecha para o desligamento continuar; se o sistema já tiver desistido, desligue de novo.',
+    shutdownKeepWorking: 'Continuar trabalhando',
+    shutdownAllow: 'Permitir desligar',
     notifyConfirmation: 'Precisa da sua confirmação: {reason}',
     notifyConfirmationShort: 'Precisa da sua confirmação',
     notifyPromptApproval: 'Quer mudar o prompt de {botName}. Aprove ou recuse.',
@@ -132,6 +139,13 @@ export const MAIN_STRINGS = {
     stopServiceConfirm: 'Stop and Quit',
     stopServiceCancel: 'Cancel',
     stopServiceFailed: 'The background service did not stop in time. Try again in a moment.',
+    botsWorkingOne: '1 bot is working right now.',
+    botsWorkingOther: '{count} bots are working right now.',
+    shutdownBusyTitle: 'Shut down while bots are working?',
+    shutdownBusyDetail:
+      'Shutting down now interrupts their work. If you allow it, Milibot quits so the shutdown can go on; if the system already gave up, shut down again.',
+    shutdownKeepWorking: 'Keep Working',
+    shutdownAllow: 'Allow Shutdown',
     notifyConfirmation: 'Needs your confirmation: {reason}',
     notifyConfirmationShort: 'Needs your confirmation',
     notifyPromptApproval: 'Wants to change the prompt of {botName}. Approve or decline.',
@@ -165,6 +179,13 @@ export function mainText(
   return MAIN_STRINGS[language][key].replace(/\{(\w+)\}/g, (match, name: string) =>
     name in params ? String(params[name]) : match,
   )
+}
+
+/** "N bots are working right now." */
+export function botsWorkingText(language: Language, count: number): string {
+  return count === 1
+    ? mainText(language, 'botsWorkingOne')
+    : mainText(language, 'botsWorkingOther', { count })
 }
 
 export function systemLanguage(locale: string): Language {

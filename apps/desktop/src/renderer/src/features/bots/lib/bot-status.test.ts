@@ -1,10 +1,11 @@
+import { isBusyStatus } from '@milibot/shared'
 import i18next, { type TFunction } from 'i18next'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import en from '@/i18n/locales/en'
 import ptBR from '@/i18n/locales/pt-BR'
 
-import { botStatusLabel, isBusyStatus, nextStatusDetail, statusActivity, waitingForUser } from './bot-status'
+import { botStatusLabel, nextStatusDetail, statusActivity, waitingForUser } from './bot-status'
 
 // Portuguese on purpose: asserts the pt-BR status labels.
 

@@ -1,6 +1,6 @@
 import { type CloseBehavior, firstBot, type IdleWatchFallback, type WorkspaceSummary } from '@milibot/shared'
 import { FolderOpen, Trash2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppStore, useCurrentWorkspace } from '@/features/workspace/store'
@@ -18,6 +18,7 @@ import { TextInput } from '@/ui/TextInput'
 
 import { AttachmentLimitRow } from './AttachmentLimitRow'
 import { BackupRows } from './BackupSection'
+import { ComputerCard } from './ComputerCard'
 import { SettingsCard, SettingsPage, SettingsRow } from './SettingsLayout'
 import { useWorkspacePreferences } from './store'
 
@@ -102,50 +103,6 @@ export function DeleteWorkspaceDialog({
       onConfirm={() => deleteWorkspace(workspace.id)}
       onClose={onClose}
     />
-  )
-}
-
-/**
- * App-wide (not per workspace): the daemon starts when the user logs in. Hidden where the platform has no
- * login item (`getLoginItem` → null).
- */
-function ComputerCard() {
-  const { t } = useTranslation()
-  const showToast = useAppStore((s) => s.showToast)
-  const [enabled, setEnabled] = useState<boolean | null | undefined>(undefined)
-  useEffect(() => {
-    let active = true
-    window.milibot
-      .getLoginItem()
-      .then((value) => active && setEnabled(value))
-      .catch(() => active && setEnabled(false))
-    return () => {
-      active = false
-    }
-  }, [])
-  if (enabled === null) return null
-  const change = (value: boolean) => {
-    const previous = enabled
-    setEnabled(value)
-    window.milibot
-      .setLoginItem(value)
-      .then(setEnabled)
-      .catch(() => {
-        setEnabled(previous)
-        showToast('error')
-      })
-  }
-  return (
-    <SettingsCard title={t('settings.general.thisComputer')}>
-      <SettingsRow label={t('settings.general.launchAtLogin')} hint={t('settings.general.launchAtLoginHint')}>
-        <Switch
-          checked={enabled ?? false}
-          disabled={enabled === undefined}
-          label={t('settings.general.launchAtLogin')}
-          onChange={change}
-        />
-      </SettingsRow>
-    </SettingsCard>
   )
 }
 

@@ -57,6 +57,12 @@
     "thisComputer": "Este computador",
     "launchAtLogin": "Iniciar o Milibot em segundo plano ao entrar no computador",
     "launchAtLoginHint": "Rotinas rodam mesmo sem abrir o app",
+    "keepAwake": "Não deixar o computador suspender enquanto os bots trabalham",
+    "keepAwakeHint": {
+      "mac": "Vale para todos os workspaces enquanto o app estiver aberto. A tela pode apagar; fechar a tampa ou suspender pelo menu ainda suspende. Ao desligar com bots trabalhando, o app pede confirmação.",
+      "windows": "Vale para todos os workspaces enquanto o app estiver aberto. A tela pode apagar; fechar a tampa ou suspender pelo menu ainda suspende. Ao desligar com bots trabalhando, o Windows mostra o app na lista dos que impedem o desligamento.",
+      "linux": "Vale para todos os workspaces enquanto o app estiver aberto. A tela pode apagar; fechar a tampa ou suspender pelo menu ainda suspende."
+    },
     "data": "Dados",
     "folder": "Pasta do workspace",
     "reveal": "Mostrar no Finder",

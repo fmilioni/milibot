@@ -1,5 +1,5 @@
 import { type ApiClient, byRecentlyOpened, type Language, type WorkspaceSummary } from '@milibot/shared'
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, powerMonitor } from 'electron'
 
 import { releaseUserControl, releaseWorkspaces } from '../daemon/control-release'
 import type { DaemonManager } from '../daemon/manager'
@@ -9,13 +9,15 @@ import { AppTray } from '../menus/tray'
 import { APP_ID } from '../platform/app-id'
 import { hasStatusNotifierWatcher, userNamespacesRestricted } from '../platform/host/probe'
 import { appLoginItem } from '../platform/login-item'
+import type { KeepAwakeGuard } from '../services/keep-awake/guard'
 import type { VncBridge } from '../services/vnc-bridge'
 import { hardenWebContents } from '../windows/hardening'
 import { onWindowClosed, onWorkspaceReleased, windowCount, workspaceIds } from '../windows/registry'
 import { onVmWindowClosed } from '../windows/vm'
 import { openWorkspace, openWorkspaceWindow } from '../windows/workspace'
-import { mainText } from './i18n'
+import { botsWorkingText, mainText } from './i18n'
 import type { AppSettingsWatcher } from './settings'
+import { shutdownDecision } from './shutdown'
 
 /** Screens the user holds go back to their bots when the app quits: nobody is left to drive them. */
 const QUIT_RELEASE_TIMEOUT_MS = 1_500
@@ -60,6 +62,7 @@ export interface LifecycleDeps {
   daemon: DaemonManager
   settings: AppSettingsWatcher
   vncBridge: VncBridge
+  keepAwake: Pick<KeepAwakeGuard, 'state'>
 }
 
 /**
@@ -75,14 +78,16 @@ export class AppLifecycle {
 
   start(): void {
     const { daemon, settings, vncBridge } = this.deps
-    installAppMenu(daemon, settings.language)
+    const busyBots = () => this.deps.keepAwake.state.busyBots
+    installAppMenu(daemon, settings.language, busyBots)
     settings.onLanguage((language) => {
-      installAppMenu(daemon, language)
+      installAppMenu(daemon, language, busyBots)
       this.tray?.setLanguage(language)
     })
     this.watchWindows()
     this.startTray()
     this.stopDaemonAtSessionEnd()
+    this.askBeforeShutdown()
 
     app.on('second-instance', () => this.bringBack())
     app.on('activate', () => {
@@ -198,7 +203,7 @@ export class AppLifecycle {
         showLogs,
         quit: () => {
           if (daemon.external) app.quit()
-          else void confirmAndStopService(daemon, settings.language)
+          else void confirmAndStopService(daemon, settings.language, this.deps.keepAwake.state.busyBots)
         },
       },
       settings.language,
@@ -209,7 +214,9 @@ export class AppLifecycle {
   /**
    * Windows ends a session without signalling windowless processes, so the daemon and its VMs would be
    * killed like a power cut. Every window receives the end-of-session messages (a hidden one keeps
-   * that working while only the tray is up), and the first one asks the daemon to stop.
+   * that working while only the tray is up), and the first one asks the daemon to stop. While bots
+   * work, the query is blocked instead (`shutdownDecision`): Windows then lists the app among those
+   * keeping it from shutting down, and only the user going on anyway (`session-end`) stops the daemon.
    */
   private stopDaemonAtSessionEnd(): void {
     if (process.platform !== 'win32') return
@@ -220,10 +227,48 @@ export class AppLifecycle {
       this.deps.daemon.requestShutdown()
     }
     app.on('browser-window-created', (_event, window) => {
-      window.on('query-session-end', stop)
+      window.on('query-session-end', (event) => {
+        if (shutdownDecision('win32', this.deps.keepAwake.state.active, event.reasons) === 'block')
+          event.preventDefault()
+        else stop()
+      })
       window.on('session-end', stop)
     })
     if (this.tray)
       new BrowserWindow({ show: false, skipTaskbar: true, focusable: false, width: 1, height: 1 })
+  }
+
+  /**
+   * macOS: a shutdown, restart or logout while bots work is cancelled (`preventDefault` makes Electron
+   * ignore the system's terminate) and the user is asked. Allowing it quits the app, which lets a
+   * shutdown still waiting for it go on.
+   */
+  private askBeforeShutdown(): void {
+    if (process.platform !== 'darwin') return
+    let asking = false
+    // electron.d.ts types this listener without its event, which Electron passes and lets prevent.
+    const onShutdown = (event: Electron.Event) => {
+      const { active, busyBots } = this.deps.keepAwake.state
+      if (shutdownDecision('darwin', active) !== 'ask') return
+      event.preventDefault()
+      if (asking) return
+      asking = true
+      const language = this.deps.settings.language
+      void dialog
+        .showMessageBox({
+          type: 'warning',
+          message: mainText(language, 'shutdownBusyTitle'),
+          detail: `${botsWorkingText(language, busyBots)} ${mainText(language, 'shutdownBusyDetail')}`,
+          buttons: [mainText(language, 'shutdownKeepWorking'), mainText(language, 'shutdownAllow')],
+          defaultId: 0,
+          cancelId: 0,
+        })
+        .then(({ response }) => {
+          if (response === 1) app.quit()
+        })
+        .catch((err: unknown) => console.warn('[main] shutdown dialog failed', err))
+        .finally(() => (asking = false))
+    }
+    powerMonitor.on('shutdown', onShutdown as unknown as () => void)
   }
 }

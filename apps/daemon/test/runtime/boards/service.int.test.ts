@@ -15,13 +15,14 @@ import { bootRuntime, type RuntimeHarness, stopRuntimes } from '../../support/ru
 import { useTempDir } from '../../support/temp'
 import { until } from '../../support/wait'
 
+// Portuguese on purpose: the move comment follows a pt-BR workspace.
 let h: RuntimeHarness
 
 const dir = useTempDir('boards')
 afterEach(stopRuntimes)
 
-async function boot() {
-  h = await bootRuntime({ dir: dir(), fallback: { text: 'ok' }, host: { compaction: false } })
+async function boot(options: { language?: 'pt-BR' } = {}) {
+  h = await bootRuntime({ dir: dir(), fallback: { text: 'ok' }, host: { compaction: false }, ...options })
   await until(() => h.vm?.status().state === 'running', 8000)
 }
 
@@ -481,6 +482,16 @@ describe('moving a card to another board', () => {
     expect(h.events.filter((e) => e.type === 'board.cards.updated').map((e) => e.payload.boardId)).toEqual(
       expect.arrayContaining([from.id, to.id]),
     )
+  })
+
+  it("records the move in the user's language", async () => {
+    await boot({ language: 'pt-BR' })
+    const a = await h.call<BoardDetail>('createBoard', {}, { title: 'A' })
+    const b = await h.call<BoardDetail>('createBoard', {}, { title: 'B' })
+    const card = await h.call<BoardCard>('createBoardCard', { boardId: a.id }, { title: 'Card' })
+    await h.call('moveBoardCardToBoard', { boardId: a.id, cardId: card.id }, { toBoardId: b.id })
+    const detail = await h.call<BoardCardDetail>('getBoardCard', { boardId: b.id, cardId: card.id })
+    expect(detail.comments.map((c) => c.body)).toEqual(['Movido de "A" para "B".'])
   })
 
   it('moves for the user to a chosen column and refuses archived boards', async () => {

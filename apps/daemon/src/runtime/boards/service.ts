@@ -17,6 +17,7 @@ import {
   type BoardListFilter,
   type BoardPayload,
   type Bot,
+  type Language,
   type LogFn,
   type Message,
   type MessagePayload,
@@ -41,6 +42,11 @@ function nextLabelColor(labels: ReadonlyArray<Pick<BoardLabel, 'color'>>): Board
   return BOARD_LABEL_COLORS.slice(1).reduce((best, color) => (uses(color) < uses(best) ? color : best), 'red')
 }
 
+// Portuguese on purpose: the move comment is written into the card in the user's language.
+function movedNote(from: string, to: string, language: Language): string {
+  return language === 'pt-BR' ? `Movido de "${from}" para "${to}".` : `Moved from "${from}" to "${to}".`
+}
+
 export interface BoardServiceDeps {
   db: Db
   vm: Pick<VmController, 'status' | 'subscribe' | 'runningGuest' | 'guest'>
@@ -55,6 +61,8 @@ export interface BoardServiceDeps {
   /** The work session a conversation belongs to (pull requests opened there go to its card). */
   sessionOfConversation?: (conversationId: string) => string | null
   imageFetch?: (url: string, init?: RequestInit) => Promise<Response>
+  /** Language of the notes the app writes on cards (the move comment). */
+  userLanguage?: () => Language
   now: () => number
   log?: LogFn
 }
@@ -435,10 +443,21 @@ export class BoardService implements BoardCardLinks {
       const image = this.store.image(from.id, sha)
       return image ? [this.images.placeIn(to, image)] : []
     })
-    this.store.moveCardToBoard(id, to.id, status, options.index ?? Number.MAX_SAFE_INTEGER, images)
+    this.store.moveCardToBoard(
+      id,
+      to.id,
+      status,
+      options.index ?? Number.MAX_SAFE_INTEGER,
+      images,
+      keepLabels,
+    )
     if (status === 'doing' && card.status !== 'doing' && options.author.botId)
       this.store.addAssignee(id, options.author.botId)
-    this.store.addComment(id, options.author, `Moved from "${from.title}" to "${to.title}".`)
+    this.store.addComment(
+      id,
+      options.author,
+      movedNote(from.title, to.title, this.deps.userLanguage?.() ?? 'en'),
+    )
     if (images.length) this.images.kick()
     this.changed(from.id, { cards: true })
     this.changed(to.id, { cards: true })

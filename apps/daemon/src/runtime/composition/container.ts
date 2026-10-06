@@ -632,6 +632,7 @@ export function createContainer(options: ContainerOptions) {
       },
       appendMessage: append,
       updateMessage: update,
+      userLanguage: () => settings.userLanguage(),
       emit,
       sessionOfConversation: (conversationId) =>
         sessionsRef.get().forConversation(conversationId)?.sessionId ?? null,

@@ -18,6 +18,7 @@ import { pidAlive } from '@milibot/vm-host'
 import { app } from 'electron'
 
 import type { DaemonConnection } from '../../bridge/contract'
+import { rotateLog } from '../services/logging/log-file'
 import { type DaemonCommand, daemonEnvironment, packagedDaemon, pathKey } from './command'
 import { appPaths, dataRoot } from './paths'
 import { shutdownDaemon } from './shutdown'
@@ -27,6 +28,8 @@ const START_TIMEOUT_MS = 20_000
 const EXTERNAL_WAIT_MS = 60_000
 const POLL_MS = 250
 const STOP_TIMEOUT_MS = 90_000
+/** The daemon's log moves to `daemon.log.1` past this size, when the app starts a daemon. */
+const DAEMON_LOG_MAX_BYTES = 20 * 1024 * 1024
 
 function usesPackagedDaemon(): boolean {
   return app.isPackaged && !process.env.MILIBOT_DAEMON_ENTRY
@@ -185,6 +188,11 @@ function spawnDaemon(): void {
   if (cwd && !existsSync(cwd)) throw new Error(`Daemon directory not found: ${cwd}`)
   const paths = appPaths()
   mkdirSync(paths.logsDir, { recursive: true })
+  try {
+    rotateLog(paths.daemonLog, DAEMON_LOG_MAX_BYTES)
+  } catch {
+    // A file another process still holds open (Windows) is appended to as it is.
+  }
   const log = openSync(paths.daemonLog, 'a')
   try {
     const child = spawn(command, args, {

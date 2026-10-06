@@ -30,6 +30,7 @@ export const ACTIVITY_STEP_KINDS = [
   'mcp',
   'note',
   'list_bots',
+  'get_bot',
   'create_bot',
   'update_bot',
   'delete_bot',

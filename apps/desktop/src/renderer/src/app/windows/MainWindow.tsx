@@ -10,6 +10,7 @@ import { CanvasScreen } from '@/features/canvas/CanvasScreen'
 import { ChatPanel } from '@/features/chat/ChatPanel'
 import { DesignsScreen } from '@/features/designs/DesignsScreen'
 import { FilesScreen } from '@/features/files/FilesScreen'
+import { RefLinkProvider } from '@/features/refs/RefLinkProvider'
 import { SessionScreen } from '@/features/sessions/SessionScreen'
 import { SettingsScreen } from '@/features/settings/SettingsScreen'
 import { SetupScreen } from '@/features/setup/SetupScreen'
@@ -68,18 +69,20 @@ export function MainWindow() {
   if (phase === 'error') return <BootScreen error={bootError} onRetry={() => void boot()} />
 
   return (
-    <div className="relative flex h-full">
-      {inSetup ? (
-        <Area name="setup" className={CENTER}>
-          <SetupScreen />
-        </Area>
-      ) : (
-        <WindowScreen />
-      )}
-      <ModalHost />
-      <ReconnectingBanner />
-      <Toaster />
-    </div>
+    <RefLinkProvider>
+      <div className="relative flex h-full">
+        {inSetup ? (
+          <Area name="setup" className={CENTER}>
+            <SetupScreen />
+          </Area>
+        ) : (
+          <WindowScreen />
+        )}
+        <ModalHost />
+        <ReconnectingBanner />
+        <Toaster />
+      </div>
+    </RefLinkProvider>
   )
 }
 

@@ -33,6 +33,8 @@
   },
   "debug": "Debug and costs",
   "settings": "Settings",
+  "keepAwake_one": "Keeping the computer awake: {{count}} bot working",
+  "keepAwake_other": "Keeping the computer awake: {{count}} bots working",
   "usageSince": "{{cost}} since {{time}} · {{tokens}} tokens",
   "resetCounter": "Reset counter",
   "counterHint": "Click to reset the counter (history is kept)",

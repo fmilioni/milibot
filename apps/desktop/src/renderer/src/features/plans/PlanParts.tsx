@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { planTone } from '@/features/plans/lib/plans'
 import { cn } from '@/lib/cn'
+import { LinkifiedText } from '@/ui/LinkifiedText'
 import { StatusChip } from '@/ui/Tag'
 
 export function PlanStatusChip({ status }: { status: PlanStatus }) {
@@ -66,10 +67,18 @@ export function PlanStepList({ steps }: { steps: PlanStep[] }) {
                       : 'text-fg'
                 }
               >
-                {step.title}
+                <LinkifiedText text={step.title} />
               </span>
-              {step.detail && <span className="text-sm text-fg-secondary">{step.detail}</span>}
-              {step.note && <span className="text-sm text-fg-muted italic">{step.note}</span>}
+              {step.detail && (
+                <span className="text-sm text-fg-secondary">
+                  <LinkifiedText text={step.detail} />
+                </span>
+              )}
+              {step.note && (
+                <span className="text-sm text-fg-muted italic">
+                  <LinkifiedText text={step.note} />
+                </span>
+              )}
             </div>
           </li>
         )

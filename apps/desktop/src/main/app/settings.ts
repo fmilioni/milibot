@@ -3,6 +3,7 @@ import {
   type AppSettings,
   AUTH_QUERY_PARAM,
   createApiClient,
+  DEFAULT_APP_SETTINGS,
   EVENTS_PATH,
   type Language,
   type ThemePreference,
@@ -47,17 +48,19 @@ export interface AppSettingsWatcherDeps {
 
 /**
  * The app settings main follows (language for menus, tray, dialogs and notifications; theme for window
- * backgrounds), from the daemon's app WebSocket. The renderer's theme changes come through `setTheme`.
- * Also relays the workspace list events of that socket.
+ * backgrounds; whether to keep the computer awake), from the daemon's app WebSocket. The renderer's theme
+ * changes come through `setTheme`. Also relays the workspace list events of that socket.
  */
 export class AppSettingsWatcher {
   private currentLanguage: Language
   private currentTheme: ThemePreference = 'system'
+  private currentKeepAwake = DEFAULT_APP_SETTINGS.keepAwake
   private socket: WebSocket | null = null
   private retry = 0
   private timer: ReturnType<typeof setTimeout> | null = null
   private readonly languageListeners = new Set<(language: Language) => void>()
   private readonly themeListeners = new Set<(theme: ThemePreference) => void>()
+  private readonly keepAwakeListeners = new Set<(keepAwake: boolean) => void>()
   private readonly workspaceListeners = new Set<WorkspaceListener>()
 
   constructor(private readonly deps: AppSettingsWatcherDeps) {
@@ -72,12 +75,20 @@ export class AppSettingsWatcher {
     return this.currentTheme
   }
 
+  get keepAwake(): boolean {
+    return this.currentKeepAwake
+  }
+
   onLanguage(listener: (language: Language) => void): void {
     this.languageListeners.add(listener)
   }
 
   onTheme(listener: (theme: ThemePreference) => void): void {
     this.themeListeners.add(listener)
+  }
+
+  onKeepAwake(listener: (keepAwake: boolean) => void): void {
+    this.keepAwakeListeners.add(listener)
   }
 
   onWorkspaces(listener: WorkspaceListener): void {
@@ -88,9 +99,13 @@ export class AppSettingsWatcher {
     void this.connect()
   }
 
-  apply(settings: Partial<Pick<AppSettings, 'language' | 'theme'>>): void {
+  apply(settings: Partial<Pick<AppSettings, 'language' | 'theme' | 'keepAwake'>>): void {
     this.setLanguage(settings.language ?? this.deps.fallbackLanguage)
     if (settings.theme) this.setTheme(settings.theme)
+    if (settings.keepAwake !== undefined && settings.keepAwake !== this.currentKeepAwake) {
+      this.currentKeepAwake = settings.keepAwake
+      for (const listener of this.keepAwakeListeners) listener(settings.keepAwake)
+    }
   }
 
   setTheme(theme: ThemePreference): void {

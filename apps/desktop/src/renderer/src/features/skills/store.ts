@@ -118,8 +118,11 @@ export const useSkillsStore = create<SkillsState>()((set, get) => {
     },
 
     openSkill(skillId) {
+      const app = useAppStore.getState()
+      // Scope it first, or the screen's first load() switches workspaces and drops the skill just opened.
+      if (app.workspaceId) forWorkspace(app.workspaceId)
       set({ detailId: skillId })
-      if (skillId) useAppStore.getState().openSettings('skills')
+      if (skillId) app.openSettings('skills')
     },
 
     openImport: (paths = []) => set({ importing: { paths } }),

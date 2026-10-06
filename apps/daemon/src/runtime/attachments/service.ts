@@ -15,7 +15,7 @@ import type { EndpointHandlers } from '../../handlers'
 import type { VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
 import { FilesScreen } from './files-screen'
-import { COPY_CHUNK_BYTES, maxFileMb } from './limits'
+import { COPY_CHUNK_BYTES, maxFileMb, MB } from './limits'
 import { MentionedImages } from './mentioned-images'
 import { AttachmentEvents } from './notify'
 import { ShareFileTools } from './share-file'
@@ -37,6 +37,8 @@ export interface AttachmentServiceDeps {
   now: () => number
   /** Where exported copies go (default: `$TMPDIR/milibot-attachments`). */
   exportDir?: string
+  /** Where copies of `/workspace` files opened from links go (default: `$TMPDIR/milibot-vm-files`). */
+  vmFilesDir?: string
   copyChunkBytes?: number
   log?: LogFn
 }
@@ -59,7 +61,14 @@ export class AttachmentService {
     this.uploads = new AttachmentUploads({ ...deps, attachments, events, copyChunkBytes })
     const stagingPath = (id: string) => this.uploads.stagingPath(id)
     this.mentioned = new MentionedImages({ ...deps, attachments, stagingPath, copyChunkBytes })
-    this.files = new FilesScreen({ ...deps, attachments, events, stagingPath, copyChunkBytes })
+    this.files = new FilesScreen({
+      ...deps,
+      attachments,
+      events,
+      stagingPath,
+      copyChunkBytes,
+      maxFileBytes: () => this.maxFileMb() * MB,
+    })
     this.tools = new ShareFileTools({ ...deps, attachments, events, copyChunkBytes })
   }
 
@@ -104,7 +113,7 @@ export class AttachmentService {
     return this.mentioned.attach(turn)
   }
 
-  handlers(): EndpointHandlers<keyof typeof attachmentEndpoints> {
+  handlers(): EndpointHandlers<keyof typeof attachmentEndpoints | 'exportWorkspaceFile'> {
     const { uploads, files } = this
     return {
       createAttachment: ({ params, body }) => uploads.create(params.conversationId, body),
@@ -115,6 +124,7 @@ export class AttachmentService {
         return { ok: true as const }
       },
       exportAttachment: ({ params }) => files.export(params.attachmentId),
+      exportWorkspaceFile: ({ body }) => files.exportPath(body.path),
       listFiles: ({ query }) => files.list(query),
       renameFile: ({ params, body }) => files.rename(params.attachmentId, body.name),
       deleteFile: async ({ params }) => {

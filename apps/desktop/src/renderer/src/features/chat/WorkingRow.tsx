@@ -1,9 +1,9 @@
-import type { Bot } from '@milibot/shared'
+import { type Bot, isBusyStatus } from '@milibot/shared'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
-import { botStatusLabel, isBusyStatus, statusActivity } from '@/features/bots/lib/bot-status'
+import { botStatusLabel, statusActivity } from '@/features/bots/lib/bot-status'
 import { openDesignFor } from '@/features/canvas/store'
 import { toastOnError, useAppStore } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'

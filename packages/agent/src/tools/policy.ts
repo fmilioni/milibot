@@ -54,6 +54,7 @@ export const TOOL_FAMILIES = {
   routines: [...routineTools.names],
   secrets: ['request_secret', 'list_secrets'],
   team: [
+    'get_bot',
     'create_bot',
     'update_bot',
     'delete_bot',

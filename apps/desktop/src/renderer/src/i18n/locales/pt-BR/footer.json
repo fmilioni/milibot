@@ -33,6 +33,8 @@
   },
   "debug": "Debug e custos",
   "settings": "Configurações",
+  "keepAwake_one": "Mantendo o computador acordado: {{count}} bot trabalhando",
+  "keepAwake_other": "Mantendo o computador acordado: {{count}} bots trabalhando",
   "usageSince": "{{cost}} desde {{time}} · {{tokens}} tokens",
   "resetCounter": "Zerar contador",
   "counterHint": "Clique para zerar o contador (o histórico continua guardado)",

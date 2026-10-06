@@ -10,6 +10,7 @@ import { MetaText } from '@/ui/MetaText'
 import { Tooltip } from '@/ui/Tooltip'
 
 import { ActiveWorkLine } from './ActiveWorkLine'
+import { KeepAwakeIndicator } from './KeepAwakeIndicator'
 import { UsageCards } from './UsageCards'
 import { VmStatusLine } from './VmStatusLine'
 
@@ -87,6 +88,7 @@ export function SidebarFooter() {
           />
         )}
         <div className="flex shrink-0 items-center gap-3 text-fg-secondary">
+          <KeepAwakeIndicator />
           <Tooltip content={t('footer.debug')}>
             <button
               type="button"

@@ -28,6 +28,7 @@ describe('toolsForLane main', () => {
     const withoutTeam = new Set([...all].filter((f) => f !== 'team'))
     expect(names(toolsForLane('main', { enabledFamilies: all }))).toEqual(
       expect.arrayContaining([
+        'get_bot',
         'create_bot',
         'update_bot',
         'delete_bot',
@@ -39,6 +40,7 @@ describe('toolsForLane main', () => {
     )
     const member = names(toolsForLane('main', { enabledFamilies: withoutTeam }))
     for (const name of [
+      'get_bot',
       'create_bot',
       'update_bot',
       'delete_bot',
@@ -67,6 +69,7 @@ describe('toolsForLane main', () => {
       'browser_wait_for',
       'browser_tabs',
       'list_bots',
+      'get_bot',
       'create_bot',
       'update_bot',
       'update_own_prompt',

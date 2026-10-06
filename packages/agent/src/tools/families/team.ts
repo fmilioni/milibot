@@ -7,11 +7,38 @@ const avatarSchema = { type: 'object' }
 const STR = { type: 'string' } as const
 const NAMES = { type: 'array', items: STR } as const
 
+/** Exact replacements in a role section (`update_own_prompt`, `update_bot`), applied in order, all or none. */
+const personaPatchSchema = {
+  type: 'array',
+  description: 'Exact replacements in the current role section, applied in order.',
+  items: {
+    type: 'object',
+    properties: {
+      old_text: {
+        type: 'string',
+        description: 'Exact current text; empty appends new_text at the end.',
+      },
+      new_text: { type: 'string' },
+    },
+    required: ['new_text'],
+  },
+}
+
 const definitions = {
   list_bots: {
     name: 'list_bots',
     description: 'List the bots of this workspace (name, label, role summary, status, model).',
     inputSchema: { type: 'object', properties: {} },
+  },
+  get_bot: {
+    name: 'get_bot',
+    description:
+      'A bot (by id or name) with its whole role section, to read before changing it with update_bot.',
+    inputSchema: {
+      type: 'object',
+      properties: { bot: { type: 'string' } },
+      required: ['bot'],
+    },
   },
   create_bot: {
     name: 'create_bot',
@@ -32,7 +59,9 @@ const definitions = {
   },
   update_bot: {
     name: 'update_bot',
-    description: 'Change a bot (by id or name): name, label, system prompt, model or avatar.',
+    description:
+      'Change a bot (by id or name): name, label, role section (whole "system_prompt" or exact "patch"), ' +
+      'model or avatar.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -40,6 +69,7 @@ const definitions = {
         name: { type: 'string' },
         label: { type: 'string' },
         system_prompt: { type: 'string' },
+        patch: personaPatchSchema,
         reason: { type: 'string' },
         model: { type: 'string' },
         avatar: avatarSchema,
@@ -64,21 +94,7 @@ const definitions = {
           type: 'string',
           description: "The complete new role section (replaces the current one), in the user's language.",
         },
-        patch: {
-          type: 'array',
-          description: 'Exact replacements in the current role section, applied in order.',
-          items: {
-            type: 'object',
-            properties: {
-              old_text: {
-                type: 'string',
-                description: 'Exact current text; empty appends new_text at the end.',
-              },
-              new_text: { type: 'string' },
-            },
-            required: ['new_text'],
-          },
-        },
+        patch: personaPatchSchema,
         reason: {
           type: 'string',
           description: 'What the user asked that motivates the change, in one sentence.',
@@ -149,6 +165,8 @@ export const teamTools = defineTools({
     switch (name) {
       case 'list_bots':
         return { kind: name, detail: '' }
+      case 'get_bot':
+        return { kind: name, detail: scalarText(a.bot) }
       case 'create_bot':
       case 'update_bot':
         return { kind: name, detail: scalarText(a.name) || scalarText(a.bot) }
@@ -169,6 +187,7 @@ export const teamTools = defineTools({
     }
   },
   labels: {
+    get_bot: "read a bot's role section",
     update_own_prompt: 'updated own prompt',
     set_model: 'changed model',
     skill_import: 'skill import',

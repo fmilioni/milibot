@@ -63,4 +63,69 @@ describe('tokenize', () => {
       text('\ntwo'),
     ])
   })
+
+  describe('ids and /workspace paths', () => {
+    const ULID = '01m41qvydqnjxef4ax623he0my'
+    const card = `bcd_${ULID}`
+    const of = (value: string) =>
+      tokenize(value).flatMap((t) => (t.type === 'link' ? [`${t.kind}:${t.text}`] : []))
+
+    it('links every id kind the app opens', () => {
+      for (const prefix of [
+        'bcd',
+        'brd',
+        'dsg',
+        'dfr',
+        'plan',
+        'wses',
+        'kdoc',
+        'prj',
+        'skill',
+        'rtn',
+        'cnv',
+        'bot',
+      ])
+        expect(of(`see ${prefix}_${ULID}.`)).toEqual([`ref:${prefix}_${ULID}`])
+    })
+
+    it('splits the text around an id', () => {
+      expect(tokenize(`Card ${card}, done`)).toEqual([
+        text('Card '),
+        { type: 'link', kind: 'ref', text: card, href: card },
+        text(', done'),
+      ])
+    })
+
+    it('leaves tool names, slugs, other ids and malformed ids as text', () => {
+      expect(of('plan_submit board_card_get bot-theo skill_load')).toEqual([])
+      expect(of(`msg_${ULID} att_${ULID} ${card}x ${card.toUpperCase()} x${card}`)).toEqual([])
+    })
+
+    it('links /workspace file paths without the sentence punctuation', () => {
+      expect(of('Saved to /workspace/milibot/design/NOTES.md.')).toEqual([
+        'path:/workspace/milibot/design/NOTES.md',
+      ])
+      expect(of('(see /workspace/a/b.png), then')).toEqual(['path:/workspace/a/b.png'])
+      expect(of('"/workspace/a.txt"')).toEqual(['path:/workspace/a.txt'])
+    })
+
+    it('leaves folders, dot segments and other roots as text', () => {
+      expect(of('/workspace/milibot/ /workspace/../etc/passwd /home/agent/x.md /tmp/workspace/x')).toEqual([])
+    })
+
+    it('leaves an id in inline code as text, as markdown keeps code as code', () => {
+      expect(of(`run \`${card}\` or \`see ${card} too\``)).toEqual([])
+      expect(of(`\`${card}\` and ${card}`)).toEqual([`ref:${card}`])
+      expect(of(`a \` before ${card}`)).toEqual([`ref:${card}`])
+      expect(of('open `/workspace/x.md`')).toEqual(['path:/workspace/x.md'])
+    })
+
+    it('mixes URLs, ids and paths in order', () => {
+      expect(of(`https://a.example.com/x ${card} /workspace/x.md`)).toEqual([
+        'url:https://a.example.com/x',
+        `ref:${card}`,
+        'path:/workspace/x.md',
+      ])
+    })
+  })
 })

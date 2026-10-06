@@ -64,11 +64,12 @@ export function isSafeToOpen(
   }
 }
 
-const EXPORT_FOLDERS = new Set(['milibot-knowledge', 'milibot-attachments'])
+const EXPORT_FOLDERS = new Set(['milibot-knowledge', 'milibot-attachments', 'milibot-vm-files'])
 
 /**
  * "Download" only copies files the daemon exported for download (`<tmp>/milibot-knowledge/<id>/<name>`,
- * `<tmp>/milibot-attachments/<id>/<name>`), never an arbitrary path the renderer names.
+ * `<tmp>/milibot-attachments/<id>/<name>`, `<tmp>/milibot-vm-files/<hash>/<name>`), never an arbitrary path
+ * the renderer names.
  */
 export function isExportedFile(path: string, stat: (p: string) => { isFile(): boolean } = statSync): boolean {
   if (!isAbsolute(path) || normalize(path) !== path) return false

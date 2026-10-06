@@ -7,7 +7,7 @@ import {
   newId,
 } from '@milibot/shared'
 
-import { bool, type Db, parseJson } from '../../db/sqlite'
+import { bool, type Db, parseJson, sqlList } from '../../db/sqlite'
 import { DaemonError, notFound } from '../../errors'
 import type { BotStore } from '../bots/store'
 import { type MessageRow, toMessage } from '../messages/store'
@@ -50,6 +50,19 @@ export class ConversationStore {
     private readonly bots: BotStore,
     private readonly now: () => number = Date.now,
   ) {}
+
+  /** The conversations among `ids` (deleted ones left out), with their current members. */
+  refs(
+    ids: readonly string[],
+  ): Array<{ id: string; type: ConversationType; title: string | null; memberBotIds: string[] }> {
+    if (!ids.length) return []
+    const rows = this.db
+      .prepare(
+        `SELECT id, type, title FROM conversations WHERE id IN (${sqlList(ids)}) AND deleted_at IS NULL`,
+      )
+      .all(...ids) as Array<{ id: string; type: ConversationType; title: string | null }>
+    return rows.map((row) => ({ ...row, memberBotIds: this.memberBotIds(row.id) }))
+  }
 
   private memberBotIds(conversationId: string): string[] {
     const rows = this.db

@@ -1,12 +1,5 @@
-import type { Bot } from '@milibot/shared'
+import { type Bot, isBusyStatus } from '@milibot/shared'
 import type { TFunction } from 'i18next'
-
-/** Statuses in which the bot is busy on a turn; the UI reads all of them as "working". */
-const BUSY_STATUSES: ReadonlySet<string> = new Set(['thinking', 'working', 'talking', 'effort'])
-
-export function isBusyStatus(status: string | null | undefined): boolean {
-  return BUSY_STATUSES.has(status ?? '')
-}
 
 /** Tool kinds (Milibot tools and Claude Code native tools, lowercased) → `bot.activity.*` key. */
 const ACTIVITY_KEYS = {
@@ -63,6 +56,7 @@ const ACTIVITY_KEYS = {
   report_task: 'repo',
   share_file: 'files',
   list_bots: 'team',
+  get_bot: 'team',
   create_bot: 'team',
   update_bot: 'team',
   set_model: 'team',

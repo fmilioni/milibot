@@ -102,6 +102,7 @@ describe('activity steps of every tool', () => {
       }
     }
     expect(describeToolCall('list_bots', {})).toEqual({ kind: 'list_bots', detail: '' })
+    expect(describeToolCall('get_bot', { bot: 'Ana' })).toEqual({ kind: 'get_bot', detail: 'Ana' })
     expect(describeToolCall('computer', { action: 'hover' })).toEqual({ kind: 'click', detail: '' })
     expect(describeToolCall('browser_tabs', { action: 'pin' })).toEqual({ kind: 'browser_tabs', detail: '' })
     expect(describeToolCall('some_future_tool', { a: 1 })).toEqual({ kind: 'some_future_tool', detail: '' })

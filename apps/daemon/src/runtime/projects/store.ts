@@ -1,6 +1,6 @@
 import { newId, type Project } from '@milibot/shared'
 
-import { type Db, parseJson } from '../../db/sqlite'
+import { type Db, parseJson, sqlList } from '../../db/sqlite'
 
 interface ProjectRow {
   id: string
@@ -44,6 +44,14 @@ export class ProjectStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Names of the projects among `ids` (archived ones too). */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(`SELECT id, name FROM projects WHERE id IN (${sqlList(ids)})`)
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
 
   list(includeArchived: boolean): Project[] {
     const rows = this.db

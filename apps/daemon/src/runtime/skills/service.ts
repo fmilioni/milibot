@@ -636,6 +636,11 @@ export class SkillService {
     }
   }
 
+  /** Names of the skills among `ids`, for links in text. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    return this.rows.names(ids)
+  }
+
   handlers(): EndpointHandlers<keyof typeof skillEndpoints> {
     return {
       listSkills: () => {

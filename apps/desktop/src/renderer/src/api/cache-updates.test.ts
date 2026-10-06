@@ -55,7 +55,9 @@ describe('workspace cache updates', () => {
         payload: { botId: 'bot_1', control: 'idle', paused: false, busy: false },
       }),
     ).toEqual([{ kind: 'invalidate', key: queryKeys.botDisplay('ws1', 'bot_1') }])
-    expect(workspaceCacheUpdates('ws1', { type: 'bot.deleted', payload: { botId: 'bot_1' } })).toEqual([])
+    expect(
+      workspaceCacheUpdates('ws1', { type: 'bot.created', payload: { bot: { id: 'bot_1' } as never } }),
+    ).toEqual([])
     expect(workspaceCacheUpdates('ws1', { type: 'vm.status', payload: { vm: {} as never } })).toEqual([
       { kind: 'invalidate', key: queryKeys.vmDetails('ws1') },
       { kind: 'invalidate', key: queryKeys.cliInstall('ws1') },

@@ -49,6 +49,7 @@ describe('activity step texts', () => {
     expect(stepText({ kind: 'bash', detail: 'ls -la' }, t)).toBe('ls -la')
     expect(stepText({ kind: 'ask_bot', detail: '' }, t)).toBe('Perguntou a outro bot')
     expect(stepText({ kind: 'update_bot', detail: 'Iris' }, t)).toBe('Atualizou o bot Iris')
+    expect(stepText({ kind: 'get_bot', detail: 'Iris' }, t)).toBe('Leu o papel de Iris')
   })
 
   it('never says a failed memory_forget removed anything', () => {

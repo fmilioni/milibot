@@ -6,7 +6,7 @@ import {
 } from '@milibot/shared'
 
 import { modelSpecJson } from '../../db/model-spec'
-import type { Db } from '../../db/sqlite'
+import { type Db, sqlList } from '../../db/sqlite'
 import { notFound } from '../../errors'
 
 export interface SessionRow {
@@ -53,6 +53,27 @@ export class SessionStore {
     private readonly db: Db,
     private readonly now: () => number,
   ) {}
+
+  /** Titles of the sessions among `ids`, deleted ones left out. */
+  names(ids: readonly string[]): Array<{ id: string; name: string }> {
+    if (!ids.length) return []
+    return this.db
+      .prepare(
+        `SELECT id, title AS name FROM work_sessions WHERE id IN (${sqlList(ids)}) AND deleted_at IS NULL`,
+      )
+      .all(...ids) as Array<{ id: string; name: string }>
+  }
+
+  /** The sessions whose conversations are among `conversationIds`. */
+  byConversations(conversationIds: readonly string[]): Array<{ id: string; conversationId: string }> {
+    if (!conversationIds.length) return []
+    return this.db
+      .prepare(
+        `SELECT id, conversation_id AS conversationId FROM work_sessions
+         WHERE conversation_id IN (${sqlList(conversationIds)}) AND deleted_at IS NULL`,
+      )
+      .all(...conversationIds) as Array<{ id: string; conversationId: string }>
+  }
 
   row(id: string): SessionRow | null {
     return (

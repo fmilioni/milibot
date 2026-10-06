@@ -30,7 +30,8 @@ const definitions = {
   },
   get_bot: {
     name: 'get_bot',
-    description: 'A bot (by id or name) with its whole role section, to read before changing it with update_bot.',
+    description:
+      'A bot (by id or name) with its whole role section, to read before changing it with update_bot.',
     inputSchema: {
       type: 'object',
       properties: { bot: { type: 'string' } },
@@ -148,5 +149,9 @@ export const teamTools = defineTools({
         }
     }
   },
-  labels: { get_bot: "read a bot's role section", update_own_prompt: 'updated own prompt', set_model: 'changed model' },
+  labels: {
+    get_bot: "read a bot's role section",
+    update_own_prompt: 'updated own prompt',
+    set_model: 'changed model',
+  },
 })

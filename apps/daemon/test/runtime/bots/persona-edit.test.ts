@@ -39,7 +39,9 @@ describe('persona edits', () => {
     expect(parsePersonaEdit({ system_prompt: 'x', patch: [] }, scope)).toEqual({
       error: 'Pass either "system_prompt" or "patch", not both.',
     })
-    expect(parsePersonaEdit({ patch: [] }, scope)).toMatchObject({ error: expect.stringContaining('"system_prompt"') })
+    expect(parsePersonaEdit({ patch: [] }, scope)).toMatchObject({
+      error: expect.stringContaining('"system_prompt"'),
+    })
     expect(parsePersonaEdit({ system_prompt: '  Full  ' }, scope)).toEqual({ newPersona: 'Full' })
     const failed = applyPersonaEdit(
       'You are Ana.',

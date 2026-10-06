@@ -143,12 +143,9 @@ describe('update_bot with patch', () => {
     })
     expect(lastToolResult()).toContain("waits for the user's approval")
     expect(ana().systemPrompt).toBe(ANA_PROMPT)
-    const list = await call<{ messages: Message[] }>(
-      'listMessages',
-      { conversationId: chiefDm },
-      undefined,
-      { limit: 100 },
-    )
+    const list = await call<{ messages: Message[] }>('listMessages', { conversationId: chiefDm }, undefined, {
+      limit: 100,
+    })
     const card = list.messages.find((m) => m.payload?.type === 'confirmation')
     if (card?.payload?.type !== 'confirmation') throw new Error('expected a confirmation card')
     expect(card.payload).toMatchObject({ action: 'update_prompt', status: 'pending' })

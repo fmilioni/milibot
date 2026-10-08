@@ -20,7 +20,7 @@
     "eval:knowledge-thresholds": "tsx eval/knowledge/thresholds.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0",
+    "@anthropic-ai/sdk": "^0.131.0",
     "@huggingface/transformers": "^4.3.0",
     "@milibot/shared": "workspace:*",
     "js-yaml": "4.3.2",

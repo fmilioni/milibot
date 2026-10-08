@@ -11,7 +11,7 @@
     "@milibot/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.4",
     "esbuild": "^0.28.2",
     "typescript": "~5.9.3",
     "vitest": "^5.0.2"

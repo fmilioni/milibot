@@ -24,7 +24,7 @@
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/keyring": "^2.1.0",
     "better-sqlite3": "^13.0.3",
-    "fastify": "^5.12.5",
+    "fastify": "^5.12.6",
     "linkedom": "^0.18.13",
     "lucide": "^1.48.0",
     "onnxruntime-common": "1.30.0",

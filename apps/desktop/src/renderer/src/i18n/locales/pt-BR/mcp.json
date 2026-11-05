@@ -35,6 +35,7 @@
     "kind": "Onde o servidor roda",
     "stdio": "Na VM (comando)",
     "http": "Remoto (URL)",
+    "commandNeedsVm": "Servidores por comando rodam na máquina virtual, que este workspace não tem. Aqui dá para adicionar servidores remotos.",
     "name": "Nome",
     "namePlaceholder": "GitHub",
     "command": "Comando",

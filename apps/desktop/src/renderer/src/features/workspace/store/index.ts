@@ -1,5 +1,12 @@
-import type { ConversationSummary, WorkspaceSummary } from '@milibot/shared'
+import {
+  computerCapabilities,
+  type ComputerCapability,
+  type ConversationSummary,
+  type WorkspaceSummary,
+} from '@milibot/shared'
 import { create } from 'zustand'
+
+import { currentComputerHas } from '@/features/workspace/lib/computer'
 
 import { createStoreContext } from './context'
 import { botsSlice } from './slices/bots'
@@ -41,6 +48,17 @@ export const useAppStore = createAppStore()
 
 export function useCurrentWorkspace(): WorkspaceSummary | undefined {
   return useAppStore((s) => s.workspaces.find((w) => w.id === s.workspaceId))
+}
+
+/** Whether this window's workspace computer offers `capability`; true until the workspace is known. */
+export function useComputerHas(capability: ComputerCapability): boolean {
+  return useAppStore((s) => currentComputerHas(s, capability))
+}
+
+/** Everything this window's workspace computer offers (a VM's set until the workspace is known). */
+export function useComputerCapabilities(): ReadonlySet<ComputerCapability> {
+  const kind = useAppStore((s) => s.workspaces.find((w) => w.id === s.workspaceId)?.computer ?? 'vm')
+  return computerCapabilities(kind)
 }
 
 export function useSelectedConversation(): ConversationSummary | undefined {

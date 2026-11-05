@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest'
 
 const root = join(import.meta.dirname, '..')
 const LOCALES = /(^|\/)locales\//
+/** The Drafia design draws the app in its default language, like the locales hold it. */
+const DESIGN = /^design\/[^/]+\.drafia\//
 
 const WORDS = [
   ...['nao', 'voce', 'usuario', 'arquivos', 'conhecimento', 'configuracoes', 'ensinar', 'desfazer', 'rotina'],
@@ -37,7 +39,7 @@ function repoFiles(): string[] {
     windowsHide: true,
   })
     .split('\0')
-    .filter((path) => path && !LOCALES.test(path) && existsSync(join(root, path)))
+    .filter((path) => path && !LOCALES.test(path) && !DESIGN.test(path) && existsSync(join(root, path)))
 }
 
 describe('Portuguese outside the locales', () => {

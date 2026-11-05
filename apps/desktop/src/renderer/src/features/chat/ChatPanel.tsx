@@ -11,7 +11,7 @@ import { describeConversation, STATUS_DOT_CLASS } from '@/features/chat/lib/conv
 import { DesignPresenceChip } from '@/features/designs/DesignPresenceChip'
 import { DesignsButton } from '@/features/designs/DesignsButton'
 import { useTeachingBot } from '@/features/vm/teach-store'
-import { useAppStore, useSelectedConversation } from '@/features/workspace/store'
+import { useAppStore, useComputerHas, useSelectedConversation } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
 import { IconButton } from '@/ui/IconButton'
@@ -121,6 +121,7 @@ function ChatHeader({
   const { t } = useTranslation()
   const rightPanel = useAppStore((s) => s.rightPanel)
   const toggle = useAppStore((s) => s.toggleRightPanel)
+  const hasDesktop = useComputerHas('desktop')
   const statusDetail = useAppStore((s) => s.statusDetail)
   const display = describeConversation(conversation, bots, t('sidebar.groupFallback'))
   const bot = display.primaryBot
@@ -191,9 +192,11 @@ function ChatHeader({
             <Users size={15} />
           </IconButton>
         )}
-        <IconButton label={t('chat.showVm')} active={rightPanel === 'vm'} onClick={() => toggle('vm')}>
-          <Monitor size={15} />
-        </IconButton>
+        {hasDesktop && (
+          <IconButton label={t('chat.showVm')} active={rightPanel === 'vm'} onClick={() => toggle('vm')}>
+            <Monitor size={15} />
+          </IconButton>
+        )}
         <IconButton
           label={t('chat.showDebug')}
           active={rightPanel === 'debug'}

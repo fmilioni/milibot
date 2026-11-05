@@ -5,3 +5,5 @@ CHANGELOG.md
 vm/guest
 LICENSE.md
 apps/daemon/src/**/*.generated.ts
+# Written by the Drafia app
+design/*.drafia

@@ -12,15 +12,19 @@ import {
   goldenNeedsBuild,
   goldenReadyForSetup,
   initialProviderStep,
+  limitToRows,
   looksLikeOpenRouterKey,
   maskKey,
   pickDefaultModel,
   PROVIDER_ROWS,
   providerRowName,
+  providerRows,
   providerStepIssues,
   type ProviderStepState,
   setupVmProgress,
+  starterSuggestions,
   VM_CREATE_SECONDS,
+  vmBeingCreated,
   whpxCase,
 } from './setup'
 
@@ -56,6 +60,19 @@ const base: ProviderStepState = {
 }
 
 describe('provider step', () => {
+  it('offers the CLI engines only to a computer with a shell', () => {
+    expect(providerRows(new Set(['shell']))).toEqual(PROVIDER_ROWS)
+    expect(providerRows(new Set())).toEqual(['openrouter', 'compatible'])
+  })
+
+  it('counts the rows off screen as unchecked', () => {
+    const checked = { ...base.checked, claude_code: true, openrouter: true }
+
+    const limited = limitToRows({ ...base, checked }, ['openrouter', 'compatible'])
+
+    expect(limited.checked).toEqual({ ...base.checked, openrouter: true })
+  })
+
   it('lists a row per CLI engine, named by its brand, before the API rows', () => {
     const t = ((key: string) => `t:${key}`) as unknown as TFunction
     expect(PROVIDER_ROWS).toEqual(['claude_code', 'codex', 'antigravity', 'openrouter', 'compatible'])
@@ -413,5 +430,32 @@ describe('whpxCase', () => {
     expect(whpxCase(host('win32', 'whpx', null))).toBeNull()
     expect(whpxCase(host('linux', 'tcg', 'whpx_feature_disabled'))).toBeNull()
     expect(whpxCase(null)).toBeNull()
+  })
+})
+
+describe('vmBeingCreated', () => {
+  const ready = { state: 'ready', outdated: false } as GoldenStatus
+  const building = { state: 'building', outdated: false } as GoldenStatus
+  const vm = (state: VmInfo['state']) => ({ state }) as VmInfo
+
+  it('follows a boot, or a VM waiting for its image', () => {
+    expect(vmBeingCreated(ready, vm('starting'))).toBe(true)
+    expect(vmBeingCreated(building, vm('not_created'))).toBe(true)
+  })
+
+  it('leaves a VM alone once it exists, or with its image ready', () => {
+    expect(vmBeingCreated(ready, vm('not_created'))).toBe(false)
+    expect(vmBeingCreated({ state: 'missing', outdated: false } as GoldenStatus, vm('not_created'))).toBe(
+      false,
+    )
+    expect(vmBeingCreated(building, vm('stopped'))).toBe(false)
+    expect(vmBeingCreated(ready, null)).toBe(false)
+  })
+})
+
+describe('starterSuggestions', () => {
+  it('leaves out the repositories idea without a shell', () => {
+    expect(starterSuggestions(new Set(['shell']))).toEqual(['finances', 'repos', 'research', 'news'])
+    expect(starterSuggestions(new Set())).toEqual(['finances', 'research', 'news'])
   })
 })

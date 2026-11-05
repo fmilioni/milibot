@@ -7,7 +7,7 @@ import { formatCount, kindLabel, KNOWLEDGE_KINDS } from '@/features/knowledge/li
 import { useProjectStore } from '@/features/projects/store'
 import { Notice, SettingsPage } from '@/features/settings/SettingsLayout'
 import { useSettingsStore } from '@/features/settings/store'
-import { toastOnError, useAppStore } from '@/features/workspace/store'
+import { toastOnError, useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { useFileDrop } from '@/hooks/use-file-drop'
 import { cn } from '@/lib/cn'
@@ -309,6 +309,7 @@ export function KnowledgeSettings() {
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const showToast = useAppStore((s) => s.showToast)
+  const readsDocuments = useComputerHas('documents')
   const load = useKnowledgeStore((s) => s.load)
   const upload = useKnowledgeStore((s) => s.upload)
   const maxFileMb = useKnowledgeStore((s) => s.maxFileMb)
@@ -359,7 +360,7 @@ export function KnowledgeSettings() {
         }}
       />
       <ModelCard />
-      <LegacyOfficeCard workspaceId={workspaceId} />
+      {readsDocuments && <LegacyOfficeCard workspaceId={workspaceId} />}
       <Documents />
       <button
         type="button"

@@ -57,7 +57,7 @@ function Column({
   )
 }
 
-/** Live usage at the top of Settings › Virtual machine: charts, disks and what each bot uses. */
+/** Live usage at the top of Settings › Computer on a VM: charts, disks and what each bot uses. */
 export function VmUsageCard({
   stats,
   onGrow,

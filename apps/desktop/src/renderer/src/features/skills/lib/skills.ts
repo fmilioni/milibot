@@ -1,5 +1,6 @@
 import {
   type Bot,
+  type ComputerCapability,
   foldText,
   parseGithubSkillUrl,
   type Skill,
@@ -132,20 +133,45 @@ export function skillAccess(skill: Pick<Skill, 'allowedBots'>, bots: Record<stri
 
 /** One item of the line under a skill's description: a tag with an icon, or plain text. */
 export type SkillMetaItem =
-  { kind: 'tag'; icon: 'tools' | 'scripts' | 'user' | 'users'; text: string } | { kind: 'text'; text: string }
+  | { kind: 'tag'; icon: 'tools' | 'scripts' | 'user' | 'users' | 'noComputer'; text: string }
+  | { kind: 'text'; text: string }
+
+/** What a built-in needs of the computer that this workspace's lacks (it is then off for every bot). */
+export function missingRequirements(
+  skill: Pick<Skill, 'requires'>,
+  capabilities: ReadonlySet<ComputerCapability>,
+): ComputerCapability[] {
+  return skill.requires.filter((need) => !capabilities.has(need))
+}
 
 /**
- * Meta line of a skill row: built-ins show tools/scripts, the tokens they cost and, for skills on only for
- * the first bot, who has them on; the others show scripts, access and files.
+ * Meta line of a skill row: built-ins show what they miss of the computer, tools/scripts, the tokens they
+ * cost and, for skills on only for the first bot, who has them on; the others show scripts, access and files.
  */
 export function skillRowMeta(
   skill: Skill,
   bots: Record<string, Bot>,
-  { first, t, locale, now }: { first: boolean; t: TFunction; locale: string; now?: number },
+  {
+    first,
+    t,
+    locale,
+    now,
+    capabilities,
+  }: {
+    first: boolean
+    t: TFunction
+    locale: string
+    now?: number
+    capabilities: ReadonlySet<ComputerCapability>
+  },
 ): SkillMetaItem[] {
   const items: SkillMetaItem[] = []
   const scripts: SkillMetaItem = { kind: 'tag', icon: 'scripts', text: t('skills.meta.scripts') }
   if (skill.source === 'builtin') {
+    if (missingRequirements(skill, capabilities).length > 0) {
+      items.push({ kind: 'tag', icon: 'noComputer', text: t('skills.meta.needsVm') })
+    }
+
     if (skill.toolCount > 0)
       items.push({ kind: 'tag', icon: 'tools', text: t('skills.meta.tools', { count: skill.toolCount }) })
     else if (skill.hasScripts) items.push(scripts)

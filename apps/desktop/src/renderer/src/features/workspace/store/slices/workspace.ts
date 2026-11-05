@@ -59,9 +59,19 @@ export function workspaceSlice(ctx: StoreContext): WorkspaceSlice {
       )
     },
 
-    async setupVm(size) {
-      const body = { kind: 'vm', size } as const
+    async setupComputer(body) {
       ctx.upsertWorkspace(await api().call('setupWorkspaceComputer', { params: { workspaceId: ws() }, body }))
+    },
+
+    async setComputer(choice) {
+      const workspaceId = ws()
+      ctx.upsertWorkspace(await api().call('setWorkspaceComputer', { params: { workspaceId }, body: choice }))
+      await ctx.loadVm(workspaceId)
+    },
+
+    async deleteVmDisk() {
+      const { freedBytes } = await api().call('deleteWorkspaceVm', { params: { workspaceId: ws() } })
+      return freedBytes
     },
 
     openWorkspaceInNewWindow(workspaceId) {

@@ -42,6 +42,7 @@
     "tokens": "~{{tokens}} tokens",
     "tokensOnLoad": "~{{tokens}} tokens ao carregar",
     "scripts": "Contém scripts",
+    "needsVm": "Precisa da máquina virtual",
     "files_one": "{{count}} arquivo",
     "files_other": "{{count}} arquivos",
     "captures_one": "{{count}} captura de tela",
@@ -66,6 +67,7 @@
   },
   "deleteConfirm": "Excluir “{{name}}”? A pasta é apagada e os bots deixam de usá-la.",
   "folderNote": "Cada skill é uma pasta com um SKILL.md (e, se quiser, scripts e modelos). Copie pastas para {{path}} e elas aparecem aqui sozinhas. Os arquivos das skills ficam na VM em {{vmPath}}, legíveis por todos os bots.",
+  "folderNoteNoComputer": "Cada skill é uma pasta com um SKILL.md (e, se quiser, scripts e modelos). Copie pastas para {{path}} e elas aparecem aqui sozinhas.",
   "errors": {
     "noDescription": "O SKILL.md não tem “description”: os bots só enxergam a skill quando ela disser para que serve.",
     "noFrontmatter": "O SKILL.md precisa começar com um bloco entre linhas --- com name e description.",

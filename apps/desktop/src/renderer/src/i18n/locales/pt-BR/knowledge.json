@@ -197,12 +197,17 @@
       "title": "O arquivo saiu do /workspace",
       "hint": "O arquivo não está mais no caminho de onde foi adicionado"
     },
+    "no_computer": {
+      "title": "Precisa da máquina virtual",
+      "hint": "Este tipo de arquivo é lido na máquina virtual, que este workspace não tem"
+    },
     "internal": {
       "title": "Algo deu errado",
       "hint": "Tente reindexar o documento"
     }
   },
   "updateSystem": "Atualizar sistema",
+  "useVm": "Usar máquina virtual",
   "legacyOffice": {
     "label": "Arquivos antigos do Office (.doc, .xls, .ppt)",
     "hint": "Lê também .ods e .odp. Instala o LibreOffice na máquina virtual (cerca de {{size}} MB no disco dela).",

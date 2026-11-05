@@ -7,11 +7,17 @@ import { DebugPanel } from '@/features/debug/DebugPanel'
 import { AppearanceSettings } from '@/features/settings/AppearanceSettings'
 import { VmPanel } from '@/features/vm/VmPanel'
 import { RightPanelHeader } from '@/features/workspace/RightPanelHeader'
-import { type RightPanel as RightPanelKind, useAppStore } from '@/features/workspace/store'
+import { type RightPanel as RightPanelKind, useAppStore, useComputerHas } from '@/features/workspace/store'
 
 export function RightPanel() {
   const panel = useAppStore((s) => s.rightPanel)
-  if (!panel) return null
+  const hasDesktop = useComputerHas('desktop')
+  // The default panel stays `vm`, so it comes back if the workspace switches to a VM.
+  const hidden = !panel || (panel === 'vm' && !hasDesktop)
+  if (hidden) {
+    return null
+  }
+
   return (
     <aside className={`flex shrink-0 flex-col border-l border-border bg-surface ${rightPanelWidth(panel)}`}>
       <RightPanelContent panel={panel} />

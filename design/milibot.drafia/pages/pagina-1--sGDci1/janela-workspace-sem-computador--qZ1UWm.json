@@ -1,0 +1,588 @@
+{
+  "id": "qZ1UWm",
+  "type": "frame",
+  "name": "Janela · Workspace sem computador",
+  "x": 3080,
+  "y": 1300,
+  "width": 1440,
+  "height": 900,
+  "layout": "horizontal",
+  "clip": true,
+  "modes": {
+    "Tokens": "Dark"
+  },
+  "fills": ["$color/bg"],
+  "children": [
+    {
+      "id": "3sEUjy",
+      "type": "frame",
+      "name": "Sidebar",
+      "width": 280,
+      "height": "fill",
+      "layout": "vertical",
+      "gap": 4,
+      "padding": [40, 12, 14, 12],
+      "fills": ["$color/surface"],
+      "strokes": ["$color/border"],
+      "strokeWeight": [0, 1, 0, 0],
+      "children": [
+        {
+          "id": "PttTfk",
+          "type": "frame",
+          "name": "Switcher",
+          "layout": "horizontal",
+          "gap": 8,
+          "padding": [4, 8],
+          "align": "center",
+          "children": [
+            {
+              "id": "2bNuKb",
+              "type": "frame",
+              "name": "Badge",
+              "width": 22,
+              "height": 22,
+              "layout": "horizontal",
+              "justify": "center",
+              "align": "center",
+              "fills": ["$color/accent"],
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "3bWXiE",
+                  "type": "text",
+                  "name": "Initial",
+                  "fills": ["$color/on-accent"],
+                  "content": "P",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11,
+                  "fontWeight": 700
+                }
+              ]
+            },
+            {
+              "id": "6hs4NN",
+              "type": "text",
+              "name": "Name",
+              "fills": ["$color/fg"],
+              "content": "Pessoal",
+              "fontFamily": "$font/sans",
+              "fontSize": 15,
+              "fontWeight": 700
+            },
+            {
+              "id": "BH5oQM",
+              "type": "icon",
+              "name": "Chevrons",
+              "width": 12,
+              "height": 12,
+              "fills": ["$color/fg-muted"],
+              "icon": "lucide:chevrons-up-down"
+            }
+          ]
+        },
+        {
+          "id": "bx6Fss",
+          "type": "frame",
+          "name": "Nav · Quadros",
+          "width": "fill",
+          "height": 30,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "children": [
+            {
+              "id": "R4lHOo",
+              "type": "icon",
+              "name": "Icon",
+              "width": 14,
+              "height": 14,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:kanban"
+            },
+            {
+              "id": "P748T5",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Quadros",
+              "fontFamily": "$font/sans",
+              "fontSize": 13
+            }
+          ]
+        },
+        {
+          "id": "as3E3P",
+          "type": "frame",
+          "name": "Nav · Designs",
+          "width": "fill",
+          "height": 30,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "children": [
+            {
+              "id": "ci4Gp1",
+              "type": "icon",
+              "name": "Icon",
+              "width": 14,
+              "height": 14,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:pen-tool"
+            },
+            {
+              "id": "TvO7QQ",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Designs",
+              "fontFamily": "$font/sans",
+              "fontSize": 13
+            }
+          ]
+        },
+        {
+          "id": "C3Wp4Z",
+          "type": "frame",
+          "name": "Nav · Arquivos",
+          "width": "fill",
+          "height": 30,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "children": [
+            {
+              "id": "1z8htp",
+              "type": "icon",
+              "name": "Icon",
+              "width": 14,
+              "height": 14,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:folder-open"
+            },
+            {
+              "id": "xLoZLZ",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Arquivos",
+              "fontFamily": "$font/sans",
+              "fontSize": 13
+            }
+          ]
+        },
+        {
+          "id": "QdZeL1",
+          "type": "frame",
+          "name": "Bot · Maestro",
+          "width": "fill",
+          "margin": [12, 0, 0, 0],
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [8, 10],
+          "align": "center",
+          "fills": ["$color/surface-3"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "eLwWeu",
+              "type": "ellipse",
+              "name": "Avatar",
+              "width": 30,
+              "height": 30,
+              "fills": ["#6366F1"]
+            },
+            {
+              "id": "rM9AQN",
+              "type": "frame",
+              "name": "Text",
+              "layout": "vertical",
+              "gap": 2,
+              "children": [
+                {
+                  "id": "4ZOW5o",
+                  "type": "text",
+                  "name": "Name",
+                  "fills": ["$color/fg"],
+                  "content": "Maestro",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                },
+                {
+                  "id": "nsAmMA",
+                  "type": "text",
+                  "name": "Preview",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "Pronto! Montei o quadro.",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 12
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "r3mimE",
+          "type": "frame",
+          "name": "Spacer",
+          "width": "fill",
+          "height": "fill"
+        },
+        {
+          "id": "8MIT25",
+          "type": "frame",
+          "name": "Footer",
+          "width": "fill",
+          "layout": "vertical",
+          "gap": 8,
+          "padding": [10, 4, 0, 4],
+          "strokes": ["$color/border"],
+          "strokeWeight": [1, 0, 0, 0],
+          "note": "The VM status line becomes 'Sem computador'; hover shows 'Os bots trabalham sem computador. Mudar nas configurações'; click opens Configurações › Computador. No usage popover.",
+          "children": [
+            {
+              "id": "1brAvl",
+              "type": "frame",
+              "name": "Computer line",
+              "layout": "horizontal",
+              "gap": 7,
+              "padding": [2, 4],
+              "align": "center",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "obovJB",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 13,
+                  "height": 13,
+                  "fills": ["$color/fg-muted"],
+                  "icon": "lucide:cloud"
+                },
+                {
+                  "id": "f4PKPD",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "Sem computador",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 12
+                }
+              ]
+            },
+            {
+              "id": "UJdB2p",
+              "type": "frame",
+              "name": "Usage",
+              "width": "fill",
+              "layout": "horizontal",
+              "padding": [0, 4],
+              "justify": "space-between",
+              "align": "center",
+              "children": [
+                {
+                  "id": "OfdzPK",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg-muted"],
+                  "content": "US$ 0,42 hoje • 61 mil tokens",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 12
+                },
+                {
+                  "id": "xMaPmC",
+                  "type": "frame",
+                  "name": "Icons",
+                  "layout": "horizontal",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "id": "g05g5t",
+                      "type": "icon",
+                      "name": "Debug",
+                      "width": 14,
+                      "height": 14,
+                      "fills": ["$color/fg-secondary"],
+                      "icon": "lucide:bug"
+                    },
+                    {
+                      "id": "5T3293",
+                      "type": "icon",
+                      "name": "Settings",
+                      "width": 14,
+                      "height": 14,
+                      "fills": ["$color/fg-secondary"],
+                      "icon": "lucide:settings"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aazfcb",
+      "type": "frame",
+      "name": "Chat",
+      "width": "fill",
+      "height": "fill",
+      "layout": "vertical",
+      "note": "No 'Desktop' button in the header and no VM right panel; session headers, working rows and activity cards drop their 'show screen' actions. Attachments show no 'waiting for the VM' state: they stay on this computer and bots read their text and images.",
+      "children": [
+        {
+          "id": "vlhoW3",
+          "type": "frame",
+          "name": "Header",
+          "width": "fill",
+          "height": 64,
+          "layout": "horizontal",
+          "padding": [0, 20],
+          "justify": "space-between",
+          "align": "center",
+          "strokes": ["$color/border"],
+          "strokeWeight": [0, 0, 1, 0],
+          "children": [
+            {
+              "id": "DDocKZ",
+              "type": "frame",
+              "name": "Bot",
+              "layout": "horizontal",
+              "gap": 10,
+              "align": "center",
+              "children": [
+                {
+                  "id": "FUS77f",
+                  "type": "ellipse",
+                  "name": "Avatar",
+                  "width": 32,
+                  "height": 32,
+                  "fills": ["#6366F1"]
+                },
+                {
+                  "id": "Dkf4CR",
+                  "type": "frame",
+                  "name": "Text",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "id": "XCg6Ot",
+                      "type": "text",
+                      "name": "Name",
+                      "fills": ["$color/fg"],
+                      "content": "Maestro",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 15,
+                      "fontWeight": 600
+                    },
+                    {
+                      "id": "wNBLdw",
+                      "type": "text",
+                      "name": "Status",
+                      "fills": ["$color/fg-secondary"],
+                      "content": "● Disponível",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "KpAOVt",
+              "type": "frame",
+              "name": "Actions",
+              "layout": "horizontal",
+              "gap": 14,
+              "children": [
+                {
+                  "id": "rF967C",
+                  "type": "icon",
+                  "name": "Debug",
+                  "width": 16,
+                  "height": 16,
+                  "fills": ["$color/fg-secondary"],
+                  "icon": "lucide:bug"
+                },
+                {
+                  "id": "OmyYPE",
+                  "type": "icon",
+                  "name": "Bot settings",
+                  "width": 16,
+                  "height": 16,
+                  "fills": ["$color/fg-secondary"],
+                  "icon": "lucide:sliders-horizontal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "D9bN0E",
+          "type": "frame",
+          "name": "Messages",
+          "width": "fill",
+          "height": "fill",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [24, 120],
+          "justify": "end",
+          "children": [
+            {
+              "id": "EAw0el",
+              "type": "frame",
+              "name": "User message",
+              "width": "fill",
+              "layout": "vertical",
+              "gap": 6,
+              "align": "end",
+              "children": [
+                {
+                  "id": "GIWOrV",
+                  "type": "frame",
+                  "name": "Attachment",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "padding": [8, 10],
+                  "align": "center",
+                  "fills": ["$color/surface-2"],
+                  "strokes": ["$color/border"],
+                  "strokeWeight": 1,
+                  "cornerRadius": 8,
+                  "children": [
+                    {
+                      "id": "pUSOEP",
+                      "type": "icon",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "fills": ["$color/fg-secondary"],
+                      "icon": "lucide:file-text"
+                    },
+                    {
+                      "id": "8L81r0",
+                      "type": "text",
+                      "name": "Name",
+                      "fills": ["$color/fg"],
+                      "content": "roteiro.md",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 12
+                    },
+                    {
+                      "id": "xeXwof",
+                      "type": "text",
+                      "name": "Size",
+                      "fills": ["$color/fg-muted"],
+                      "content": "4 KB",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 11
+                    }
+                  ]
+                },
+                {
+                  "id": "AMk2Yi",
+                  "type": "frame",
+                  "name": "Bubble",
+                  "layout": "horizontal",
+                  "padding": [10, 14],
+                  "fills": ["$color/surface-3"],
+                  "cornerRadius": 12,
+                  "children": [
+                    {
+                      "id": "jTcmvd",
+                      "type": "text",
+                      "name": "Text",
+                      "fills": ["$color/fg"],
+                      "content": "Monta um quadro com esse roteiro de viagem?",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 13
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "R8Dl4M",
+              "type": "frame",
+              "name": "Bot message",
+              "width": "fill",
+              "layout": "horizontal",
+              "gap": 10,
+              "children": [
+                {
+                  "id": "eAo7yd",
+                  "type": "ellipse",
+                  "name": "Avatar",
+                  "width": 28,
+                  "height": 28,
+                  "fills": ["#6366F1"]
+                },
+                {
+                  "id": "xjIWGu",
+                  "type": "text",
+                  "name": "Text",
+                  "width": "fill",
+                  "fills": ["$color/fg"],
+                  "content": "Pronto! Montei o quadro “Viagem” com uma coluna por dia e um cartão por atividade.",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "lineHeight": 1.5,
+                  "textGrowth": "fixed-width"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "Uixhkc",
+          "type": "frame",
+          "name": "Composer",
+          "width": "fill",
+          "layout": "vertical",
+          "padding": [0, 20, 20, 20],
+          "children": [
+            {
+              "id": "r4c9mz",
+              "type": "frame",
+              "name": "Box",
+              "width": "fill",
+              "height": 88,
+              "layout": "vertical",
+              "padding": [12, 14],
+              "justify": "space-between",
+              "fills": ["$color/surface"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": 12,
+              "children": [
+                {
+                  "id": "rY2dvD",
+                  "type": "text",
+                  "name": "Placeholder",
+                  "fills": ["$color/fg-muted"],
+                  "content": "Mensagem para Maestro... use @ para mencionar",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13
+                },
+                {
+                  "id": "74Xxqy",
+                  "type": "icon",
+                  "name": "Attach",
+                  "width": 15,
+                  "height": 15,
+                  "fills": ["$color/fg-secondary"],
+                  "icon": "lucide:paperclip"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -35,7 +35,8 @@ type Dialog =
   | { type: 'reset' }
   | { type: 'updateSystem' }
 
-export function VmSettings() {
+/** The Computer page of a workspace on its VM; `lead` (the computer choice) goes first. */
+export function VmSettings({ lead }: { lead: ReactNode }) {
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const host = useSettingsStore((s) => s.host)
@@ -63,7 +64,8 @@ export function VmSettings() {
 
   if (!details) {
     return (
-      <SettingsPage title={t('settings.sections.vm')} subtitle={t('settings.vm.subtitle')}>
+      <SettingsPage title={t('settings.sections.computer')} subtitle={t('settings.computer.subtitle')}>
+        {lead}
         <AsyncView data={details} error={query.error} onRetry={query.reload}>
           {() => null}
         </AsyncView>
@@ -92,10 +94,11 @@ export function VmSettings() {
 
   return (
     <SettingsPage
-      title={t('settings.sections.vm')}
-      subtitle={t('settings.vm.subtitle')}
+      title={t('settings.sections.computer')}
+      subtitle={t('settings.computer.subtitle')}
       actions={<StateBadge details={details} />}
     >
+      {lead}
       <TcgNotice />
       {updating && (
         <SystemUpdateProgress

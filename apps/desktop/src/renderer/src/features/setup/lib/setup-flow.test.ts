@@ -6,6 +6,8 @@ import {
   initialVmSize,
   loginEngines,
   planProviderSave,
+  setupComputerKind,
+  suggestedComputer,
   vmStepAdvance,
   vmStepNeedsBuild,
   vmStepNeedsStart,
@@ -134,8 +136,54 @@ describe('initialVmSize', () => {
   })
 })
 
+describe('suggestedComputer', () => {
+  const able = {
+    maxVmCpus: 16,
+    maxVmMemoryGb: 28,
+    qemu: { found: true, path: '/q' },
+    vmAccel: { kind: 'hvf', slow: false },
+  } as HostInfo
+
+  it('waits for the host', () => {
+    expect(suggestedComputer(null)).toBeNull()
+  })
+
+  it('takes a VM on a host that runs one well', () => {
+    expect(suggestedComputer(able)).toEqual({ kind: 'vm' })
+  })
+
+  it.each([
+    ['qemu', { ...able, qemu: { found: false, path: null } }],
+    ['slow', { ...able, vmAccel: { kind: 'tcg', slow: true } }],
+    ['memory', { ...able, maxVmMemoryGb: 3 }],
+  ] as const)('starts without a computer when the reason is %s', (reason, hostInfo) => {
+    expect(suggestedComputer(hostInfo as HostInfo)).toEqual({ kind: 'none', reason })
+  })
+})
+
+describe('setupComputerKind', () => {
+  const base = { step: 'providers' as const, stored: 'vm' as const, chosen: null, vm: null, suggested: null }
+
+  it('keeps the stored computer once step 1 was saved', () => {
+    expect(setupComputerKind({ ...base, step: 'vm', stored: 'none', chosen: 'vm' })).toBe('none')
+  })
+
+  it("takes the user's pick, else a VM already running, else the host's suggestion", () => {
+    expect(setupComputerKind({ ...base, chosen: 'none', vm: vm({ state: 'running' }) })).toBe('none')
+    expect(setupComputerKind({ ...base, vm: vm({ state: 'running' }), suggested: 'none' })).toBe('vm')
+    expect(setupComputerKind({ ...base, suggested: 'none' })).toBe('none')
+    expect(setupComputerKind(base)).toBe('vm')
+  })
+})
+
 describe('step 2 kicks', () => {
-  const input = { step: 'vm' as const, vm: vm({}), golden: golden({}), providers: [claude] }
+  const input = {
+    step: 'vm' as const,
+    computer: 'vm' as const,
+    vm: vm({}),
+    golden: golden({}),
+    providers: [claude],
+  }
 
   it('moves on once the VM runs and the providers are known', () => {
     expect(vmStepAdvance({ ...input, vm: vm({ state: 'running' }) })).toBe('login')
@@ -143,6 +191,14 @@ describe('step 2 kicks', () => {
     expect(vmStepAdvance({ ...input, vm: vm({ state: 'running' }), providers: null })).toBeNull()
     expect(vmStepAdvance({ ...input, vm: vm({ state: 'starting' }) })).toBeNull()
     expect(vmStepAdvance({ ...input, step: 'providers', vm: vm({ state: 'running' }) })).toBeNull()
+  })
+
+  it('moves on right away without a computer, and never touches the VM', () => {
+    const none = { ...input, computer: 'none' as const, providers: [openRouter] }
+
+    expect(vmStepAdvance(none)).toBe('done')
+    expect(vmStepNeedsStart(none)).toBe(false)
+    expect(vmStepNeedsBuild({ ...none, golden: golden({ revision: 1, outdated: true }) })).toBe(false)
   })
 
   it('starts a VM left idle with the image ready', () => {

@@ -2,6 +2,7 @@ import {
   clampVmSize,
   CLI_ENGINES,
   type CliEngine,
+  type ComputerKind,
   DEFAULT_VM_CONFIG,
   defaultPreset,
   type GoldenStatus,
@@ -100,23 +101,87 @@ export function initialVmSize(host: HostInfo | null, vm: VmInfo | null, vmWaitOv
   return clampVmSize(initial, host)
 }
 
+/** Why the setup starts on "no computer": no QEMU to run a VM, no hardware acceleration, or too little memory. */
+type NoComputerReason = 'qemu' | 'slow' | 'memory'
+
+export type ComputerSuggestion = { kind: 'vm' } | { kind: 'none'; reason: NoComputerReason }
+
+/** The computer step 1 starts on: a VM unless this host can't run one well. Null until the host is known. */
+export function suggestedComputer(host: HostInfo | null): ComputerSuggestion | null {
+  if (!host) {
+    return null
+  }
+
+  if (!host.qemu.found) {
+    return { kind: 'none', reason: 'qemu' }
+  }
+
+  if (host.vmAccel?.slow) {
+    return { kind: 'none', reason: 'slow' }
+  }
+
+  if (defaultPreset(host) === null) {
+    return { kind: 'none', reason: 'memory' }
+  }
+
+  return { kind: 'vm' }
+}
+
+/**
+ * The computer the setup works with: the stored one once step 1 was saved; on step 1, the user's pick, a VM
+ * already running (back from a login, so it was chosen before), or the host's suggestion.
+ */
+export function setupComputerKind(input: {
+  step: SetupStep
+  stored: ComputerKind | null
+  chosen: ComputerKind | null
+  vm: VmInfo | null
+  suggested: ComputerKind | null
+}): ComputerKind {
+  if (input.step !== 'providers' && input.stored) {
+    return input.stored
+  }
+
+  if (input.chosen) {
+    return input.chosen
+  }
+
+  if (input.vm?.state === 'running') {
+    return 'vm'
+  }
+
+  return input.suggested ?? 'vm'
+}
+
 export interface VmStepInput {
   step: SetupStep
+  /** The workspace's computer, stored when step 1 is saved. */
+  computer: ComputerKind
   vm: VmInfo | null
   golden: GoldenStatus | null
   /** The providers were read (they decide whether logins follow). */
   providers: Provider[] | null
 }
 
-/** The VM is up during step 2: the setup moves on to the logins, or straight to the first bot. */
-export function vmStepAdvance({ step, vm, providers }: VmStepInput): SetupStep | null {
-  if (step !== 'vm' || vm?.state !== 'running' || !providers) return null
+/**
+ * The computer is ready during step 2 (a VM once it runs; no computer right away): the setup moves on to the
+ * logins, or straight to the first bot.
+ */
+export function vmStepAdvance({ step, computer, vm, providers }: VmStepInput): SetupStep | null {
+  const computerReady = computer !== 'vm' || vm?.state === 'running'
+  if (step !== 'vm' || !computerReady || !providers) {
+    return null
+  }
+
   return nextSetupStep('vm', { needsLogin: loginEngines(providers).length > 0 })
 }
 
 /** Resuming step 2 with the image ready but the VM not started (e.g. the daemon restarted meanwhile). */
-export function vmStepNeedsStart({ step, vm, golden }: VmStepInput): boolean {
-  if (step !== 'vm' || !goldenReadyForSetup(golden) || !vm) return false
+export function vmStepNeedsStart({ step, computer, vm, golden }: VmStepInput): boolean {
+  if (step !== 'vm' || computer !== 'vm' || !goldenReadyForSetup(golden) || !vm) {
+    return false
+  }
+
   return (
     vm.state === 'not_created' ||
     vm.state === 'stopped' ||
@@ -125,6 +190,6 @@ export function vmStepNeedsStart({ step, vm, golden }: VmStepInput): boolean {
 }
 
 /** Step 2 waits on an image nothing builds (e.g. the build died with the daemon). */
-export function vmStepNeedsBuild({ step, vm, golden }: VmStepInput): boolean {
-  return step === 'vm' && goldenBuildStalled(golden, vm)
+export function vmStepNeedsBuild({ step, computer, vm, golden }: VmStepInput): boolean {
+  return step === 'vm' && computer === 'vm' && goldenBuildStalled(golden, vm)
 }

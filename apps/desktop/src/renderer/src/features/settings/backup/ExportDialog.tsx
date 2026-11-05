@@ -7,6 +7,7 @@ import { queryKeys } from '@/api/queries'
 import { useApiQuery } from '@/api/use-api-query'
 import { estimateBackup, getVmDetails, startBackupJob } from '@/features/settings/api'
 import { Notice } from '@/features/settings/SettingsLayout'
+import { useComputerHas } from '@/features/workspace/store'
 import { useApiMutation } from '@/features/workspace/use-api-mutation'
 import { cn } from '@/lib/cn'
 import { apiErrorReason } from '@/lib/errors'
@@ -112,7 +113,11 @@ export function ExportDialog({
   )
   const busy = startJob.busy
 
-  const { data: details } = useApiQuery(queryKeys.vmDetails(workspace.id), () => getVmDetails(workspace.id))
+  // Without a computer there are no /workspace files or VM disk to export, only the workspace's data.
+  const hasComputer = useComputerHas('shell')
+  const { data: details } = useApiQuery(queryKeys.vmDetails(workspace.id), () => getVmDetails(workspace.id), {
+    enabled: hasComputer,
+  })
 
   const excludesKey = excludes.join('\n')
   useEffect(() => {
@@ -182,7 +187,7 @@ export function ExportDialog({
     <Modal title={t('backup.dialogTitle')} width={560} onClose={onClose} closeLabel={t('common.close')}>
       <div className="flex flex-col gap-3.5">
         {option('archive', t('backup.archive'), t('backup.archiveHint'), <Download size={16} />)}
-        {kind === 'archive' && (
+        {kind === 'archive' && hasComputer && (
           <div className="flex flex-col gap-3 rounded-[10px] bg-surface-3/60 px-3.5 py-3">
             <div className="flex items-start gap-3">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -206,15 +211,18 @@ export function ExportDialog({
             {includeWorkspace && <ExcludeList value={excludes} onChange={setExcludes} />}
           </div>
         )}
-        <button
-          type="button"
-          aria-expanded={advanced || kind === 'disk'}
-          onClick={() => setAdvanced(!advanced)}
-          className="focus-ring self-start rounded text-sm font-medium text-fg-secondary hover:text-fg"
-        >
-          {advanced || kind === 'disk' ? '▾' : '▸'} {t('backup.advanced')}
-        </button>
-        {(advanced || kind === 'disk') &&
+        {hasComputer && (
+          <button
+            type="button"
+            aria-expanded={advanced || kind === 'disk'}
+            onClick={() => setAdvanced(!advanced)}
+            className="focus-ring self-start rounded text-sm font-medium text-fg-secondary hover:text-fg"
+          >
+            {advanced || kind === 'disk' ? '▾' : '▸'} {t('backup.advanced')}
+          </button>
+        )}
+        {hasComputer &&
+          (advanced || kind === 'disk') &&
           option(
             'disk',
             t('backup.disk'),

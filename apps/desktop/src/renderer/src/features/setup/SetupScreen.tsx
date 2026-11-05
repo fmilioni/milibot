@@ -1,4 +1,4 @@
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { type ReactNode, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,7 +10,8 @@ import { Button } from '@/ui/Button'
 import { Spinner } from '@/ui/Spinner'
 
 import { CliLoginStep } from './CliLoginStep'
-import { CreateMachineButton, LegacyOfficeOption, MachineProgress, MachineSizePicker } from './MachineStep'
+import { ComputerStep } from './ComputerStep'
+import { CreateMachineButton, MachineProgress } from './MachineStep'
 import { ProvidersStep } from './ProvidersStep'
 import { KvmNotice, QemuMissing, WhpxNotice } from './QemuStep'
 import { SetupHero } from './SetupHero'
@@ -102,6 +103,15 @@ function SetupFlow() {
 
   const qemuMissing = host !== null && !host.qemu.found
   const hostSetup = host?.setup ?? null
+  const { computer, machineReady } = flow
+  const machineTitle = t('setup.machine.ready', {
+    cpus: vmConfig.cpus,
+    mem: vmConfig.memGb,
+    disk: vmConfig.dataGb,
+  })
+  const computerDone = computer === 'none' || (size !== null && !qemuMissing)
+  // "Create machine" when a VM must still be made; "Continue" without a computer or with it already running.
+  const creates = computer === 'vm' && !machineReady
 
   return (
     <div className="flex h-full w-full">
@@ -130,6 +140,26 @@ function SetupFlow() {
               <>
                 <Step
                   number={1}
+                  state={computerDone ? 'done' : 'active'}
+                  title={machineReady ? machineTitle : t('setup.computer.title')}
+                >
+                  {!machineReady && (
+                    <ComputerStep
+                      computer={computer}
+                      suggestion={flow.suggestion}
+                      host={host}
+                      size={size}
+                      legacyOffice={flow.legacyOffice}
+                      onComputer={flow.setComputer}
+                      onSize={flow.setSize}
+                      onLegacyOffice={flow.setLegacyOffice}
+                      onCheckQemu={flow.checkQemu}
+                      onRecheckHost={flow.recheckHost}
+                    />
+                  )}
+                </Step>
+                <Step
+                  number={2}
                   state={issues.length === 0 ? 'done' : 'active'}
                   title={t('setup.providers.title')}
                 >
@@ -137,6 +167,7 @@ function SetupFlow() {
                     <ProvidersStep
                       workspaceId={workspaceId}
                       state={providerState}
+                      visibleRows={flow.rows}
                       providers={providers}
                       onChange={flow.patchProviders}
                       onProvidersChanged={flow.reloadProviders}
@@ -153,55 +184,48 @@ function SetupFlow() {
                       : t('setup.providers.hint')}
                   </p>
                 </Step>
-                {flow.machineReady ? (
-                  <Step
-                    number={2}
-                    state="done"
-                    title={t('setup.machine.ready', {
-                      cpus: vmConfig.cpus,
-                      mem: vmConfig.memGb,
-                      disk: vmConfig.dataGb,
-                    })}
-                  >
-                    <Button
-                      variant="primary"
-                      className="w-fit"
-                      disabled={issues.length > 0 || busy}
-                      onClick={() => void flow.createMachine()}
-                    >
-                      {busy && <Spinner size={13} />}
-                      {t('setup.machine.continue')}
-                    </Button>
-                    {error && <p className="selectable text-xs text-danger">{error}</p>}
-                  </Step>
-                ) : (
-                  <Step number={2} state="active" title={t('setup.machine.title')}>
-                    <p className="text-sm text-fg-secondary">{t('setup.machine.subtitle')}</p>
-                    {size && <MachineSizePicker size={size} host={host} onChange={flow.setSize} />}
-                    <LegacyOfficeOption checked={flow.legacyOffice} onChange={flow.setLegacyOffice} />
-                    {qemuMissing && <QemuMissing onCheck={flow.checkQemu} />}
-                    <KvmNotice setup={hostSetup} onCheck={flow.recheckHost} />
-                    <WhpxNotice host={host} onCheck={flow.recheckHost} />
+                <div className="flex flex-col gap-2 pl-10">
+                  {creates ? (
                     <CreateMachineButton
                       minutes={createMachineMinutes(golden)}
                       busy={busy}
-                      disabled={issues.length > 0 || !size || qemuMissing}
-                      onClick={() => void flow.createMachine()}
+                      disabled={!flow.canFinish || qemuMissing}
+                      onClick={() => void flow.finish()}
                     />
-                    {error && (
-                      <p className="selectable text-xs text-danger">{t('setup.machine.failed', { error })}</p>
-                    )}
-                  </Step>
-                )}
+                  ) : (
+                    <Button
+                      variant="primary"
+                      className="w-fit"
+                      disabled={!flow.canFinish || busy}
+                      onClick={() => void flow.finish()}
+                    >
+                      {busy ? <Spinner size={13} /> : null}
+                      {t('setup.machine.continue')}
+                      {!busy && <ArrowRight size={12} />}
+                    </Button>
+                  )}
+                  {error && (
+                    <p className="selectable text-xs text-danger">
+                      {creates ? t('setup.machine.failed', { error }) : error}
+                    </p>
+                  )}
+                </div>
                 <Step number={3} state="pending" title={t('setup.firstBot.title')}>
-                  <p className="text-sm text-fg-muted">{t('setup.firstBot.hintPending')}</p>
+                  <p className="text-sm text-fg-muted">
+                    {computer === 'vm' ? t('setup.firstBot.hintPending') : t('setup.firstBot.hintNoComputer')}
+                  </p>
                 </Step>
               </>
             ) : (
               <>
-                <Step number={1} state="done" title={t('setup.providers.summary', { names })} />
-                {step === 'vm' ? (
-                  <Step number={2} state="active" title={t('setup.machine.title')}>
+                <Step
+                  number={1}
+                  state="done"
+                  title={computer === 'vm' ? machineTitle : t('setup.computer.none.name')}
+                />
+                <Step number={2} state="done" title={t('setup.providers.summary', { names })} />
+                {step === 'vm' && computer === 'vm' && (
+                  <Step number={3} state="active" title={t('setup.machine.title')}>
                     <p className="text-sm text-fg-secondary">
                       {t('setup.machine.summary', {
                         cpus: vmConfig.cpus,
@@ -221,18 +245,8 @@ function SetupFlow() {
                       retrying={flow.retrying}
                     />
                   </Step>
-                ) : (
-                  <Step
-                    number={2}
-                    state="done"
-                    title={t('setup.machine.ready', {
-                      cpus: vmConfig.cpus,
-                      mem: vmConfig.memGb,
-                      disk: vmConfig.dataGb,
-                    })}
-                  />
                 )}
-                {step === 'login' ? (
+                {step === 'login' && (
                   <Step number={3} state="active" title={t('setup.login.title', cliTextParams(loginEngine))}>
                     <p className="text-sm leading-[1.5] text-fg-secondary">
                       {t('setup.login.description', cliTextParams(loginEngine))}
@@ -249,7 +263,8 @@ function SetupFlow() {
                       onChangeProviders={flow.changeProviders}
                     />
                   </Step>
-                ) : (
+                )}
+                {step === 'vm' && computer !== 'vm' && (
                   <Step number={3} state="pending" title={t('setup.firstBot.title')}>
                     <p className="text-sm text-fg-muted">{t('setup.firstBot.hint')}</p>
                   </Step>

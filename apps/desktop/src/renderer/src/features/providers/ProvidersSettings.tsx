@@ -1,4 +1,4 @@
-import { CLI_ENGINE_INFO, CLI_ENGINES, type CliEngine, isCliEngine } from '@milibot/shared'
+import { CLI_ENGINE_INFO, CLI_ENGINES, type CliEngine, isCliEngine, type Provider } from '@milibot/shared'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,7 +7,7 @@ import { queryKeys } from '@/api/queries'
 import { addCliProvider, useProvidersData } from '@/features/providers/api'
 import { KeyringNotice } from '@/features/settings/HostWarnings'
 import { SettingsPage } from '@/features/settings/SettingsLayout'
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useApiMutation } from '@/features/workspace/use-api-mutation'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cliTextParams } from '@/lib/cli-engines'
@@ -16,13 +16,25 @@ import { Button } from '@/ui/Button'
 
 import { ProviderForm } from './ProviderForm'
 import { ApiProviderCard } from './settings/ApiProviderCard'
+import { CliNeedsVmNote } from './settings/CliNeedsVmNote'
 import { CliProviderCard } from './settings/CliProviderCard'
 import { DefaultModels } from './settings/DefaultModels'
+
+/** The engines offered as "add" rows: those without a provider yet, when the computer can run them. */
+function missingEngines(providers: readonly Provider[], runsCli: boolean): CliEngine[] {
+  if (!runsCli) {
+    return []
+  }
+
+  return CLI_ENGINES.filter((engine) => !providers.some((p) => p.type === engine))
+}
 
 export function ProvidersSettings() {
   const { t } = useTranslation()
   const workspaceId = useWorkspaceId()
   const openSettings = useAppStore((s) => s.openSettings)
+  // CLI engines run on the bots' computer: without one, their cards stay but none can be added.
+  const runsCli = useComputerHas('shell')
   const { data, error, reload } = useProvidersData(workspaceId)
   const [form, setForm] = useState<{ providerId: string | null } | null>(null)
   const addCli = useApiMutation((engine: CliEngine) => addCliProvider(workspaceId, engine), {
@@ -50,6 +62,11 @@ export function ProvidersSettings() {
         {(data) => (
           <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
             <ul className="flex min-w-0 flex-col gap-3">
+              {!runsCli && (
+                <li>
+                  <CliNeedsVmNote />
+                </li>
+              )}
               {data.providers.map((provider) =>
                 isCliEngine(provider.type) ? (
                   <CliProviderCard
@@ -92,27 +109,25 @@ export function ProvidersSettings() {
                   />
                 </li>
               )}
-              {CLI_ENGINES.filter((engine) => !data.providers.some((p) => p.type === engine)).map(
-                (engine) => (
-                  <li
-                    key={engine}
-                    className="flex items-center gap-3 rounded-xl border border-dashed border-border px-3.5 py-3"
-                  >
-                    <span className="min-w-0 flex-1 text-base text-fg-secondary">
-                      {t(
-                        CLI_ENGINE_INFO[engine].authModes.length > 1
-                          ? 'settings.providers.cli.missing'
-                          : 'settings.providers.cli.missingAccount',
-                        cliTextParams(engine),
-                      )}
-                    </span>
-                    <Button size="sm" disabled={addCli.busy} onClick={() => void addCli.run(engine)}>
-                      <Plus size={13} />
-                      {t('settings.providers.cli.add', cliTextParams(engine))}
-                    </Button>
-                  </li>
-                ),
-              )}
+              {missingEngines(data.providers, runsCli).map((engine) => (
+                <li
+                  key={engine}
+                  className="flex items-center gap-3 rounded-xl border border-dashed border-border px-3.5 py-3"
+                >
+                  <span className="min-w-0 flex-1 text-base text-fg-secondary">
+                    {t(
+                      CLI_ENGINE_INFO[engine].authModes.length > 1
+                        ? 'settings.providers.cli.missing'
+                        : 'settings.providers.cli.missingAccount',
+                      cliTextParams(engine),
+                    )}
+                  </span>
+                  <Button size="sm" disabled={addCli.busy} onClick={() => void addCli.run(engine)}>
+                    <Plus size={13} />
+                    {t('settings.providers.cli.add', cliTextParams(engine))}
+                  </Button>
+                </li>
+              ))}
             </ul>
             <DefaultModels data={data} onEditProvider={(providerId) => setForm({ providerId })} />
           </div>

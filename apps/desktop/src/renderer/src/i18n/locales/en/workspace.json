@@ -18,5 +18,6 @@
     "suspended": "VM suspended",
     "error": "VM error"
   },
+  "noComputer": "No computer",
   "runtimeCrashed": "Stopped responding"
 }

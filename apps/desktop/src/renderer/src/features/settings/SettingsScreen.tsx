@@ -27,7 +27,7 @@ import { ProvidersSettings } from '@/features/providers/ProvidersSettings'
 import { SessionsSettings } from '@/features/sessions/SessionsSettings'
 import { SkillsSettings } from '@/features/skills/SkillsSettings'
 import { useSkillsStore } from '@/features/skills/store'
-import { VmSettings } from '@/features/vm/settings/VmSettings'
+import { ComputerSettings } from '@/features/vm/settings/ComputerSettings'
 import { screenIs, type SettingsSection, useAppStore, useCurrentWorkspace } from '@/features/workspace/store'
 import { WorkspaceBadge } from '@/features/workspace/WorkspaceBadge'
 import { WorkspacesSettings } from '@/features/workspace/WorkspacesSettings'
@@ -43,7 +43,7 @@ import { SettingsPage } from './SettingsLayout'
 const SECTION_ICONS: Record<SettingsSection, ReactNode> = {
   general: <SlidersHorizontal size={15} aria-hidden />,
   providers: <KeyRound size={15} aria-hidden />,
-  vm: <Monitor size={15} aria-hidden />,
+  computer: <Monitor size={15} aria-hidden />,
   credentials: <GitBranch size={15} aria-hidden />,
   mcp: <Plug size={15} aria-hidden />,
   skills: <Sparkles size={15} aria-hidden />,
@@ -60,7 +60,7 @@ const SECTION_ICONS: Record<SettingsSection, ReactNode> = {
 const WORKSPACE_SECTIONS: SettingsSection[] = [
   'general',
   'providers',
-  'vm',
+  'computer',
   'credentials',
   'mcp',
   'skills',
@@ -80,8 +80,8 @@ function Section({ section }: { section: SettingsSection }) {
       return <GeneralSettings />
     case 'providers':
       return <ProvidersSettings />
-    case 'vm':
-      return <VmSettings />
+    case 'computer':
+      return <ComputerSettings />
     case 'credentials':
       return <CredentialsSettings />
     case 'mcp':

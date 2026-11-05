@@ -197,12 +197,17 @@
       "title": "The file left /workspace",
       "hint": "The file is no longer where it was added from"
     },
+    "no_computer": {
+      "title": "Needs the virtual machine",
+      "hint": "This kind of file is read on the virtual machine, which this workspace doesn't have"
+    },
     "internal": {
       "title": "Something went wrong",
       "hint": "Try reading the document again"
     }
   },
   "updateSystem": "Update system",
+  "useVm": "Use a virtual machine",
   "legacyOffice": {
     "label": "Old Office files (.doc, .xls, .ppt)",
     "hint": "Also reads .ods and .odp. Installs LibreOffice in the virtual machine (about {{size}} MB of its disk).",

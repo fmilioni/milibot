@@ -3,8 +3,8 @@ import { ArrowUpRight, CalendarClock, GitPullRequest, Search, Wallet } from 'luc
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { STARTER_SUGGESTIONS, type StarterSuggestion } from '@/features/setup/lib/setup'
-import { useAppStore } from '@/features/workspace/store'
+import { type StarterSuggestion, starterSuggestions } from '@/features/setup/lib/setup'
+import { useAppStore, useComputerCapabilities } from '@/features/workspace/store'
 
 import { CHAT_COLUMN } from './MessageList'
 
@@ -25,6 +25,7 @@ export function StarterSuggestions({ conversation }: { conversation: Conversatio
   const thread = useAppStore((s) => s.threads[conversation.id])
   const sendMessage = useAppStore((s) => s.sendMessage)
   const [sending, setSending] = useState(false)
+  const capabilities = useComputerCapabilities()
   const bot = conversation.type === 'direct' ? bots[conversation.memberBotIds[0] ?? ''] : undefined
   if (!bot || bot.id !== firstBot(Object.values(bots))?.id || !thread || thread.loading || thread.hasMore)
     return null
@@ -39,7 +40,7 @@ export function StarterSuggestions({ conversation }: { conversation: Conversatio
     <div className="px-7 pb-3">
       <div className={CHAT_COLUMN}>
         <ul aria-label={t('setup.suggestions.label')} className="flex flex-col gap-1.5 pl-10">
-          {STARTER_SUGGESTIONS.map((key) => {
+          {starterSuggestions(capabilities).map((key) => {
             const Icon = ICONS[key]
             const text = t(`setup.suggestions.${key}`)
             return (

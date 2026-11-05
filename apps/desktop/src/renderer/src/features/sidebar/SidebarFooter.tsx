@@ -2,7 +2,7 @@ import { Bug, RotateCcw, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerHas } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
 import { formatClock, formatTokens, formatUsd } from '@/lib/format'
 import { Menu } from '@/ui/Menu'
@@ -12,6 +12,7 @@ import { Tooltip } from '@/ui/Tooltip'
 import { ActiveWorkLine } from './ActiveWorkLine'
 import { AppUpdateCard } from './AppUpdateCard'
 import { KeepAwakeIndicator } from './KeepAwakeIndicator'
+import { NoComputerLine } from './NoComputerLine'
 import { UsageCards } from './UsageCards'
 import { VmStatusLine } from './VmStatusLine'
 
@@ -22,6 +23,7 @@ export function SidebarFooter() {
   const rightPanel = useAppStore((s) => s.rightPanel)
   const toggle = useAppStore((s) => s.toggleRightPanel)
   const openSettings = useAppStore((s) => s.openSettings)
+  const hasComputer = useComputerHas('shell')
   const state = vm?.state ?? status?.vm.state ?? 'not_created'
   const desktops = vm?.desktops ?? status?.vm.desktops ?? 0
   const resetUsageCounter = useAppStore((s) => s.resetUsageCounter)
@@ -59,7 +61,11 @@ export function SidebarFooter() {
     <footer className="mx-3 mb-4 flex flex-col gap-2.5 border-t border-border pt-3">
       <UsageCards />
       <ActiveWorkLine />
-      <VmStatusLine label={vmLabel} dot={vmDot} running={state === 'running'} />
+      {hasComputer ? (
+        <VmStatusLine label={vmLabel} dot={vmDot} running={state === 'running'} />
+      ) : (
+        <NoComputerLine />
+      )}
       <AppUpdateCard />
       <div className="flex items-center justify-between gap-2 px-1">
         <Tooltip content={t('footer.counterHint')}>

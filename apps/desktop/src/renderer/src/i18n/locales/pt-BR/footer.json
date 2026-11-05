@@ -10,6 +10,10 @@
     "error": "VM com erro",
     "usageHint": "Ver uso da VM"
   },
+  "noComputer": {
+    "label": "Sem computador",
+    "hint": "Os bots trabalham sem computador. Mudar em Configurações › Computador"
+  },
   "usage": "{{cost}} hoje · {{tokens}} tokens",
   "quota": {
     "title": "Uso do {{engine}}",

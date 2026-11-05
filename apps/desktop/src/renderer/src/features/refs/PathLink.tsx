@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from 'react'
 
 import { fileErrorCode } from '@/features/files/store'
 import { type ToastKey, useAppStore } from '@/features/workspace/store'
+import { isNoComputer } from '@/lib/errors'
 import { FileChip } from '@/ui/RefLinks'
 
 import { openWorkspaceFile } from './api'
@@ -31,7 +32,8 @@ export function PathLink({
     if (!workspaceId) return
     openWorkspaceFile(workspaceId, path).catch((err: unknown) => {
       console.error('[open file]', err)
-      showToast(PATH_ERRORS[fileErrorCode(err) ?? ''] ?? 'error')
+      const toast = isNoComputer(err) ? 'fileNeedsComputerToOpen' : PATH_ERRORS[fileErrorCode(err) ?? '']
+      showToast(toast ?? 'error')
     })
   }
   if (variant === 'chip')

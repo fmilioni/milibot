@@ -65,7 +65,7 @@ export function VmStatusLine({ label, dot, running }: { label: string; dot: stri
             stats={stats}
             onAdjust={() => {
               setAnchor(null)
-              openSettings('vm')
+              openSettings('computer')
             }}
           />
         </Popover>

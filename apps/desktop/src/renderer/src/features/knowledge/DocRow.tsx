@@ -207,13 +207,13 @@ export function DocRow({ doc }: { doc: KnowledgeDoc }) {
               {t(error.legacyOffice === 'enable' ? 'knowledge.legacyOffice.enable' : 'common.retry')}
             </button>
           )}
-          {error?.updateSystem && (
+          {error?.computerAction && (
             <button
               type="button"
-              onClick={() => openSettings('vm')}
+              onClick={() => openSettings('computer')}
               className="focus-ring shrink-0 rounded font-semibold text-accent hover:underline"
             >
-              {t('knowledge.updateSystem')}
+              {t(`knowledge.${error.computerAction}`)}
             </button>
           )}
         </div>

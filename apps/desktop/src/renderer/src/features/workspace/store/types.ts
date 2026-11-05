@@ -10,14 +10,15 @@ import type {
   BotPromptDraft,
   CliUsage,
   CloseBehavior,
+  ComputerChoice,
   ConversationSummary,
   CopyWorkspaceOptions,
   GenerateBotPromptBody,
   GroupSettings,
   QuestionAnswer,
   RuntimeStatus,
+  SetupComputerBody,
   SetupStep,
-  SetupVmBody,
   SidebarSection,
   SidebarSlot,
   UpdateBotBody,
@@ -91,8 +92,12 @@ export interface WorkspaceSlice {
   }): Promise<void>
   /** Moves this window's workspace to another setup screen (`done` shows the chat). */
   updateSetup(step: SetupStep): Promise<void>
-  /** Saves the VM size and starts creating the machine. */
-  setupVm(size: SetupVmBody): Promise<void>
+  /** Stores the workspace's computer; a VM is sized and its creation starts. */
+  setupComputer(body: SetupComputerBody): Promise<void>
+  /** Switches a set-up workspace's computer (its runtime restarts; leaving the VM keeps its disk). */
+  setComputer(choice: ComputerChoice): Promise<void>
+  /** Deletes the disk a workspace kept from its VM; resolves to the bytes freed. */
+  deleteVmDisk(): Promise<number>
   openWorkspaceInNewWindow(workspaceId: string): void
   updateWorkspace(workspaceId: string, patch: UpdateWorkspaceBody): Promise<void>
   /** Deletes a workspace (VM, disks, data, keys); a window showing it moves to another one. */

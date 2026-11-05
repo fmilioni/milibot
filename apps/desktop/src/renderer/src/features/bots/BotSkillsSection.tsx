@@ -1,12 +1,12 @@
 import type { Bot, BotSkill } from '@milibot/shared'
-import { Bot as BotIcon, Lock } from 'lucide-react'
+import { Bot as BotIcon, Lock, MonitorOff } from 'lucide-react'
 import { createElement, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { groupSkills, skillOrigin } from '@/features/skills/lib/skills'
+import { groupSkills, missingRequirements, skillOrigin } from '@/features/skills/lib/skills'
 import { GithubMark, skillIcon, useSkillText } from '@/features/skills/SkillParts'
 import { useSkillsStore } from '@/features/skills/store'
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerCapabilities } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
 import { Tag } from '@/ui/Tag'
@@ -19,6 +19,7 @@ const BUILTINS_SHOWN = 4
 function Row({ item, bot, onChange }: { item: BotSkill; bot: Bot; onChange: (enabled: boolean) => void }) {
   const { t } = useTranslation()
   const text = useSkillText()
+  const capabilities = useComputerCapabilities()
   const { skill } = item
   const { name } = text(skill)
   const on = item.active
@@ -35,6 +36,12 @@ function Row({ item, bot, onChange }: { item: BotSkill; bot: Bot; onChange: (ena
       </Tooltip>
     )
   else if (!skill.enabled) chip = <Tag size="sm">{t('panels.bot.skills.offInWorkspace')}</Tag>
+  else if (missingRequirements(skill, capabilities).length > 0)
+    chip = (
+      <Tag size="sm" icon={<MonitorOff size={10} aria-hidden />}>
+        {t('skills.meta.needsVm')}
+      </Tag>
+    )
   else if (skill.source === 'import' && origin?.kind === 'github')
     chip = (
       <Tag size="sm" icon={<GithubMark size={10} />}>

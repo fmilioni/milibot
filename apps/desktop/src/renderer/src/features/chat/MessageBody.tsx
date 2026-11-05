@@ -25,6 +25,7 @@ import type { MessageView } from '@/features/chat/lib/message-view'
 import { DesignCard } from '@/features/designs/DesignCard'
 import { openCliLoginTerminal } from '@/features/providers/api'
 import { sessionCardIsCompact } from '@/features/sessions/lib/session-view'
+import { currentComputerHas } from '@/features/workspace/lib/computer'
 import { toastOnError, useAppStore } from '@/features/workspace/store'
 import type { MentionTarget } from '@/lib/mentions'
 import { Collapsible } from '@/ui/Collapsible'
@@ -227,7 +228,8 @@ export function messageBody(
           void toastOnError(openCliLoginTerminal(workspaceId, engine, message.authorBotId))
         store().openRightPanel('vm')
       }
-      return body(<ErrorCard payload={view.payload} onOpenScreen={onOpenScreen} />)
+      const canOpenScreen = currentComputerHas(store(), 'desktop')
+      return body(<ErrorCard payload={view.payload} {...(canOpenScreen ? { onOpenScreen } : {})} />)
     }
     case 'task':
       return body(<TaskCard payload={view.payload} />)

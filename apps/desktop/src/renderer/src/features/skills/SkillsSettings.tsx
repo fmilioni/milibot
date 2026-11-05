@@ -7,6 +7,7 @@ import {
   Folder,
   FolderOpen,
   FolderSearch,
+  MonitorOff,
   Terminal,
   User,
   Users,
@@ -28,7 +29,12 @@ import {
   skillRowMeta,
   sourceChips,
 } from '@/features/skills/lib/skills'
-import { toastOnError, useAppStore } from '@/features/workspace/store'
+import {
+  toastOnError,
+  useAppStore,
+  useComputerCapabilities,
+  useComputerHas,
+} from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { useFileDrop } from '@/hooks/use-file-drop'
 import { cn } from '@/lib/cn'
@@ -51,7 +57,7 @@ import { useSkillMenu } from './use-skill-menu'
 
 const FILTERS: SkillFilter[] = ['all', 'yours', 'taught', 'builtin']
 
-const META_ICONS = { tools: Wrench, scripts: Terminal, user: User, users: Users }
+const META_ICONS = { tools: Wrench, scripts: Terminal, user: User, users: Users, noComputer: MonitorOff }
 
 /** Paths of files and folders dropped on the window (sandboxed renderer: through the preload). */
 function droppedPaths(event: DragEvent): string[] {
@@ -106,6 +112,7 @@ function SkillsList() {
   const skills = useSkillsStore((s) => (s.workspaceId === workspaceId ? s.skills : NO_SKILLS))
   const loaded = useSkillsStore((s) => s.workspaceId === workspaceId && s.loaded)
   const folder = useSkillsStore((s) => (s.workspaceId === workspaceId ? s.folder : null))
+  const hasComputer = useComputerHas('shell')
   const loadFolder = useSkillsStore((s) => s.loadFolder)
   const openImport = useSkillsStore((s) => s.openImport)
   const [filter, setFilter] = useState<SkillFilter>('all')
@@ -174,10 +181,12 @@ function SkillsList() {
         </div>
       )}
       <Notice icon={<Folder size={14} className="text-fg-secondary" />}>
-        {t('skills.folderNote', {
-          path: folder ? shortPath(folder.path) : '…',
-          vmPath: folder?.vmPath ?? '/usr/local/share/milibot/skills',
-        })}
+        {hasComputer
+          ? t('skills.folderNote', {
+              path: folder ? shortPath(folder.path) : '…',
+              vmPath: folder?.vmPath ?? '/usr/local/share/milibot/skills',
+            })
+          : t('skills.folderNoteNoComputer', { path: folder ? shortPath(folder.path) : '…' })}
       </Notice>
       {creating && <NewSkillDialog onClose={() => setCreating(false)} />}
     </SettingsPage>
@@ -256,7 +265,8 @@ function SkillRow({ skill, first }: { skill: Skill; first: boolean }) {
   const { name, description } = text(skill)
   const chips = sourceChips(skill, bots)
   const entries = useSkillMenu(skill, { withOpen: true, onDelete: () => setConfirming(true) })
-  const meta = skillRowMeta(skill, bots, { first, t, locale: i18n.language })
+  const capabilities = useComputerCapabilities()
+  const meta = skillRowMeta(skill, bots, { first, t, locale: i18n.language, capabilities })
 
   return (
     <li className={cn('flex flex-col', !first && 'border-t border-border')}>

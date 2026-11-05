@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { NO_MODEL_LISTS, useProviderModelLists } from '@/features/providers/api'
 import { ProviderForm } from '@/features/providers/ProviderForm'
+import { CliNeedsVmNote } from '@/features/providers/settings/CliNeedsVmNote'
 import {
   checkedRows,
   effectiveDefault,
@@ -117,12 +118,15 @@ function ProviderFormDialog({
 export function ProvidersStep({
   workspaceId,
   state,
+  visibleRows,
   providers,
   onChange,
   onProvidersChanged,
 }: {
   workspaceId: string
   state: ProviderStepState
+  /** The rows this workspace's computer can run (`providerRows`). */
+  visibleRows: readonly ProviderRowId[]
   providers: Provider[]
   onChange: (patch: StepPatch) => void
   onProvidersChanged: () => Promise<Provider[]>
@@ -140,11 +144,13 @@ export function ProvidersStep({
   const savedKey = providers.some((p) => rowOf(p) === 'openrouter' && p.hasSecret)
   const rows = checkedRows(state)
   const defaultRow = effectiveDefault(state)
+  const engines = CLI_ENGINES.filter((engine) => visibleRows.includes(engine))
+  const enginesHidden = engines.length < CLI_ENGINES.length
 
   return (
     <div className="flex flex-col gap-2.5">
       <ul className="flex flex-col gap-2">
-        {CLI_ENGINES.map((engine) => (
+        {engines.map((engine) => (
           <ProviderRow
             key={engine}
             row={engine}
@@ -197,6 +203,7 @@ export function ProvidersStep({
           )}
         </ProviderRow>
       </ul>
+      {enginesHidden && <CliNeedsVmNote />}
       {rows.length > 0 && (
         <div
           role="radiogroup"

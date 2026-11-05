@@ -473,6 +473,22 @@ describe('DefaultAgentHost', () => {
     })
   })
 
+  it('words an unavailable model as a card with the params the app translates it with', async () => {
+    const { env, host, bot, say } = await setup([])
+    env.resolveModel = async () => ({
+      kind: 'unavailable',
+      code: 'no_model',
+      reason: 'Choose a model for the provider "Local" (or for this bot).',
+      params: { provider: 'Local' },
+    })
+    say('hi')
+    await host.idle(bot.id)
+    expect(env.messages.at(-1)).toMatchObject({
+      kind: 'card',
+      payload: { type: 'error', code: 'no_model', params: { provider: 'Local' } },
+    })
+  })
+
   it('posts an error card and goes idle when a turn crashes', async () => {
     const { env, host, bot, say } = await setup([{ text: 'never' }])
     env.resolveModel = async () => {

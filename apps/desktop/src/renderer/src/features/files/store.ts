@@ -11,6 +11,7 @@ import { create } from 'zustand'
 import { api } from '@/api/daemon'
 import { createWorkspaceScope } from '@/api/workspace-scope'
 import type { ToastKey } from '@/features/workspace/store'
+import { isNoComputer } from '@/lib/errors'
 
 const PAGE_SIZE = 100
 const NO_COUNTS: FilePage['counts'] = { all: 0, bots: 0, user: 0 }
@@ -164,8 +165,12 @@ export function fileErrorCode(err: unknown): string | null {
   return typeof code === 'string' ? code : null
 }
 
-/** The toast for a failed file action: the VM off, the file gone from the VM, or anything else. */
+/** The toast for a failed file action: no computer, the VM off, the file gone from the VM, or anything else. */
 export function fileErrorToast(err: unknown): ToastKey {
+  if (isNoComputer(err)) {
+    return 'fileNeedsComputer'
+  }
+
   const code = fileErrorCode(err)
   if (code === 'VM_NOT_RUNNING') return 'fileNeedsVm'
   if (code === 'FILE_REMOVED') return 'fileRemoved'

@@ -3,6 +3,7 @@ import { AppWindow, Check, ChevronsUpDown, ExternalLink, Plus, Settings2, Shield
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { workspaceHas } from '@/features/workspace/lib/computer'
 import { useAppStore, useCurrentWorkspace } from '@/features/workspace/store'
 import { WorkspaceBadge } from '@/features/workspace/WorkspaceBadge'
 import { useDismiss } from '@/hooks/use-dismiss'
@@ -162,20 +163,24 @@ function WorkspaceRow({
   const vm = useAppStore((s) => s.vm)
   const busyBots = useAppStore((s) => Object.values(s.bots).filter((b) => b.status !== 'idle').length)
 
+  const hasComputer = workspaceHas(workspace, 'shell')
+  const working = busyBots > 0 ? t('workspace.botsWorking', { count: busyBots }) : null
+
   let statusText: string
   let dot: string
   if (workspace.setup !== 'done') {
     statusText = t('setup.pending')
     dot = 'bg-warning'
-  } else if (current) {
-    const state = vm?.state ?? 'not_created'
-    const vmText = t(`workspace.vmState.${state}`)
-    statusText =
-      busyBots > 0 ? `${vmText}${META_SEPARATOR}${t('workspace.botsWorking', { count: busyBots })}` : vmText
-    dot = vmDot(state)
-  } else if (workspace.runtimeStatus === 'crashed') {
+  } else if (workspace.runtimeStatus === 'crashed' && !current) {
     statusText = t('workspace.runtimeCrashed')
     dot = 'bg-danger'
+  } else if (!hasComputer) {
+    statusText = [t('workspace.noComputer'), current ? working : null].filter(Boolean).join(META_SEPARATOR)
+    dot = workspace.runtimeStatus === 'running' ? 'bg-success' : 'bg-fg-muted'
+  } else if (current) {
+    const state = vm?.state ?? 'not_created'
+    statusText = [t(`workspace.vmState.${state}`), working].filter(Boolean).join(META_SEPARATOR)
+    dot = vmDot(state)
   } else {
     statusText = t(`workspace.vmState.${workspace.vmState}`)
     dot = vmDot(workspace.vmState)

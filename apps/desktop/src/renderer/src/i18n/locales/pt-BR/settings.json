@@ -11,7 +11,7 @@
     "appearance": "Idioma e aparência",
     "general": "Geral",
     "providers": "Provedores e modelos",
-    "vm": "Máquina virtual",
+    "computer": "Computador",
     "credentials": "GitHub e credenciais",
     "costs": "Debug e custos",
     "workspaces": "Workspaces",
@@ -349,11 +349,55 @@
       "remove": "Remover {{level}}",
       "invalid": "Use só letras, números e - _ . (sem espaços)",
       "levels": "Níveis aceitos"
+    },
+    "cliNeedsVm": "{{engines}} precisam da máquina virtual."
+  },
+  "computer": {
+    "subtitle": "Onde os bots deste workspace trabalham",
+    "options": {
+      "vm": "Linux só para os bots: terminal, tela e navegador.",
+      "none": "Só conversa, web, quadros e memória. Leve."
+    },
+    "can": {
+      "title": "Os bots continuam fazendo",
+      "chat": "Conversar, planejar e lembrar de tudo",
+      "web": "Pesquisar e ler páginas da web",
+      "boards": "Quadros, planos, rotinas e designs",
+      "attachments": "Ler anexos de texto e imagens"
+    },
+    "needsVm": {
+      "title": "Precisam da máquina virtual",
+      "shell": "Terminal, código e repositórios",
+      "desktop": "Tela, navegador e aprender procedimentos",
+      "documents": "PDFs, Office e imagens escaneadas",
+      "cli": "{{engines}}"
+    },
+    "keptDisk": {
+      "title": "Disco da máquina virtual anterior · {{size}}",
+      "body": "Os arquivos dos bots em /workspace ficam guardados aqui. Se voltar para a máquina virtual, ela continua de onde parou.",
+      "delete": "Apagar disco"
+    },
+    "leave": {
+      "title": "Trabalhar sem computador?",
+      "body": "A máquina virtual será desligada e os bots que estiverem trabalhando param. O disco fica guardado: dá para voltar depois e continuar de onde parou.",
+      "confirm": "Desligar e trocar",
+      "busy": "Desligando…"
+    },
+    "use": {
+      "title": "Usar uma máquina virtual",
+      "body": "Os bots ganham terminal, tela e navegador. Criar a máquina leva alguns minutos; você pode continuar conversando enquanto isso.",
+      "bodyResume": "A máquina virtual anterior volta com os arquivos dos bots, no tamanho que tinha. Dá para mudar o tamanho depois nesta página.",
+      "resume": "Ligar a máquina virtual"
+    },
+    "deleteDisk": {
+      "title": "Apagar o disco da máquina virtual?",
+      "body": "Os arquivos dos bots em /workspace, os programas instalados e os pontos de restauração somem para sempre. Libera {{size}}. Os bots, conversas e quadros continuam.",
+      "confirm": "Apagar disco",
+      "busy": "Apagando…"
     }
   },
   "vm": {
     "sizeTitle": "Tamanho e discos",
-    "subtitle": "O computador Linux onde os bots trabalham",
     "state": {
       "not_created": "Ainda não criada",
       "stopped": "Desligada",
@@ -613,7 +657,7 @@
     }
   },
   "workspaces": {
-    "subtitle": "Ambientes separados, cada um com sua VM, bots, memória e chaves",
+    "subtitle": "Ambientes separados, cada um com seus bots, memória, chaves e computador",
     "vm": {
       "not_created": "VM não criada",
       "stopped": "VM desligada",

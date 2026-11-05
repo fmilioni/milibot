@@ -3,6 +3,7 @@ name: using-the-screen
 description: 'Your desktop via the computer tool and procedures taught on it. Load it before using a GUI app other than the browser, checking the screen or a taught task.'
 milibot:
   tools: [computer]
+  requires: [desktop]
 ---
 
 # Using the screen

@@ -27,7 +27,7 @@ import {
   stepWatchTarget,
 } from '@/features/chat/lib/activity-steps'
 import { shortFilePath, splitPath } from '@/features/sessions/lib/session-view'
-import { toastOnError, useAppStore } from '@/features/workspace/store'
+import { toastOnError, useAppStore, useComputerHas } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
 import type { MentionTarget } from '@/lib/mentions'
 import { DiffStat } from '@/ui/diff/DiffStat'
@@ -321,6 +321,7 @@ export function ActivityTurn({
 }) {
   const { t } = useTranslation()
   const showBotScreen = useAppStore((s) => s.showBotScreen)
+  const hasDesktop = useComputerHas('desktop')
   const segments = splitActivity(payload)
   const openDesign = (name: string | null) => void toastOnError(openDesignFor(conversationId, botId, name))
   const current = payload.steps.findLast((s) => s.status === 'running')
@@ -331,7 +332,7 @@ export function ActivityTurn({
           label: t('chat.activity.showDesign'),
           onClick: () => openDesign(current ? stepDesignName(current) : null),
         }
-      : target === 'screen' && botId
+      : target === 'screen' && botId && hasDesktop
         ? { label: t('chat.activity.showScreen'), onClick: () => showBotScreen(botId) }
         : undefined
   const lastSteps = segments.findLast((s) => s.type === 'steps')

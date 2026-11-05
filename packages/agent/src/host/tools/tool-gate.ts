@@ -2,7 +2,7 @@ import type { Bot } from '@milibot/shared'
 
 import type { ToolCall } from '../../llm/messages'
 import { gateReplies } from '../../prompts/tool-replies'
-import { toolAlias, toolAllowedInLane, toolEnabled } from '../../tools/policy'
+import { toolAlias, toolAllowedInLane, toolEnabled, toolFitsComputer } from '../../tools/policy'
 import type { HostContext } from '../context'
 import type { LaneState, TurnState } from '../state'
 
@@ -21,27 +21,40 @@ export function gateToolCall(
 ): ToolRefusal | null {
   const args = call.arguments as { action?: unknown } | null
   const kind = lane.info.kind
-  if (!toolAllowedInLane(call.name, kind)) return { status: 'error', text: gateReplies.notHere(call.name) }
-  if (!toolEnabled(call.name, kind, ctx.env().skillContext(bot, kind).families))
+  if (!toolAllowedInLane(call.name, kind)) {
+    return { status: 'error', text: gateReplies.notHere(call.name) }
+  }
+
+  const scope = ctx.env().skillContext(bot, kind)
+  if (!toolFitsComputer(call.name, scope.capabilities)) {
+    return { status: 'error', text: gateReplies.noComputer(call.name) }
+  }
+
+  if (!toolEnabled(call.name, kind, scope)) {
     return { status: 'error', text: gateReplies.skillOff(call.name) }
-  if (ctx.helpers.get(lane.info.key)?.readOnly && !toolAllowedInLane(call.name, kind, true))
+  }
+
+  if (ctx.helpers.get(lane.info.key)?.readOnly && !toolAllowedInLane(call.name, kind, true)) {
     return { status: 'error', text: gateReplies.readOnly(call.name) }
+  }
+
   if (turn?.offeredTools && !turn.offeredTools.has(call.name)) {
     const alias = toolAlias(call.name)
+    const offersAlias = alias !== undefined && turn.offeredTools.has(alias)
     return {
       status: 'error',
-      text:
-        alias && turn.offeredTools.has(alias)
-          ? gateReplies.useAlias(call.name, alias)
-          : gateReplies.notInTurn(call.name),
+      text: offersAlias ? gateReplies.useAlias(call.name, alias) : gateReplies.notInTurn(call.name),
     }
   }
-  if (
+
+  const waitsForScreenshot =
     call.name === 'computer' &&
     ctx.lanes.bot(bot.id).needsScreenshot &&
     args?.action !== 'screenshot' &&
     args?.action !== 'wait'
-  )
+  if (waitsForScreenshot) {
     return { status: 'cancelled', text: gateReplies.userTookControl }
+  }
+
   return null
 }

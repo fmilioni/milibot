@@ -428,6 +428,7 @@ const ERROR_CODES = [
   'empty',
   'file_missing',
   'vm_file_not_found',
+  'no_computer',
   'internal',
 ] as const
 type ErrorCode = (typeof ERROR_CODES)[number]
@@ -440,19 +441,32 @@ function errorTitle(doc: KnowledgeDoc, t: TFunction): string {
   return t(`knowledge.errors.${knownError(doc)}.title`)
 }
 
+/** What a failed doc asks of Settings › Computer: a system update, or a computer to read it on. */
+type ComputerAction = 'updateSystem' | 'useVm'
+
+const COMPUTER_ACTIONS: Partial<Record<ErrorCode, ComputerAction>> = {
+  tools_missing: 'updateSystem',
+  no_computer: 'useVm',
+}
+
+const LEGACY_OFFICE_ACTIONS: Partial<Record<ErrorCode, 'enable' | 'retry'>> = {
+  legacy_office_disabled: 'enable',
+  office_missing: 'retry',
+}
+
 /**
- * What went wrong and what to do: `tools_missing` points to "Update system", an old Office file to the
- * "Old Office files" switch (turn it on, or retry its install).
+ * What went wrong and what to do: missing tools or no computer point to Settings › Computer, an old Office
+ * file to the "Old Office files" switch (turn it on, or retry its install).
  */
 export function docErrorView(
   doc: KnowledgeDoc,
   t: TFunction,
-): { hint: string; updateSystem: boolean; legacyOffice: 'enable' | 'retry' | null } {
+): { hint: string; computerAction: ComputerAction | null; legacyOffice: 'enable' | 'retry' | null } {
   const code = knownError(doc)
   return {
     hint: t(`knowledge.errors.${code}.hint`),
-    updateSystem: code === 'tools_missing',
-    legacyOffice: code === 'legacy_office_disabled' ? 'enable' : code === 'office_missing' ? 'retry' : null,
+    computerAction: COMPUTER_ACTIONS[code] ?? null,
+    legacyOffice: LEGACY_OFFICE_ACTIONS[code] ?? null,
   }
 }
 

@@ -144,8 +144,12 @@ export class SessionCards {
     const lines = [
       `# Session brief: ${row.title}`,
       `Goal:\n${row.goal}`,
-      `Working directory: ${row.cwd ?? WORKSPACE_DIR}` +
-        (chosenFolder ? ' (the project folder chosen for this work; it may already have files)' : ''),
+      ...(row.cwd
+        ? [
+            `Working directory: ${row.cwd}` +
+              (chosenFolder ? ' (the project folder chosen for this work; it may already have files)' : ''),
+          ]
+        : []),
       ...(row.repo_name
         ? [
             `Repository: ${row.repo_name}${branch ? ` — your own worktree on branch ${branch}` : ''} (commit there; the chat's worktree is not this one).`,

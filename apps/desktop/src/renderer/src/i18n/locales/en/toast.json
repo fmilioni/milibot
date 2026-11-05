@@ -1,6 +1,7 @@
 {
   "fileSaved": "File saved",
   "fileNeedsVm": "Turn on the VM to download this file.",
+  "fileNeedsComputer": "This file lives on the bots' computer, which this workspace doesn't have.",
   "fileRemoved": "This file is no longer in the VM.",
   "addedToKnowledge": "Added to knowledge",
   "attachmentUnavailable": "This attachment is not available yet. Try again in a moment.",
@@ -32,8 +33,10 @@
   "idCopied": "ID copied",
   "cardMoved": "Card moved",
   "fileNeedsVmToOpen": "Turn on the VM to open this file.",
+  "fileNeedsComputerToOpen": "This file lives on the bots' computer, which this workspace doesn't have.",
   "fileMissing": "This file no longer exists in the VM.",
   "notAFile": "This path is not a file.",
   "fileOutsideWorkspace": "This file points outside /workspace and cannot be opened from the app.",
-  "fileTooLargeToOpen": "This file is too large to open from the app."
+  "fileTooLargeToOpen": "This file is too large to open from the app.",
+  "vmDiskDeleted": "Virtual machine disk deleted"
 }

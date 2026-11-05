@@ -1,9 +1,9 @@
-import { CODEX_VERSION, type ExecResult, type VmInfo } from '@milibot/shared'
+import { CODEX_VERSION, computerCapabilities, type ExecResult, type VmInfo } from '@milibot/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CODEX_LOGIN_STATUS_CMD, CodexInstaller } from '../../../src/runtime/providers/cli-engines/codex'
 import { CliEngineRoutes } from '../../../src/runtime/providers/cli-routes'
-import { createPlaceholderVm, type VmController } from '../../../src/runtime/vm/controller'
+import { createNoComputerVm, type VmController } from '../../../src/runtime/vm/controller'
 import { WorkspaceStore } from '../../../src/runtime/workspace-store'
 import { openWorkspaceDb } from '../../../src/workspace-db/open'
 import { seedWorkspace } from '../../../src/workspace-db/seed'
@@ -35,7 +35,7 @@ function fakeVm(
   }
   const start = vi.fn(async () => undefined)
   const vm: VmController = {
-    ...createPlaceholderVm(),
+    ...createNoComputerVm(),
     status: () => ({ state, desktops: 1 }) as VmInfo,
     subscribe: () => () => undefined,
     runningGuest: () => guest as never,
@@ -45,11 +45,17 @@ function fakeVm(
   return { vm, exec, procs, start, setState: (next: VmInfo['state']) => (state = next) }
 }
 
-function routes(vm: VmController, installer?: CodexInstaller, now?: () => number) {
+function routes(
+  vm: VmController,
+  installer?: CodexInstaller,
+  now?: () => number,
+  computer: 'vm' | 'none' = 'vm',
+) {
   const codexInstaller = installer ?? new CodexInstaller({ vm, needed: () => true, log: () => {} })
   return new CliEngineRoutes({
     store,
     vm,
+    capabilities: computerCapabilities(computer),
     runtimes: {
       claude_code: { name: 'claude-code' },
       codex: { name: 'codex', installer: codexInstaller },
@@ -247,5 +253,20 @@ describe('Codex through the CLI routes', () => {
       code: 'unsupported',
       details: { engine: 'codex', capability: 'compactSystemPrompt' },
     })
+  })
+})
+
+describe('CLI routes without a computer', () => {
+  it('refuse logins and installs without trying to boot a VM', async () => {
+    const { vm, start, exec } = fakeVm(() => ({}))
+    const handlers = routes(vm, undefined, undefined, 'none')
+
+    const noComputer = { code: 'unsupported', details: { reason: 'no_computer' } }
+    await expect(handlers.openCliLoginTerminal({ ...args('claude_code'), body: {} })).rejects.toMatchObject(
+      noComputer,
+    )
+    await expect(handlers.installCli(args('codex'))).rejects.toMatchObject(noComputer)
+    expect(start).not.toHaveBeenCalled()
+    expect(exec).not.toHaveBeenCalled()
   })
 })

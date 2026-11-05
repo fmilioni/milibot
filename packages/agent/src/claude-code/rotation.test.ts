@@ -1,4 +1,4 @@
-import { cliSettingKeys } from '@milibot/shared'
+import { cliSettingKeys, computerCapabilities } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import { cliKeys } from '../cli/keys'
@@ -212,15 +212,20 @@ describe('Claude Code session rotation', () => {
   it('changes the profile when a skill is turned on or off (catalog and MCP tools)', () => {
     const bot = makeBot()
     const all = new Set(TOOL_FAMILY_NAMES)
+    const vm = computerCapabilities('vm')
     const catalog = formatSkillCatalog([{ name: 'web-browsing', description: 'Websites.' }])
     const profile = (skills: SkillContext) =>
       claudeProfile(cliPrompt('claude_code', bot, [], null, 'main', skills))
-    const base = profile({ catalog, families: all })
-    expect(profile({ catalog, families: all })).toBe(base)
-    expect(profile({ catalog: '', families: all })).not.toBe(base)
+    const base = profile({ catalog, families: all, capabilities: vm })
+    expect(profile({ catalog, families: all, capabilities: vm })).toBe(base)
+    expect(profile({ catalog: '', families: all, capabilities: vm })).not.toBe(base)
     const withoutBrowser = new Set([...all].filter((f) => f !== 'browser'))
-    expect(profile({ catalog, families: withoutBrowser })).not.toBe(base)
-    const prompt = cliPrompt('claude_code', bot, [], null, 'main', { catalog, families: withoutBrowser })
+    expect(profile({ catalog, families: withoutBrowser, capabilities: vm })).not.toBe(base)
+    const prompt = cliPrompt('claude_code', bot, [], null, 'main', {
+      catalog,
+      families: withoutBrowser,
+      capabilities: vm,
+    })
     expect(prompt.instructions).toContain('- web-browsing — Websites.')
     expect(prompt.mcpTools.map((t) => t.name)).not.toContain('browser_snapshot')
   })

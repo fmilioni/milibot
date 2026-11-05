@@ -22,7 +22,7 @@ import { useProjectStore } from '@/features/projects/store'
 import { effortLabel } from '@/features/providers/lib/models'
 import { findCatalogModel, useModelCatalog } from '@/features/providers/use-model-catalog'
 import { isSessionFinished } from '@/features/sessions/lib/session-view'
-import { copyWithToast, useAppStore } from '@/features/workspace/store'
+import { copyWithToast, useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
 import { formatUsd } from '@/lib/format'
@@ -70,6 +70,7 @@ export function SessionHeader({
   const showToast = useAppStore((s) => s.showToast)
   const debugOpen = useAppStore((s) => s.rightPanel === 'debug')
   const vmOpen = useAppStore((s) => s.rightPanel === 'vm')
+  const hasDesktop = useComputerHas('desktop')
   const toggleRightPanel = useAppStore((s) => s.toggleRightPanel)
   const origin = useAppStore((s) => s.conversations[session.originConversationId])
   const laneDetail = useSessionStore((s) => s.laneDetail[session.id])
@@ -86,7 +87,8 @@ export function SessionHeader({
   const title = useRef<HTMLHeadingElement>(null)
   const [headerWidth, setHeaderWidth] = useState<number | null>(null)
   const [titleCut, setTitleCut] = useState(false)
-  const vmInMenu = headerWidth !== null && headerWidth < VM_IN_MENU_BELOW
+  const vmInMenu = hasDesktop && headerWidth !== null && headerWidth < VM_IN_MENU_BELOW
+  const vmInHeader = hasDesktop && !vmInMenu
   const statusLabel = t(`chat.session.status.${session.status}`)
   const finished = isSessionFinished(session.status)
   const doing = useLaneLabel(finished ? undefined : session.lane, laneDetail, bots)
@@ -258,7 +260,7 @@ export function SessionHeader({
           </Tooltip>
         )}
         {panelToggle && <PanelToggleButton ref={panelToggleRef} toggle={panelToggle} session={session} />}
-        {!vmInMenu && (
+        {vmInHeader && (
           <IconButton
             label={t('chat.showVm')}
             active={vmOpen}

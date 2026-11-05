@@ -12,6 +12,7 @@ import {
   type BackupEstimate,
   type BackupJob,
   type BackupRestore,
+  type ComputerCapability,
   DEFAULT_BACKUP_EXCLUDES,
   type LogFn,
   newId,
@@ -31,7 +32,7 @@ import { DaemonError, errorMessage } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
 import { requireTarget } from '../../util/fs'
 import { ZipReader } from '../../util/zip'
-import { type VmController, whenVmRunning } from '../vm'
+import { noComputerError, type VmController, whenVmRunning } from '../vm'
 
 class RestoreError extends Error {
   constructor(
@@ -51,6 +52,8 @@ export interface BackupDeps {
   workspaceName: () => string
   version: string
   vm: VmController
+  /** `/workspace` lives in the computer's shell: without one, backups hold the data only. */
+  capabilities: ReadonlySet<ComputerCapability>
   getSetting: <T>(key: string, fallback: T) => T
   setSetting: (key: string, value: unknown) => void
   /** The workspace is still in its setup (no VM yet): the restore waits. */
@@ -134,8 +137,12 @@ export class BackupService {
   /** Validates what can fail right away (answered as an API error), then runs in the background. */
   begin(body: StartBody): BackupJob {
     if (this.job?.status === 'running') throw new DaemonError('conflict', 'A backup is already running')
-    if (body.kind === 'archive') requireTarget(body.path, '.zip')
-    else {
+    if (body.kind === 'archive') {
+      requireTarget(body.path, '.zip')
+      if (body.includeWorkspace && !this.deps.capabilities.has('shell')) {
+        throw noComputerError()
+      }
+    } else {
       requireTarget(body.path, '.qcow2')
       if (!existsSync(this.dataDisk()))
         throw new DaemonError('conflict', 'The workspace VM has not been created yet', { reason: 'no_vm' })
@@ -289,6 +296,10 @@ export class BackupService {
   }
 
   async estimate(excludes: string[] | undefined): Promise<BackupEstimate> {
+    if (!this.deps.capabilities.has('shell')) {
+      return { workspaceBytes: 0 }
+    }
+
     const guest = await this.deps.vm.guest()
     return {
       workspaceBytes: tarSizeEstimate(await guest.estimateWorkspace(excludes ?? DEFAULT_BACKUP_EXCLUDES)),

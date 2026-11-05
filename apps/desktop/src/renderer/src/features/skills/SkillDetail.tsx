@@ -1,12 +1,12 @@
-import { ArrowLeft, Copy, File, FolderOpen, RefreshCw, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Copy, File, FolderOpen, MonitorOff, RefreshCw, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { queryKeys } from '@/api/queries'
 import { useApiQuery } from '@/api/use-api-query'
 import { getSkillUsage } from '@/features/skills/api'
-import { skillOrigin, sourceChips, splitFrontmatter } from '@/features/skills/lib/skills'
-import { toastOnError, useAppStore } from '@/features/workspace/store'
+import { missingRequirements, skillOrigin, sourceChips, splitFrontmatter } from '@/features/skills/lib/skills'
+import { toastOnError, useAppStore, useComputerCapabilities } from '@/features/workspace/store'
 import { useApiMutation } from '@/features/workspace/use-api-mutation'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
@@ -17,6 +17,7 @@ import { InlineConfirm } from '@/ui/Confirm'
 import { Markdown } from '@/ui/Markdown'
 import { MoreMenu } from '@/ui/MoreMenu'
 import { Switch } from '@/ui/Switch'
+import { Tag } from '@/ui/Tag'
 import { Tooltip } from '@/ui/Tooltip'
 
 import { SkillIconBox, SourceChip, useSkillError, useSkillText } from './SkillParts'
@@ -30,6 +31,7 @@ export function SkillDetailView({ skillId }: { skillId: string }) {
   const workspaceId = useWorkspaceId()
   const bots = useAppStore((s) => s.bots)
   const showToast = useAppStore((s) => s.showToast)
+  const capabilities = useComputerCapabilities()
   const summary = useSkillsStore((s) => s.skills.find((k) => k.id === skillId))
   const getSkill = useSkillsStore((s) => s.get)
   const openSkill = useSkillsStore((s) => s.openSkill)
@@ -106,6 +108,7 @@ export function SkillDetailView({ skillId }: { skillId: string }) {
   const skill = loaded
   const { name, description } = text(skill)
   const chips = sourceChips(skill, bots)
+  const needsVm = missingRequirements(skill, capabilities).length > 0
   const readOnly = !skill.editable
   const view = detail.skillMd ? splitFrontmatter(detail.skillMd) : null
 
@@ -142,6 +145,7 @@ export function SkillDetailView({ skillId }: { skillId: string }) {
               {chips.map((chip) => (
                 <SourceChip key={chip.kind} chip={chip} />
               ))}
+              {needsVm && <Tag icon={<MonitorOff size={11} aria-hidden />}>{t('skills.meta.needsVm')}</Tag>}
             </div>
             <p className="truncate text-base text-fg-secondary">{description}</p>
           </div>

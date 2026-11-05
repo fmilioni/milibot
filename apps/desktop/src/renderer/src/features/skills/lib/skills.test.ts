@@ -1,4 +1,4 @@
-import type { Bot, Skill, SkillImportCandidate } from '@milibot/shared'
+import { type Bot, computerCapabilities, type Skill, type SkillImportCandidate } from '@milibot/shared'
 import type { TFunction } from 'i18next'
 import { describe, expect, it } from 'vitest'
 
@@ -11,6 +11,7 @@ import {
   importablePaths,
   importErrorKey,
   isGithubAddress,
+  missingRequirements,
   needsGithubToken,
   originLines,
   shortPath,
@@ -33,6 +34,7 @@ function skill(patch: Partial<Skill> & Pick<Skill, 'slug'>): Skill {
     allowedBots: 'all',
     defaultFor: 'all',
     tools: [],
+    requires: [],
     toolCount: 0,
     enabledFor: [],
     disabledFor: [],
@@ -152,13 +154,28 @@ describe('skills screen', () => {
   })
 })
 
+const VM = computerCapabilities('vm')
+
 describe('skill rows and detail', () => {
   const t = ((key: string, options?: Record<string, unknown>) =>
     options ? `${key} ${JSON.stringify(options)}` : key) as unknown as TFunction
 
+  it('says when a built-in needs what this computer lacks', () => {
+    const browsing = skill({ slug: 'web-browsing', source: 'builtin', requires: ['browser'] })
+    const none = computerCapabilities('none')
+
+    expect(missingRequirements(browsing, none)).toEqual(['browser'])
+    expect(missingRequirements(browsing, VM)).toEqual([])
+    expect(skillRowMeta(browsing, bots, { first: false, t, locale: 'en', capabilities: none })[0]).toEqual({
+      kind: 'tag',
+      icon: 'noComputer',
+      text: 'skills.meta.needsVm',
+    })
+  })
+
   it('describes a built-in: tools, cost and who has a first-bot skill on', () => {
     const builtin = skill({ slug: 'team-management', source: 'builtin', toolCount: 4, tokens: 1200 })
-    expect(skillRowMeta(builtin, bots, { first: true, t, locale: 'en' })).toEqual([
+    expect(skillRowMeta(builtin, bots, { first: true, t, locale: 'en', capabilities: VM })).toEqual([
       { kind: 'tag', icon: 'tools', text: 'skills.meta.tools {"count":4}' },
       { kind: 'text', text: 'skills.meta.tokensOnLoad {"tokens":"1,200"}' },
     ])
@@ -169,7 +186,7 @@ describe('skill rows and detail', () => {
       defaultFor: 'first',
       enabledFor: ['bot_ana', 'bot_gone'],
     })
-    expect(skillRowMeta(firstOnly, bots, { first: false, t, locale: 'en' })).toEqual([
+    expect(skillRowMeta(firstOnly, bots, { first: false, t, locale: 'en', capabilities: VM })).toEqual([
       { kind: 'tag', icon: 'scripts', text: 'skills.meta.scripts' },
       { kind: 'text', text: 'skills.meta.tokens {"tokens":"10"}' },
       { kind: 'text', text: '·' },
@@ -179,16 +196,27 @@ describe('skill rows and detail', () => {
 
   it('describes a skill of the workspace: access and files', () => {
     expect(
-      skillRowMeta(skill({ slug: 'a', allowedBots: ['bot_dex'] }), bots, { first: false, t, locale: 'en' }),
+      skillRowMeta(skill({ slug: 'a', allowedBots: ['bot_dex'] }), bots, {
+        first: false,
+        t,
+        locale: 'en',
+        capabilities: VM,
+      }),
     ).toEqual([
       { kind: 'tag', icon: 'user', text: 'skills.access.only {"name":"Dex"}' },
       { kind: 'text', text: 'skills.meta.files {"count":1}' },
     ])
     expect(
-      skillRowMeta(skill({ slug: 'b', allowedBots: [] }), bots, { first: false, t, locale: 'en' }),
+      skillRowMeta(skill({ slug: 'b', allowedBots: [] }), bots, {
+        first: false,
+        t,
+        locale: 'en',
+        capabilities: VM,
+      }),
     ).toEqual([{ kind: 'text', text: 'skills.meta.files {"count":1} · skills.access.none' }])
     expect(
       skillRowMeta(skill({ slug: 'c', source: 'taught', fileCount: 0 }), bots, {
+        capabilities: VM,
         first: false,
         t,
         locale: 'en',
@@ -197,7 +225,7 @@ describe('skill rows and detail', () => {
   })
 
   it('says where a skill came from', () => {
-    const ctx = { bots, workspaces: [{ id: 'ws_1', name: 'Home' }], t, locale: 'en' }
+    const ctx = { bots, workspaces: [{ id: 'ws_1', name: 'Home' }], t, locale: 'en', capabilities: VM }
     expect(originLines(skill({ slug: 'a', source: 'builtin' }), ctx)).toEqual([
       { text: 'skills.detail.origin.builtin' },
     ])

@@ -25,7 +25,10 @@ export const BLOCKED_SUBNETS: ReadonlyArray<readonly [string, number, 'ipv4' | '
 ]
 
 const LOCAL_NAME = /(^|\.)(localhost|local|internal|localdomain|home\.arpa)$/i
-const LOCAL_ONLY = 'web_fetch reads public sites only; for local addresses use bash (curl) or your browser.'
+/** What web_fetch answers for a local address: with a computer, how to reach one instead. */
+export const LOCAL_ONLY =
+  'web_fetch reads public sites only; for local addresses use bash (curl) or your browser.'
+export const LOCAL_ONLY_WITHOUT_COMPUTER = 'web_fetch reads public sites only.'
 
 let blocked: BlockList | null = null
 
@@ -49,7 +52,7 @@ export function isBlockedAddress(ip: string): boolean {
  * A bare domain gets https and http is upgraded (`httpFallback`: the fetch may retry on http when https fails);
  * only public http(s) URLs without credentials pass.
  */
-export function normalizeWebUrl(raw: string): { url: URL; httpFallback: boolean } {
+export function normalizeWebUrl(raw: string, localOnly = LOCAL_ONLY): { url: URL; httpFallback: boolean } {
   const text = raw.trim()
   if (!text) throw new ToolInputError('"url" is empty')
   const withScheme =
@@ -66,9 +69,11 @@ export function normalizeWebUrl(raw: string): { url: URL; httpFallback: boolean 
     throw new ToolInputError(`only http(s) URLs can be read, not ${url.protocol}`)
   if (url.username || url.password) throw new ToolInputError('URLs with a user or password are not supported')
   const host = url.hostname.replace(/^\[|\]$/g, '')
-  if (!host || LOCAL_NAME.test(host) || (!host.includes('.') && !isIP(host)))
-    throw new ToolInputError(LOCAL_ONLY)
-  if (isIP(host) && isBlockedAddress(host)) throw new ToolInputError(LOCAL_ONLY)
+  const isLocalName = !host || LOCAL_NAME.test(host) || (!host.includes('.') && !isIP(host))
+  if (isLocalName || (isIP(host) && isBlockedAddress(host))) {
+    throw new ToolInputError(localOnly)
+  }
+
   url.hash = ''
   return { url, httpFallback }
 }

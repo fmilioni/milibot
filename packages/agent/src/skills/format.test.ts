@@ -46,6 +46,21 @@ describe('SKILL.md', () => {
     expect(error(md('name: ok\ndescription: x', 'x'.repeat(SKILL_LIMITS.skillMdBytes)))).toMatch(/KB/)
     expect(error(md('name: ok\ndescription: x\nmilibot:\n  tools: [teleport]'))).toMatch(/tool families/)
     expect(error(md('name: ok\ndescription: x\nmilibot:\n  default: nobody'))).toMatch(/default/)
+    expect(error(md('name: ok\ndescription: x\nmilibot:\n  requires: [teleporter]'))).toMatch(/requires/)
+  })
+
+  it('reads what of the computer a built-in requires', () => {
+    const parsed = parseSkillMd(
+      md('name: ok\ndescription: x\nmilibot:\n  tools: [browser]\n  requires: [browser]'),
+    )
+    const plain = parseSkillMd(md('name: ok\ndescription: x\nmilibot:\n  tools: [browser]'))
+
+    expect(parsed.ok && parsed.meta.milibot).toEqual({
+      tools: ['browser'],
+      default: 'all',
+      requires: ['browser'],
+    })
+    expect(plain.ok && plain.meta.milibot?.requires).toEqual([])
   })
 
   it('writes a SKILL.md that reads back the same', () => {

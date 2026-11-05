@@ -15,6 +15,7 @@ import {
   type Bot,
   type BotMcpServer,
   type CliEngine,
+  type ComputerCapability,
   type CreateMcpServerBody,
   type LogFn,
   type mcpEndpoints,
@@ -48,6 +49,8 @@ export interface McpDeps {
   workspaceId: string
   secrets: SecretStore
   vm: VmController
+  /** Without a `shell`, servers in the VM can't be added and are left out of the bots' tools. */
+  capabilities: ReadonlySet<ComputerCapability>
   blobs: BlobStore
   emit: (event: WorkspaceEvent) => void
   now: () => number
@@ -90,7 +93,7 @@ export class McpService {
   private readonly firstListing = new Map<string, Promise<unknown>>()
 
   constructor(private readonly deps: McpDeps) {
-    this.store = new McpStore(deps.db, deps.workspaceId, deps.secrets, deps.now)
+    this.store = new McpStore(deps.db, deps.workspaceId, deps.secrets, deps.now, deps.capabilities)
     this.oauth = new McpOAuthService({
       store: this.store,
       now: deps.now,
@@ -202,9 +205,15 @@ export class McpService {
     const views: BotMcpServerView[] = []
     for (const server of this.store.stored()) {
       const pref = prefs.get(server.id)
-      if (!server.enabled || !pref?.enabled) continue
+      if (!server.enabled || !pref?.enabled) {
+        continue
+      }
+
       const config = await this.store.config(server.id)
-      if (!config) continue
+      if (!config || !this.runnable(config)) {
+        continue
+      }
+
       views.push({
         config,
         tools: server.tools,
@@ -214,6 +223,11 @@ export class McpService {
       })
     }
     return views
+  }
+
+  /** A server in the VM needs the computer's shell; without one it is left out quietly. */
+  private runnable(config: McpServerConfig): boolean {
+    return config.transport !== 'stdio_vm' || this.deps.capabilities.has('shell')
   }
 
   /** Lists the tools of a server never listed before (bounded wait; the turn goes on without it). */

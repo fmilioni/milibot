@@ -1,6 +1,7 @@
 {
   "fileSaved": "Arquivo salvo",
   "fileNeedsVm": "Ligue a VM para baixar este arquivo.",
+  "fileNeedsComputer": "Este arquivo fica no computador dos bots, que este workspace não tem.",
   "fileRemoved": "Este arquivo não está mais na VM.",
   "addedToKnowledge": "Adicionado ao conhecimento",
   "attachmentUnavailable": "Este anexo ainda não está disponível. Tente de novo em instantes.",
@@ -32,8 +33,10 @@
   "idCopied": "ID copiado",
   "cardMoved": "Card movido",
   "fileNeedsVmToOpen": "Ligue a VM para abrir este arquivo.",
+  "fileNeedsComputerToOpen": "Este arquivo fica no computador dos bots, que este workspace não tem.",
   "fileMissing": "Este arquivo não existe mais na VM.",
   "notAFile": "Este caminho não é um arquivo.",
   "fileOutsideWorkspace": "Este arquivo aponta para fora de /workspace e não pode ser aberto pelo app.",
-  "fileTooLargeToOpen": "Este arquivo é grande demais para abrir pelo app."
+  "fileTooLargeToOpen": "Este arquivo é grande demais para abrir pelo app.",
+  "vmDiskDeleted": "Disco da máquina virtual apagado"
 }

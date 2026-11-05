@@ -3,6 +3,7 @@ import {
   CLI_ENGINES,
   type CliEngine,
   type CliLoginStatus,
+  type ComputerCapability,
   type GoldenStatus,
   type HostInfo,
   isCliEngine,
@@ -18,6 +19,25 @@ export type ProviderRowId = CliEngine | 'openrouter' | 'compatible'
 export const PROVIDER_ROWS: ProviderRowId[] = [...CLI_ENGINES, 'openrouter', 'compatible']
 /** Checked (and the default) when the workspace has no provider yet. */
 const FIRST_ROW: ProviderRowId = PROVIDER_ROWS[0] ?? 'openrouter'
+
+/** The rows the computer can run: CLI engines need a shell. */
+export function providerRows(capabilities: ReadonlySet<ComputerCapability>): ProviderRowId[] {
+  if (capabilities.has('shell')) {
+    return PROVIDER_ROWS
+  }
+
+  return PROVIDER_ROWS.filter((row) => !isCliEngine(row))
+}
+
+/** The step as it is saved with only `rows` on screen: the others count as unchecked. */
+export function limitToRows(state: ProviderStepState, rows: readonly ProviderRowId[]): ProviderStepState {
+  const checked = { ...state.checked }
+  for (const row of PROVIDER_ROWS) {
+    checked[row] = checked[row] && rows.includes(row)
+  }
+
+  return { ...state, checked }
+}
 
 /** A row's name: the engine's brand, else its translated name. */
 export function providerRowName(t: TFunction, row: ProviderRowId): string {
@@ -152,6 +172,16 @@ function goldenBuildFailed(golden: GoldenStatus): boolean {
 function vmUnderway(vm: VmInfo | null): boolean {
   if (!vm || vm.state === 'not_created') return false
   return !(vm.state === 'error' && vm.errorCode === 'GOLDEN_NOT_FOUND')
+}
+
+/** A VM on its way: booting, or not created yet while its system image builds (or failed to). */
+export function vmBeingCreated(golden: GoldenStatus | null, vm: VmInfo | null): boolean {
+  if (vm?.state === 'starting') {
+    return true
+  }
+
+  const imageUnderway = golden !== null && (golden.state === 'building' || goldenBuildFailed(golden))
+  return vm?.state === 'not_created' && imageUnderway
 }
 
 /** Typical seconds from `create` to a running VM with the first bot's desktop. */
@@ -397,5 +427,16 @@ export function whpxCase(host: HostInfo | null): WhpxCase | null {
   }
 }
 
-export const STARTER_SUGGESTIONS = ['finances', 'repos', 'research', 'news'] as const
+const STARTER_SUGGESTIONS = ['finances', 'repos', 'research', 'news'] as const
 export type StarterSuggestion = (typeof STARTER_SUGGESTIONS)[number]
+
+/** What an idea needs of the computer: keeping repositories up to date takes a shell. */
+const SUGGESTION_NEEDS: Partial<Record<StarterSuggestion, ComputerCapability>> = { repos: 'shell' }
+
+/** The ideas under the first bot's introduction that this workspace's computer can carry out. */
+export function starterSuggestions(capabilities: ReadonlySet<ComputerCapability>): StarterSuggestion[] {
+  return STARTER_SUGGESTIONS.filter((idea) => {
+    const need = SUGGESTION_NEEDS[idea]
+    return !need || capabilities.has(need)
+  })
+}

@@ -395,13 +395,16 @@ describe('document rows', () => {
     expect(docStatusView(missing, true, t).tone).toBe('danger')
     expect(docErrorView(missing, t)).toEqual({
       hint: 'Atualize o sistema da máquina virtual para ler este arquivo',
-      updateSystem: true,
+      computerAction: 'updateSystem',
       legacyOffice: null,
     })
     expect(docErrorView(doc({ status: 'failed', errorCode: 'legacy_office_disabled' }), t)).toMatchObject({
-      updateSystem: false,
+      computerAction: null,
       legacyOffice: 'enable',
     })
+    const noComputer = doc({ status: 'failed', errorCode: 'no_computer' })
+    expect(docStatusView(noComputer, false, t).label).toBe('Precisa da máquina virtual')
+    expect(docErrorView(noComputer, t).computerAction).toBe('useVm')
     expect(docErrorView(doc({ status: 'failed', errorCode: 'office_missing' }), t).legacyOffice).toBe('retry')
     const unknown = doc({ status: 'failed', errorCode: 'weird' })
     expect(docStatusView(unknown, true, t).label).toBe('Algo deu errado')

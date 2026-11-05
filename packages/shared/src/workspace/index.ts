@@ -1,4 +1,5 @@
 export * from './backup'
+export * from './computer'
 export * from './preferences'
 export * from './setup'
 export * from './workspace'

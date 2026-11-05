@@ -1,4 +1,12 @@
-import { CLI_ENGINES, DEFAULT_VM_CONFIG, firstBot, type Provider, type VmSize } from '@milibot/shared'
+import {
+  CLI_ENGINES,
+  computerCapabilities,
+  type ComputerKind,
+  DEFAULT_VM_CONFIG,
+  firstBot,
+  type Provider,
+  type VmSize,
+} from '@milibot/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 
@@ -6,26 +14,29 @@ import { refreshProviders, useProviders } from '@/features/providers/api'
 import { useSettingsStore } from '@/features/settings/store'
 import {
   initialProviderStep,
+  limitToRows,
+  providerRows,
   type ProviderStepIssue,
   providerStepIssues,
   type ProviderStepState,
-  setupVmProgress,
 } from '@/features/setup/lib/setup'
 import {
   initialVmSize,
   loginEngines,
   planProviderSave,
+  setupComputerKind,
+  suggestedComputer,
   vmStepAdvance,
   vmStepNeedsBuild,
   vmStepNeedsStart,
 } from '@/features/setup/lib/setup-flow'
 import { useAppStore, useCurrentWorkspace } from '@/features/workspace/store'
-import { useNow } from '@/hooks/use-now'
 import { errorMessage } from '@/lib/errors'
 
 import { saveProviders } from './api'
 import type { StepPatch } from './ProvidersStep'
 import { useSetupStore } from './store'
+import { useVmProgress } from './use-vm-progress'
 
 /** How long step 2 waits for the VM config (it carries a size copied from another workspace). */
 const VM_CONFIG_WAIT_MS = 1500
@@ -42,8 +53,9 @@ function useOnce(due: boolean, action: () => Promise<unknown>): void {
 }
 
 /**
- * The setup screens' workflow: step 1's providers (saved on "Create machine"), step 2's machine (size,
- * creation, and the kicks that resume a VM or an image build a restart left halfway), step 3's logins.
+ * The setup screens' workflow: step 1's computer and step 2's providers (both saved on "Create machine" or
+ * "Continue"), then the machine's creation (with the kicks that resume a VM or an image build a restart left
+ * halfway) and the logins.
  * The decisions are the pure functions of `lib/setup-flow.ts`; `SetupScreen` only renders. The screen is
  * keyed by workspace, so switching workspaces starts the flow over.
  */
@@ -53,7 +65,7 @@ export function useSetupFlow() {
   const vm = useAppStore((s) => s.vm)
   const bots = useAppStore((s) => s.bots)
   const updateSetup = useAppStore((s) => s.updateSetup)
-  const setupVm = useAppStore((s) => s.setupVm)
+  const setupComputer = useAppStore((s) => s.setupComputer)
   const startVm = useAppStore((s) => s.startVm)
   const refreshVm = useAppStore((s) => s.refreshVm)
   const host = useSettingsStore((s) => s.host)
@@ -67,7 +79,8 @@ export function useSetupFlow() {
   const step = workspace?.setup ?? 'providers'
   const providers = useProviders(workspaceId || null).data
 
-  const [providerState, setProviderState] = useState<ProviderStepState | null>(null)
+  const [rawProviderState, setProviderState] = useState<ProviderStepState | null>(null)
+  const [chosenComputer, setComputer] = useState<ComputerKind | null>(null)
   const [chosenSize, setSize] = useState<VmSize | null>(null)
   const [legacyOffice, setLegacyOffice] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -102,6 +115,16 @@ export function useSetupFlow() {
   }, [])
 
   const size = chosenSize ?? initialVmSize(host, vm, vmWaitOver)
+  const suggestion = suggestedComputer(host)
+  const computer = setupComputerKind({
+    step,
+    stored: workspace?.computer ?? null,
+    chosen: chosenComputer,
+    vm,
+    suggested: suggestion?.kind ?? null,
+  })
+  const rows = providerRows(computerCapabilities(computer))
+  const providerState = rawProviderState && limitToRows(rawProviderState, rows)
 
   const patchProviders = useCallback((patch: StepPatch) => {
     setProviderState((prev) =>
@@ -109,19 +132,9 @@ export function useSetupFlow() {
     )
   }, [])
 
-  // The bar between VM phases counts the boot from when it started.
-  const now = useNow(1000, step === 'vm')
-  const starting = vm?.state === 'starting'
-  const [startingSince, setStartingSince] = useState<number | null>(null)
-  if (starting && startingSince === null) setStartingSince(now)
-  if (!starting && startingSince !== null) setStartingSince(null)
-  const progress = setupVmProgress({
-    golden,
-    vm,
-    bootingForSeconds: startingSince !== null ? Math.max(0, now - startingSince) / 1000 : 0,
-  })
+  const progress = useVmProgress(golden, vm, step === 'vm')
 
-  const vmStep = { step, vm, golden, providers: providers ?? null }
+  const vmStep = { step, computer, vm, golden, providers: providers ?? null }
   const advance = vmStepAdvance(vmStep)
   const advancing = useRef(false)
   useEffect(() => {
@@ -138,10 +151,14 @@ export function useSetupFlow() {
   const loginEngine = engines[Math.min(loginIndex, engines.length - 1)] ?? CLI_ENGINES[0]
   const issues: ProviderStepIssue[] = providerState ? providerStepIssues(providerState) : ['none_selected']
   // Back from a login to change the providers: the machine already exists.
-  const machineReady = vm?.state === 'running'
+  const machineReady = computer === 'vm' && vm?.state === 'running'
+  const canFinish = providerState !== null && issues.length === 0 && (computer !== 'vm' || size !== null)
 
-  const createMachine = async () => {
-    if (!providerState || !size || issues.length > 0) return
+  const finish = async () => {
+    if (!providerState || !canFinish) {
+      return
+    }
+
     setBusy(true)
     setError(null)
     try {
@@ -152,7 +169,8 @@ export function useSetupFlow() {
         await updateSetup('vm')
         return
       }
-      await setupVm(size)
+
+      await setupComputer(computer === 'vm' && size ? { kind: 'vm', size } : { kind: 'none' })
       await refreshVm()
     } catch (err) {
       setError(errorMessage(err))
@@ -197,6 +215,7 @@ export function useSetupFlow() {
     host,
     providers: providers ?? ([] as Provider[]),
     providerState,
+    rows,
     patchProviders,
     reloadProviders,
     issues,
@@ -204,8 +223,12 @@ export function useSetupFlow() {
     setSize,
     legacyOffice,
     setLegacyOffice,
+    computer,
+    suggestion,
+    setComputer,
     machineReady,
-    createMachine,
+    canFinish,
+    finish,
     busy,
     error,
     progress,

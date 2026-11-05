@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { endpoint, Ok } from '../http/endpoint'
 import { type VmConfig, VmInfo } from '../vm/vm'
+import { ComputerChoice, SetupComputerBody, VM_SIZE_LIMITS } from './computer'
 import { SetupStep, WorkspaceSummary } from './workspace'
 
 const SETUP_TRANSITIONS: Record<SetupStep, SetupStep[]> = {
@@ -38,14 +39,6 @@ export const VM_PRESETS: ReadonlyArray<{ id: VmPresetId } & VmSize> = [
   { id: 'recommended', cpus: 4, memGb: 8, dataGb: 60 },
   { id: 'powerful', cpus: 8, memGb: 16, dataGb: 80 },
 ]
-
-export const VM_SIZE_LIMITS = {
-  minCpus: 1,
-  minMemGb: 2,
-  minDataGb: 20,
-  maxDataGb: 500,
-  dataStepGb: 10,
-} as const
 
 export interface VmHostLimits {
   maxVmCpus: number
@@ -101,15 +94,8 @@ export const GoldenStatus = z.object({
 })
 export type GoldenStatus = z.infer<typeof GoldenStatus>
 
-export const SetupVmBody = z.object({
-  cpus: z.number().int().positive().max(128),
-  memGb: z.number().int().positive().max(1024),
-  dataGb: z.number().int().min(VM_SIZE_LIMITS.minDataGb).max(VM_SIZE_LIMITS.maxDataGb),
-})
-export type SetupVmBody = z.input<typeof SetupVmBody>
-
-/** Runtime side of `setupWorkspaceVm`: stores the size and boots when the golden image exists. */
-const ConfigureSetupVmBody = SetupVmBody.extend({ start: z.boolean() })
+/** Runtime side of choosing the computer: a VM stores its size and boots when `start` (image ready). */
+const ConfigureComputerBody = z.object({ choice: ComputerChoice, start: z.boolean() })
 
 const UpdateSetupBody = z.object({ step: SetupStep })
 
@@ -126,11 +112,14 @@ export const setupEndpoints = {
   getGoldenImage: endpoint({ method: 'GET', path: '/golden', response: GoldenStatus }),
   /** In the background; no-op while building or when it exists. */
   buildGoldenImage: endpoint({ method: 'POST', path: '/golden/build', response: GoldenStatus }),
-  /** Saves the VM size and creates the VM (building the golden image first when missing). */
-  setupWorkspaceVm: endpoint({
+  /**
+   * Stores the workspace's computer; a VM is sized and created (building the golden image first when missing
+   * or outdated).
+   */
+  setupWorkspaceComputer: endpoint({
     method: 'POST',
-    path: '/workspaces/:workspaceId/setup/vm',
-    body: SetupVmBody,
+    path: '/workspaces/:workspaceId/setup/computer',
+    body: SetupComputerBody,
     response: WorkspaceSummary,
   }),
   /** Moves the setup forward; `done` lets the first bot introduce itself. */
@@ -141,10 +130,10 @@ export const setupEndpoints = {
     response: WorkspaceSummary,
   }),
 
-  configureSetupVm: endpoint({
+  configureComputer: endpoint({
     method: 'POST',
-    path: '/w/:workspaceId/setup/vm',
-    body: ConfigureSetupVmBody,
+    path: '/w/:workspaceId/computer/configure',
+    body: ConfigureComputerBody,
     response: VmInfo,
   }),
   finishSetup: endpoint({ method: 'POST', path: '/w/:workspaceId/setup/finish', response: Ok }),

@@ -6,6 +6,29 @@
   "stepDone": "Step {{number}} done",
   "pending": "Setup not finished",
   "back": "Back to {{name}}",
+  "computer": {
+    "title": "Where the bots work",
+    "subtitle": "Pick the bots' computer. You can change it later in the settings.",
+    "vm": {
+      "name": "Virtual machine",
+      "description": "A Linux computer just for the bots, with a screen, a browser and a terminal. Uses this computer's memory and disk.",
+      "limits": {
+        "qemu": "QEMU is missing from this install",
+        "slow": "Slow on this computer",
+        "memory": "Little memory on this computer"
+      }
+    },
+    "none": {
+      "name": "No computer",
+      "description": "The bots chat, search the web, organize boards and remember everything, but use no terminal, screen or browser. Light: needs no virtualization."
+    },
+    "suggestion": {
+      "title": "We suggest starting without a computer",
+      "qemu": "QEMU, which runs the virtual machine, is missing from this Milibot install. You can turn on the virtual machine later in the settings.",
+      "slow": "Virtualization is off or unavailable on this computer, so a virtual machine would run very slowly. You can turn on the virtual machine later in the settings.",
+      "memory": "This computer has no memory to spare for a virtual machine (the smallest needs {{mem}} GB). You can turn on the virtual machine later in the settings."
+    }
+  },
   "providers": {
     "title": "How the bots think",
     "summary": "How the bots think · {{names}}",
@@ -97,7 +120,7 @@
     "updatingSystem": "Preparing the newest system version…",
     "updateFailed": "The newest system version could not be prepared: {{error}}",
     "useCurrent": "Use the current version",
-    "useCurrentHint": "Creates the machine with the system already on this computer. The update shows up later in Settings › Virtual machine.",
+    "useCurrentHint": "Creates the machine with the system already on this computer. The update shows up later in Settings › Computer.",
     "vmFailed": "The machine did not start: {{error}}",
     "qemu": {
       "title": "Milibot's QEMU was not found",
@@ -139,7 +162,8 @@
   "firstBot": {
     "title": "Meet your first bot",
     "hintPending": "If you picked Claude Code or Codex, you sign in on the VM's terminal. Then your first bot introduces itself.",
-    "hint": "It talks with you, does the tasks and builds the team when you ask."
+    "hint": "It talks with you, does the tasks and builds the team when you ask.",
+    "hintNoComputer": "It introduces itself as soon as you continue."
   },
   "login": {
     "title": "Sign in to your {{account}} account",

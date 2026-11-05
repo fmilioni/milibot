@@ -11,7 +11,7 @@
     "appearance": "Language & appearance",
     "general": "General",
     "providers": "Providers and models",
-    "vm": "Virtual machine",
+    "computer": "Computer",
     "credentials": "GitHub and credentials",
     "costs": "Debug and costs",
     "workspaces": "Workspaces",
@@ -349,11 +349,55 @@
       "remove": "Remove {{level}}",
       "invalid": "Use only letters, digits and - _ . (no spaces)",
       "levels": "Accepted levels"
+    },
+    "cliNeedsVm": "{{engines}} need the virtual machine."
+  },
+  "computer": {
+    "subtitle": "Where this workspace's bots work",
+    "options": {
+      "vm": "Linux just for the bots: terminal, screen and browser.",
+      "none": "Chat, web, boards and memory only. Light."
+    },
+    "can": {
+      "title": "The bots still",
+      "chat": "Chat, plan and remember everything",
+      "web": "Search and read web pages",
+      "boards": "Run boards, plans, routines and designs",
+      "attachments": "Read text and image attachments"
+    },
+    "needsVm": {
+      "title": "Need the virtual machine",
+      "shell": "Terminal, code and repositories",
+      "desktop": "Screen, browser and learning procedures",
+      "documents": "PDFs, Office and scanned images",
+      "cli": "{{engines}}"
+    },
+    "keptDisk": {
+      "title": "Previous virtual machine disk · {{size}}",
+      "body": "The bots' files in /workspace are kept here. If you go back to the virtual machine, it picks up where it left off.",
+      "delete": "Delete disk"
+    },
+    "leave": {
+      "title": "Work without a computer?",
+      "body": "The virtual machine shuts down and bots that are working stop. Its disk is kept: you can come back later and pick up where you left off.",
+      "confirm": "Shut down and switch",
+      "busy": "Shutting down…"
+    },
+    "use": {
+      "title": "Use a virtual machine",
+      "body": "The bots get a terminal, a screen and a browser. Creating the machine takes a few minutes; you can keep chatting meanwhile.",
+      "bodyResume": "The previous virtual machine comes back with the bots' files, at the size it had. You can change the size later on this page.",
+      "resume": "Turn on the virtual machine"
+    },
+    "deleteDisk": {
+      "title": "Delete the virtual machine's disk?",
+      "body": "The bots' files in /workspace, installed programs and restore points are gone for good. Frees {{size}}. Bots, conversations and boards stay.",
+      "confirm": "Delete disk",
+      "busy": "Deleting…"
     }
   },
   "vm": {
     "sizeTitle": "Size and disks",
-    "subtitle": "The Linux computer where the bots work",
     "state": {
       "not_created": "Not created yet",
       "stopped": "Off",
@@ -613,7 +657,7 @@
     }
   },
   "workspaces": {
-    "subtitle": "Separate environments, each with its own VM, bots, memory and keys",
+    "subtitle": "Separate environments, each with its own bots, memory, keys and computer",
     "vm": {
       "not_created": "VM not created",
       "stopped": "VM off",

@@ -26,7 +26,7 @@ export function SystemUpdateCard() {
       <CircleArrowUp size={16} className="shrink-0 text-accent" aria-hidden />
       <button
         type="button"
-        onClick={() => openSettings('vm')}
+        onClick={() => openSettings('computer')}
         className="focus-ring flex min-w-0 flex-1 flex-col items-start rounded text-left"
       >
         <span className="truncate text-sm font-semibold text-fg">{t('footer.systemUpdate.title')}</span>

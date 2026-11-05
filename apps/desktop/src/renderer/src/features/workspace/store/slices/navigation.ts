@@ -1,9 +1,11 @@
 import { api } from '@/api/daemon'
+import { currentComputerHas } from '@/features/workspace/lib/computer'
 import {
   canvasScreenFor,
   CHAT_SCREEN,
   enterScreen,
   isNavScreen,
+  type RightPanel,
   screenIs,
 } from '@/features/workspace/lib/navigation'
 
@@ -17,6 +19,9 @@ export function navigationSlice(ctx: StoreContext): NavigationSlice {
   const leaveCanvas = () => {
     if (get().screen.kind === 'canvas') get().navigate(CHAT_SCREEN)
   }
+
+  /** The VM panel shows the bots' screens, which a workspace without a desktop doesn't have. */
+  const panelAvailable = (panel: RightPanel) => panel !== 'vm' || currentComputerHas(get(), 'desktop')
 
   return {
     screen: CHAT_SCREEN,
@@ -102,10 +107,18 @@ export function navigationSlice(ctx: StoreContext): NavigationSlice {
     },
 
     toggleRightPanel(panel) {
+      if (!panelAvailable(panel)) {
+        return
+      }
+
       set({ rightPanel: get().rightPanel === panel ? null : panel, vmBotId: null })
     },
 
     openRightPanel(panel, section) {
+      if (!panelAvailable(panel)) {
+        return
+      }
+
       leaveCanvas()
       set({ rightPanel: panel, panelSection: section ?? null, vmBotId: null })
     },
@@ -115,6 +128,10 @@ export function navigationSlice(ctx: StoreContext): NavigationSlice {
     },
 
     showBotScreen(botId) {
+      if (!panelAvailable('vm')) {
+        return
+      }
+
       leaveCanvas()
       set({ rightPanel: 'vm', vmBotId: botId })
     },

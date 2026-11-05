@@ -1,4 +1,4 @@
-import type { ConversationSummary, WorkSession } from '@milibot/shared'
+import type { ConversationSummary, WorkSession, WorkspaceSummary } from '@milibot/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const calls = vi.hoisted(() => ({ handler: vi.fn() }))
@@ -96,6 +96,18 @@ describe('app store navigation', () => {
     expect(s.getState().screen).toEqual({ kind: 'chat' })
     expect(s.getState().rightPanel).toBe('vm')
     expect(s.getState().vmBotId).toBe('b1')
+  })
+
+  it('opens no bot screen in a workspace without a computer', () => {
+    const s = store()
+    s.setState({ workspaces: [{ id: 'ws1', computer: 'none' } as WorkspaceSummary], rightPanel: null })
+
+    s.getState().showBotScreen('b1')
+    s.getState().toggleRightPanel('vm')
+
+    expect(s.getState().rightPanel).toBeNull()
+    s.getState().toggleRightPanel('debug')
+    expect(s.getState().rightPanel).toBe('debug')
   })
 
   it('keeps the settings open when switching workspaces there', async () => {

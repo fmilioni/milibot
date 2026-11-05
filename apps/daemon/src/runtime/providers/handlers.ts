@@ -2,7 +2,9 @@ import { listEmbeddingModels, probeEmbeddingModel } from '@milibot/agent/embeddi
 import { listImageModels } from '@milibot/agent/images'
 import { AnthropicProvider, type LLMProvider, OpenAICompatibleProvider } from '@milibot/agent/llm'
 import {
+  type ComputerCapability,
   type EndpointResponse,
+  isCliEngine,
   isOpenRouterServer,
   OPENROUTER_BASE_URL,
   type Provider,
@@ -12,7 +14,7 @@ import {
 
 import { DaemonError, errorMessage } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
-import type { VmController } from '../vm'
+import { noComputerError, type VmController } from '../vm'
 import { cliEngineHost } from './cli-engines'
 import type { CliEngineHost } from './cli-engines/host'
 import type { ProviderClients } from './clients'
@@ -80,6 +82,8 @@ export interface ProviderRoutesDeps {
   providers: ProviderStore
   clients: Pick<ProviderClients, 'client'>
   vm: Pick<VmController, 'guest'>
+  /** CLI engines run in the computer's shell: without one, their providers can't be added. */
+  capabilities: ReadonlySet<ComputerCapability>
   now: () => number
   fetch?: typeof fetch
   created: () => void
@@ -116,6 +120,10 @@ export class ProviderRoutes {
     return {
       listProviders: () => providers.list(),
       createProvider: async ({ body }) => {
+        if (isCliEngine(body.type) && !deps.capabilities.has('shell')) {
+          throw noComputerError()
+        }
+
         const provider = await providers.create(body)
         deps.created()
         return provider

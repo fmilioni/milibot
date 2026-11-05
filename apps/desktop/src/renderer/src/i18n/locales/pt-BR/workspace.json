@@ -6,7 +6,7 @@
   "openBadge": "aberto",
   "new": "Novo workspace…",
   "manage": "Gerenciar workspaces",
-  "isolationNote": "Cada workspace tem sua própria VM, bots, memória e chaves. Nada é compartilhado.",
+  "isolationNote": "Cada workspace tem seus próprios bots, memória, chaves e computador. Nada é compartilhado.",
   "botsWorking_one": "{{count}} bot trabalhando",
   "botsWorking_other": "{{count}} bots trabalhando",
   "vmState": {
@@ -18,5 +18,6 @@
     "suspended": "VM suspensa",
     "error": "VM com erro"
   },
+  "noComputer": "Sem computador",
   "runtimeCrashed": "Parou de responder"
 }

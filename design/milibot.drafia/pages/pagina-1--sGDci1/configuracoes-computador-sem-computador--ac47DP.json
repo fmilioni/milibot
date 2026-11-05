@@ -1,0 +1,1090 @@
+{
+  "id": "ac47DP",
+  "type": "frame",
+  "name": "Configurações · Computador (sem computador)",
+  "x": 1540,
+  "y": 1300,
+  "width": 1440,
+  "height": 900,
+  "layout": "horizontal",
+  "clip": true,
+  "modes": {
+    "Tokens": "Dark"
+  },
+  "fills": ["$color/bg"],
+  "children": [
+    {
+      "id": "tAckmL",
+      "type": "frame",
+      "name": "Nav",
+      "width": 240,
+      "height": "fill",
+      "layout": "vertical",
+      "gap": 2,
+      "padding": [46, 12, 20, 12],
+      "fills": ["$color/surface"],
+      "strokes": ["$color/border"],
+      "strokeWeight": [0, 1, 0, 0],
+      "children": [
+        {
+          "id": "d69pks",
+          "type": "frame",
+          "name": "Back",
+          "layout": "horizontal",
+          "gap": 6,
+          "padding": [4, 8],
+          "align": "center",
+          "children": [
+            {
+              "id": "YeVYzX",
+              "type": "icon",
+              "name": "Arrow",
+              "width": 14,
+              "height": 14,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:arrow-left"
+            },
+            {
+              "id": "7KBpMZ",
+              "type": "text",
+              "name": "Title",
+              "fills": ["$color/fg"],
+              "content": "Configurações",
+              "fontFamily": "$font/sans",
+              "fontSize": 15,
+              "fontWeight": 700
+            }
+          ]
+        },
+        {
+          "id": "bPNJB2",
+          "type": "text",
+          "name": "Group",
+          "margin": [12, 0, 6, 8],
+          "fills": ["$color/fg-muted"],
+          "content": "WORKSPACE PESSOAL",
+          "fontFamily": "$font/sans",
+          "fontSize": 10,
+          "fontWeight": 600,
+          "letterSpacing": 0.4
+        },
+        {
+          "id": "cY3oyB",
+          "type": "frame",
+          "name": "Item · Geral",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "kKzEHt",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:sliders-horizontal"
+            },
+            {
+              "id": "xenb24",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Geral",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "xmpSGP",
+          "type": "frame",
+          "name": "Item · Provedores e modelos",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "ydzgJ2",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:key-round"
+            },
+            {
+              "id": "rzeh0I",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Provedores e modelos",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "4BCEdi",
+          "type": "frame",
+          "name": "Item · Computador",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["$color/surface-3"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "6B891V",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg"],
+              "icon": "lucide:monitor"
+            },
+            {
+              "id": "GyD2zO",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg"],
+              "content": "Computador",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 600
+            }
+          ]
+        },
+        {
+          "id": "oLkoF8",
+          "type": "frame",
+          "name": "Item · GitHub e credenciais",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "AfMnpv",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:git-branch"
+            },
+            {
+              "id": "bQ5zje",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "GitHub e credenciais",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "iaUYYO",
+          "type": "frame",
+          "name": "Item · MCP e integrações",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "EQuRbZ",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:plug"
+            },
+            {
+              "id": "pwZxjd",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "MCP e integrações",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "RsParD",
+          "type": "frame",
+          "name": "Item · Skills",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "8E1lTx",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:sparkles"
+            },
+            {
+              "id": "9EccWX",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Skills",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "HUo3u6",
+          "type": "frame",
+          "name": "Item · Projetos",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "AxLtA1",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:folder-kanban"
+            },
+            {
+              "id": "xvienn",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Projetos",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "HRPS7b",
+          "type": "frame",
+          "name": "Item · Conhecimento",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "NXsQFA",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:book-open"
+            },
+            {
+              "id": "MDd5RV",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Conhecimento",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "vMlgEQ",
+          "type": "frame",
+          "name": "Item · Planos",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "lZuwF6",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:clipboard-list"
+            },
+            {
+              "id": "FgN4Ln",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Planos",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "w4CjmU",
+          "type": "frame",
+          "name": "Item · Sessões de trabalho",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "Yu0Kc2",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:rocket"
+            },
+            {
+              "id": "VWlYcu",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Sessões de trabalho",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "4ur7cs",
+          "type": "frame",
+          "name": "Item · Memória",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "jEEpjy",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:notebook-pen"
+            },
+            {
+              "id": "RFWqxA",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Memória",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        },
+        {
+          "id": "0np7CL",
+          "type": "frame",
+          "name": "Item · Debug e custos",
+          "width": "fill",
+          "height": 32,
+          "layout": "horizontal",
+          "gap": 10,
+          "padding": [0, 10],
+          "align": "center",
+          "fills": ["#00000000"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "Xl8VeG",
+              "type": "icon",
+              "name": "Icon",
+              "width": 15,
+              "height": 15,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:chart-column"
+            },
+            {
+              "id": "3qsykD",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg-secondary"],
+              "content": "Debug e custos",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GhqRsc",
+      "type": "frame",
+      "name": "Main",
+      "width": "fill",
+      "height": "fill",
+      "layout": "vertical",
+      "padding": [28, 48, 40, 48],
+      "align": "center",
+      "children": [
+        {
+          "id": "Pkh5RM",
+          "type": "frame",
+          "name": "Page",
+          "width": 880,
+          "layout": "vertical",
+          "gap": 14,
+          "children": [
+            {
+              "id": "3zXXHR",
+              "type": "frame",
+              "name": "Header",
+              "width": "fill",
+              "layout": "horizontal",
+              "padding": [0, 0, 6, 0],
+              "justify": "space-between",
+              "align": "start",
+              "children": [
+                {
+                  "id": "8jkycd",
+                  "type": "frame",
+                  "name": "Titles",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "id": "iKPwnW",
+                      "type": "text",
+                      "name": "Title",
+                      "fills": ["$color/fg"],
+                      "content": "Computador",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 22,
+                      "fontWeight": 700
+                    },
+                    {
+                      "id": "yGtaTy",
+                      "type": "text",
+                      "name": "Subtitle",
+                      "fills": ["$color/fg-secondary"],
+                      "content": "Onde os bots deste workspace trabalham",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 13
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "t8p6XZ",
+              "type": "frame",
+              "name": "Kind",
+              "width": "fill",
+              "layout": "horizontal",
+              "gap": 10,
+              "children": [
+                {
+                  "id": "gkamOf",
+                  "type": "frame",
+                  "name": "Option · VM",
+                  "width": "fill",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [14, 16],
+                  "fills": ["$color/surface"],
+                  "strokes": ["$color/border"],
+                  "strokeWeight": 1,
+                  "cornerRadius": "$radius/card",
+                  "children": [
+                    {
+                      "id": "NcdoPa",
+                      "type": "frame",
+                      "name": "Head",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "align": "start",
+                      "children": [
+                        {
+                          "id": "6thmXz",
+                          "type": "frame",
+                          "name": "Radio",
+                          "width": 16,
+                          "height": 16,
+                          "margin": [2, 0, 0, 0],
+                          "fills": ["#00000000"],
+                          "strokes": ["$color/fg-muted"],
+                          "strokeWeight": 1.5,
+                          "cornerRadius": 8
+                        },
+                        {
+                          "id": "H3YUGf",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 18,
+                          "height": 18,
+                          "fills": ["$color/fg-secondary"],
+                          "icon": "lucide:monitor"
+                        },
+                        {
+                          "id": "1l0kIi",
+                          "type": "frame",
+                          "name": "Text",
+                          "width": "fill",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "id": "sXSlAK",
+                              "type": "text",
+                              "name": "Title",
+                              "fills": ["$color/fg"],
+                              "content": "Máquina virtual",
+                              "fontFamily": "$font/sans",
+                              "fontSize": 14,
+                              "fontWeight": 600
+                            },
+                            {
+                              "id": "rMy135",
+                              "type": "text",
+                              "name": "Description",
+                              "width": "fill",
+                              "fills": ["$color/fg-secondary"],
+                              "content": "Linux só para os bots: terminal, tela e navegador.",
+                              "fontFamily": "$font/sans",
+                              "fontSize": 12,
+                              "lineHeight": 1.45,
+                              "textGrowth": "fixed-width"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "qQH0aG",
+                  "type": "frame",
+                  "name": "Option · No computer",
+                  "width": "fill",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [14, 16],
+                  "fills": ["$color/accent-soft"],
+                  "strokes": ["$color/accent"],
+                  "strokeWeight": 1,
+                  "cornerRadius": "$radius/card",
+                  "children": [
+                    {
+                      "id": "JSkbO1",
+                      "type": "frame",
+                      "name": "Head",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "align": "start",
+                      "children": [
+                        {
+                          "id": "1Ot3qO",
+                          "type": "frame",
+                          "name": "Radio",
+                          "width": 16,
+                          "height": 16,
+                          "margin": [2, 0, 0, 0],
+                          "fills": ["$color/bg"],
+                          "strokes": ["$color/accent"],
+                          "strokeWeight": 5,
+                          "cornerRadius": 8
+                        },
+                        {
+                          "id": "TXXe10",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 18,
+                          "height": 18,
+                          "fills": ["$color/accent"],
+                          "icon": "lucide:cloud"
+                        },
+                        {
+                          "id": "IQbNY0",
+                          "type": "frame",
+                          "name": "Text",
+                          "width": "fill",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "id": "0fR82T",
+                              "type": "text",
+                              "name": "Title",
+                              "fills": ["$color/fg"],
+                              "content": "Sem computador",
+                              "fontFamily": "$font/sans",
+                              "fontSize": 14,
+                              "fontWeight": 600
+                            },
+                            {
+                              "id": "lCcJ8V",
+                              "type": "text",
+                              "name": "Description",
+                              "width": "fill",
+                              "fills": ["$color/fg-secondary"],
+                              "content": "Só conversa, web, quadros e memória. Leve.",
+                              "fontFamily": "$font/sans",
+                              "fontSize": 12,
+                              "lineHeight": 1.45,
+                              "textGrowth": "fixed-width"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "WyUi8w",
+              "type": "frame",
+              "name": "What the bots do",
+              "width": "fill",
+              "layout": "horizontal",
+              "gap": 24,
+              "padding": [16, 18],
+              "fills": ["$color/surface"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": "$radius/card",
+              "children": [
+                {
+                  "id": "q0vdOy",
+                  "type": "frame",
+                  "name": "Os bots continuam fazendo",
+                  "width": "fill",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "id": "mu71HL",
+                      "type": "text",
+                      "name": "Title",
+                      "fills": ["$color/fg"],
+                      "content": "Os bots continuam fazendo",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 12,
+                      "fontWeight": 600
+                    },
+                    {
+                      "id": "eJxuot",
+                      "type": "frame",
+                      "name": "Conversar, planejar e lembrar de tudo",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "f1dHgG",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/success"],
+                          "icon": "lucide:check"
+                        },
+                        {
+                          "id": "7eN20E",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Conversar, planejar e lembrar de tudo",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "COO9hx",
+                      "type": "frame",
+                      "name": "Pesquisar e ler páginas da web",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "TFfT2K",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/success"],
+                          "icon": "lucide:check"
+                        },
+                        {
+                          "id": "vZ4ann",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Pesquisar e ler páginas da web",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s24c3S",
+                      "type": "frame",
+                      "name": "Quadros, planos, rotinas e designs",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "ch8Yli",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/success"],
+                          "icon": "lucide:check"
+                        },
+                        {
+                          "id": "vseWoi",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Quadros, planos, rotinas e designs",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "9MkJBL",
+                      "type": "frame",
+                      "name": "Ler anexos de texto e imagens",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "nOgTXy",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/success"],
+                          "icon": "lucide:check"
+                        },
+                        {
+                          "id": "trBj0E",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Ler anexos de texto e imagens",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "BjYEsn",
+                  "type": "frame",
+                  "name": "Precisam da máquina virtual",
+                  "width": "fill",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "id": "HTmtq6",
+                      "type": "text",
+                      "name": "Title",
+                      "fills": ["$color/fg"],
+                      "content": "Precisam da máquina virtual",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 12,
+                      "fontWeight": 600
+                    },
+                    {
+                      "id": "JjSs8e",
+                      "type": "frame",
+                      "name": "Terminal, código e repositórios",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "VxIaUf",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/fg-muted"],
+                          "icon": "lucide:minus"
+                        },
+                        {
+                          "id": "TyKENi",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Terminal, código e repositórios",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "sNWcmg",
+                      "type": "frame",
+                      "name": "Tela, navegador e aprender procedimentos",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "CeZZoz",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/fg-muted"],
+                          "icon": "lucide:minus"
+                        },
+                        {
+                          "id": "Deqtwr",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Tela, navegador e aprender procedimentos",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "Vxya95",
+                      "type": "frame",
+                      "name": "PDFs, Office e imagens escaneadas",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "Y7Xjvv",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/fg-muted"],
+                          "icon": "lucide:minus"
+                        },
+                        {
+                          "id": "svA4BN",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "PDFs, Office e imagens escaneadas",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "id": "grFWyf",
+                      "type": "frame",
+                      "name": "Claude Code, Codex e Antigravity",
+                      "width": "fill",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "align": "center",
+                      "children": [
+                        {
+                          "id": "T03XAx",
+                          "type": "icon",
+                          "name": "Icon",
+                          "width": 13,
+                          "height": 13,
+                          "fills": ["$color/fg-muted"],
+                          "icon": "lucide:minus"
+                        },
+                        {
+                          "id": "LdjPZg",
+                          "type": "text",
+                          "name": "Text",
+                          "fills": ["$color/fg-secondary"],
+                          "content": "Claude Code, Codex e Antigravity",
+                          "fontFamily": "$font/sans",
+                          "fontSize": 12
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "eGrhgs",
+              "type": "frame",
+              "name": "Previous VM disk",
+              "width": "fill",
+              "layout": "horizontal",
+              "gap": 14,
+              "padding": 16,
+              "align": "center",
+              "fills": ["$color/surface"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": "$radius/card",
+              "children": [
+                {
+                  "id": "I55XEd",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 18,
+                  "height": 18,
+                  "fills": ["$color/fg-secondary"],
+                  "icon": "lucide:hard-drive"
+                },
+                {
+                  "id": "xIqVGD",
+                  "type": "frame",
+                  "name": "Text",
+                  "width": "fill",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "id": "SnmXl9",
+                      "type": "text",
+                      "name": "Title",
+                      "fills": ["$color/fg"],
+                      "content": "Disco da máquina virtual anterior · 18,2 GB",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 13,
+                      "fontWeight": 600
+                    },
+                    {
+                      "id": "feXSDb",
+                      "type": "text",
+                      "name": "Body",
+                      "width": "fill",
+                      "fills": ["$color/fg-secondary"],
+                      "content": "Os arquivos dos bots em /workspace ficam guardados aqui. Se voltar para a máquina virtual, ela continua de onde parou.",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 12,
+                      "lineHeight": 1.45,
+                      "textGrowth": "fixed-width"
+                    }
+                  ]
+                },
+                {
+                  "id": "d6Ql6D",
+                  "type": "frame",
+                  "name": "Button · Apagar disco",
+                  "layout": "horizontal",
+                  "gap": 6,
+                  "padding": [7, 12],
+                  "align": "center",
+                  "fills": ["#00000000"],
+                  "strokes": ["$color/danger"],
+                  "strokeWeight": 1,
+                  "cornerRadius": 6,
+                  "children": [
+                    {
+                      "id": "Q8d3mr",
+                      "type": "icon",
+                      "name": "Icon",
+                      "width": 13,
+                      "height": 13,
+                      "fills": ["$color/danger"],
+                      "icon": "lucide:trash-2"
+                    },
+                    {
+                      "id": "gO1U1u",
+                      "type": "text",
+                      "name": "Label",
+                      "fills": ["$color/danger"],
+                      "content": "Apagar disco",
+                      "fontFamily": "$font/sans",
+                      "fontSize": 13,
+                      "fontWeight": 600
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

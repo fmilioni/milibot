@@ -7,7 +7,7 @@ import { useApiQuery } from '@/api/use-api-query'
 import { GithubToken } from '@/features/settings/credentials/GithubToken'
 import { SecretForm, SecretRow } from '@/features/settings/credentials/Secrets'
 import { WebSearchKey } from '@/features/settings/credentials/WebSearchKey'
-import { copyWithToast } from '@/features/workspace/store'
+import { copyWithToast, useComputerHas } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { useDraft } from '@/hooks/use-draft'
 import { Button, LinkButton } from '@/ui/Button'
@@ -57,7 +57,11 @@ export function CredentialsSettings() {
   const secrets = useApiQuery(queryKeys.credentials(workspaceId, 'secrets'), () =>
     listEnvSecrets(workspaceId),
   )
-  const ssh = useApiQuery(queryKeys.credentials(workspaceId, 'ssh'), () => getSshKey(workspaceId)).data
+  // The SSH key lives on the bots' computer.
+  const hasComputer = useComputerHas('shell')
+  const ssh = useApiQuery(queryKeys.credentials(workspaceId, 'ssh'), () => getSshKey(workspaceId), {
+    enabled: hasComputer,
+  }).data
   const [form, setForm] = useState<{ secretId: string | null } | null>(null)
 
   return (
@@ -146,31 +150,33 @@ export function CredentialsSettings() {
         </div>
       </SettingsCard>
 
-      <SettingsCard title={t('settings.credentials.ssh.title')}>
-        <SettingsRow
-          label={t('settings.credentials.ssh.publicKey')}
-          hint={
-            ssh?.publicKey ? (
-              <span className="selectable block truncate font-mono">
-                {ssh.publicKey.length > 72
-                  ? `${ssh.publicKey.slice(0, 36)}…${ssh.publicKey.slice(-28)}`
-                  : ssh.publicKey}
-                {' — '}
-                {t('settings.credentials.ssh.hint')}
-              </span>
-            ) : ssh && !ssh.vmRunning ? (
-              t('settings.credentials.ssh.vmOff')
-            ) : (
-              t('common.loading')
-            )
-          }
-        >
-          <Button size="sm" disabled={!ssh?.publicKey} onClick={() => copyWithToast(ssh?.publicKey ?? '')}>
-            <Copy size={12} />
-            {t('settings.credentials.ssh.copy')}
-          </Button>
-        </SettingsRow>
-      </SettingsCard>
+      {hasComputer && (
+        <SettingsCard title={t('settings.credentials.ssh.title')}>
+          <SettingsRow
+            label={t('settings.credentials.ssh.publicKey')}
+            hint={
+              ssh?.publicKey ? (
+                <span className="selectable block truncate font-mono">
+                  {ssh.publicKey.length > 72
+                    ? `${ssh.publicKey.slice(0, 36)}…${ssh.publicKey.slice(-28)}`
+                    : ssh.publicKey}
+                  {' — '}
+                  {t('settings.credentials.ssh.hint')}
+                </span>
+              ) : ssh && !ssh.vmRunning ? (
+                t('settings.credentials.ssh.vmOff')
+              ) : (
+                t('common.loading')
+              )
+            }
+          >
+            <Button size="sm" disabled={!ssh?.publicKey} onClick={() => copyWithToast(ssh?.publicKey ?? '')}>
+              <Copy size={12} />
+              {t('settings.credentials.ssh.copy')}
+            </Button>
+          </SettingsRow>
+        </SettingsCard>
+      )}
     </SettingsPage>
   )
 }

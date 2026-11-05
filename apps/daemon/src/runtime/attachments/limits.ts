@@ -8,6 +8,9 @@ export const COPY_CHUNK_BYTES = 4 * MB
 /** Largest image sent to the models as an image (Anthropic's per-image limit). */
 export const MAX_MODEL_IMAGE_BYTES = 5 * MB
 export const MAX_MODEL_IMAGE_SIDE = 8000
+/** Without a computer, text files reach the models inline: this much of each, and of all in one message. */
+export const ATTACHED_TEXT_MAX_BYTES = 20_000
+export const ATTACHED_TEXTS_MAX_BYTES = 60_000
 
 /** Largest file of the chats (setting, in MB). */
 export function maxFileMb(settings: Pick<SettingsStore, 'get'>): number {

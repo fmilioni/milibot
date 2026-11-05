@@ -1,5 +1,6 @@
 import type { BackupInfo, BackupJob, BackupRestore, WorkspaceSummary } from '@milibot/shared'
 import { useQueryClient } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { CircleCheck, Download, FolderOpen, TriangleAlert, Upload, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,7 +17,7 @@ import {
 } from '@/features/settings/api'
 import { ExportDialog } from '@/features/settings/backup/ExportDialog'
 import { ImportDialog } from '@/features/settings/backup/ImportDialog'
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useApiMutation } from '@/features/workspace/use-api-mutation'
 import { cn } from '@/lib/cn'
 import { apiErrorReason } from '@/lib/errors'
@@ -116,11 +117,32 @@ function JobStatus({
   )
 }
 
+/** The restore's line while it waits, runs, or once done. */
+function restoreText(
+  restore: BackupRestore,
+  { t, language, hasComputer }: { t: TFunction; language: string; hasComputer: boolean },
+): string {
+  if (restore.status === 'done') {
+    return t('backup.restoreDone')
+  }
+
+  // The files go back into /workspace once there is a VM to hold them.
+  if (restore.status === 'pending') {
+    return hasComputer ? t('backup.restorePending') : t('backup.restorePendingNoComputer')
+  }
+
+  return t('backup.restoreRunning', {
+    done: formatBytes(restore.bytesDone, language),
+    total: formatBytes(restore.bytesTotal, language),
+  })
+}
+
 function RestoreStatus({ restore, workspaceId }: { restore: BackupRestore; workspaceId: string }) {
   const { t, i18n } = useTranslation()
   const retryRestore = useApiMutation((path?: string) => retryBackupRestore(workspaceId, path))
   const skip = useApiMutation(() => skipBackupRestore(workspaceId))
   const retry = (path?: string) => void retryRestore.run(path)
+  const hasComputer = useComputerHas('shell')
   const choose = async () => {
     const path = await window.milibot.chooseOpenPath({ title: t('backup.importTitle'), extensions: ['zip'] })
     if (path) retry(path)
@@ -154,18 +176,10 @@ function RestoreStatus({ restore, workspaceId }: { restore: BackupRestore; works
       </div>
     )
   const progress = restore.bytesTotal > 0 ? Math.min(1, restore.bytesDone / restore.bytesTotal) : null
+  const text = restoreText(restore, { t, language: i18n.language, hasComputer })
   return (
     <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
-      <span className="text-sm text-fg-secondary">
-        {restore.status === 'done'
-          ? t('backup.restoreDone')
-          : restore.status === 'pending'
-            ? t('backup.restorePending')
-            : t('backup.restoreRunning', {
-                done: formatBytes(restore.bytesDone, i18n.language),
-                total: formatBytes(restore.bytesTotal, i18n.language),
-              })}
-      </span>
+      <span className="text-sm text-fg-secondary">{text}</span>
       {restore.status === 'running' && <ProgressBar value={progress} />}
     </div>
   )

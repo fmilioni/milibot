@@ -2,7 +2,12 @@ import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, wr
 import { join, win32 } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
-import type { BackupJob, BackupRestore, WorkspaceEvent } from '@milibot/shared'
+import {
+  type BackupJob,
+  type BackupRestore,
+  computerCapabilities,
+  type WorkspaceEvent,
+} from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -53,6 +58,7 @@ function setup(options: { db?: Db; qemuImg?: string | null; vmPending?: boolean 
     workspaceName: () => 'Personal',
     version: '1.2.3',
     vm,
+    capabilities: computerCapabilities('vm'),
     getSetting: (key, fallback) => store.settings.get(key, fallback),
     setSetting: (key, value) => store.settings.set(key, value),
     vmPending: () => options.vmPending ?? false,

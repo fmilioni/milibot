@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 
-import { AVATAR_COLORS, AVATAR_EYES, AVATAR_SHAPES } from '@milibot/shared'
+import { AVATAR_COLORS, AVATAR_EYES, AVATAR_SHAPES, computerCapabilities } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import { cliPrompt } from '../cli/prompt'
@@ -15,10 +15,12 @@ import {
   toolAllowedInLane,
   toolEnabled,
   toolFamily,
+  toolFitsComputer,
   toolsForLane,
 } from './policy'
 
 const names = (tools: Array<{ name: string }>) => tools.map((t) => t.name)
+const vmScope = (families: ReadonlySet<string>) => ({ families, capabilities: computerCapabilities('vm') })
 
 const claudeCodeNative = CLI_ENGINE_DRIVERS.claude_code.nativeInMcp
 
@@ -26,7 +28,7 @@ describe('toolsForLane main', () => {
   it('gates team management by its skill, never by the kind of bot', () => {
     const all = new Set(TOOL_FAMILY_NAMES)
     const withoutTeam = new Set([...all].filter((f) => f !== 'team'))
-    expect(names(toolsForLane('main', { enabledFamilies: all }))).toEqual(
+    expect(names(toolsForLane('main', { scope: vmScope(all) }))).toEqual(
       expect.arrayContaining([
         'get_bot',
         'create_bot',
@@ -38,7 +40,7 @@ describe('toolsForLane main', () => {
         'bot_mcp_set',
       ]),
     )
-    const member = names(toolsForLane('main', { enabledFamilies: withoutTeam }))
+    const member = names(toolsForLane('main', { scope: vmScope(withoutTeam) }))
     for (const name of [
       'get_bot',
       'create_bot',
@@ -164,9 +166,8 @@ describe('toolsForLane main', () => {
   it.each(['daemon_logs', 'vm_status'])(
     'offers %s in every lane, to read-only helpers and whatever skills are off',
     (tool) => {
-      const names = (tools: Array<{ name: string }>) => tools.map((t) => t.name)
       for (const lane of ['main', 'internal', 'session', 'subagent'] as const) {
-        expect(names(toolsForLane(lane, { enabledFamilies: new Set() }))).toContain(tool)
+        expect(names(toolsForLane(lane, { scope: vmScope(new Set()) }))).toContain(tool)
         expect(names(toolsForLane(lane, { native: claudeCodeNative }))).toContain(tool)
       }
       expect(names(toolsForLane('subagent', { readOnly: true, native: claudeCodeNative }))).toContain(tool)
@@ -200,8 +201,8 @@ describe('toolsForLane main', () => {
   it('offers a family of tools only while its skill is on, keeping what a lane relies on', () => {
     const all = new Set(TOOL_FAMILY_NAMES)
     const without = (...off: string[]) => new Set([...all].filter((f) => !off.includes(f)))
-    expect(names(toolsForLane('main', { enabledFamilies: all }))).toEqual(names(toolsForLane('main')))
-    const main = names(toolsForLane('main', { enabledFamilies: without('browser', 'team', 'plans') }))
+    expect(names(toolsForLane('main', { scope: vmScope(all) }))).toEqual(names(toolsForLane('main')))
+    const main = names(toolsForLane('main', { scope: vmScope(without('browser', 'team', 'plans')) }))
     expect(main).not.toContain('browser_snapshot')
     expect(main).not.toContain('create_bot')
     expect(main).toContain('add_member')
@@ -210,16 +211,53 @@ describe('toolsForLane main', () => {
     expect(main).toEqual(
       expect.arrayContaining(['computer', 'list_bots', 'message_bot', 'skill_load', 'bash']),
     )
-    const session = names(toolsForLane('session', { enabledFamilies: without('plans') }))
+    const session = names(toolsForLane('session', { scope: vmScope(without('plans')) }))
     expect(session).toEqual(expect.arrayContaining(['todo_write', 'session_finish', 'subagent']))
     expect(session).not.toContain('plan_write')
-    const cc = names(toolsForLane('main', { native: claudeCodeNative, enabledFamilies: without('computer') }))
+    const cc = names(toolsForLane('main', { native: claudeCodeNative, scope: vmScope(without('computer')) }))
     expect(cc).not.toContain('computer')
-    expect(toolEnabled('computer', 'main', without('computer'))).toBe(false)
+    expect(toolEnabled('computer', 'main', vmScope(without('computer')))).toBe(false)
     expect(toolEnabled('computer', 'main')).toBe(true)
-    expect(toolEnabled('mcp__github__search', 'main', new Set())).toBe(true)
+    expect(toolEnabled('mcp__github__search', 'main', vmScope(new Set()))).toBe(true)
     expect(toolFamily('report_task')).toBe('repos')
     expect(toolFamily('skill_load')).toBeNull()
+  })
+
+  it('offers the tools that need a machine only while the computer has what they need', () => {
+    const scope = (computer: 'vm' | 'none') => ({
+      families: new Set(TOOL_FAMILY_NAMES),
+      capabilities: computerCapabilities(computer),
+    })
+    const vm = names(toolsForLane('main', { scope: scope('vm') }))
+    const none = names(toolsForLane('main', { scope: scope('none') }))
+
+    const machineTools = ['bash', 'file_read', 'computer', 'browser_click', 'repo_checkout', 'share_file']
+    expect(vm).toEqual(expect.arrayContaining(machineTools))
+    for (const tool of [
+      ...machineTools,
+      'design_screenshot',
+      'design_export',
+      'generate_image',
+      'vm_status',
+    ]) {
+      expect(none).not.toContain(tool)
+    }
+    expect(none).toEqual(
+      expect.arrayContaining([
+        'web_fetch',
+        'report_task',
+        'board_list',
+        'design_write_frame',
+        'knowledge_read',
+      ]),
+    )
+
+    const session = names(toolsForLane('session', { scope: { ...scope('none'), families: new Set() } }))
+    expect(session).toContain('todo_write')
+
+    expect(toolFitsComputer('design_export', new Set(['shell']))).toBe(false)
+    expect(toolFitsComputer('design_export', new Set(['shell', 'browser']))).toBe(true)
+    expect(toolFitsComputer('mcp__github__search', new Set())).toBe(true)
   })
 
   it('gives read-only helpers only the tools that look', () => {
@@ -286,7 +324,7 @@ describe('toolsForLane main', () => {
 
   it('always offers plan_step: other bots mark the steps of a plan they help with', () => {
     expect(toolFamily('plan_step')).toBeNull()
-    const main = names(toolsForLane('internal', { enabledFamilies: new Set() }))
+    const main = names(toolsForLane('internal', { scope: vmScope(new Set()) }))
     expect(main).toContain('plan_step')
     expect(main).not.toContain('plan_write')
   })
@@ -366,7 +404,7 @@ describe('web tools', () => {
     expect(toolFamily('web_search')).toBe('web_search')
     expect(toolFamily('web_fetch')).toBeNull()
     const withoutSearch = new Set(TOOL_FAMILY_NAMES.filter((f) => f !== 'web_search'))
-    const main = names(toolsForLane('main', { enabledFamilies: withoutSearch }))
+    const main = names(toolsForLane('main', { scope: vmScope(withoutSearch) }))
     expect(main).not.toContain('web_search')
     expect(main).toContain('web_fetch')
   })

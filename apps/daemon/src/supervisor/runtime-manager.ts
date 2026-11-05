@@ -1,6 +1,13 @@
 import { type ChildProcess, fork } from 'node:child_process'
 
-import type { CloseBehavior, Language, LogFn, RuntimeStatus, WorkspaceEvent } from '@milibot/shared'
+import type {
+  CloseBehavior,
+  ComputerKind,
+  Language,
+  LogFn,
+  RuntimeStatus,
+  WorkspaceEvent,
+} from '@milibot/shared'
 
 import { DaemonError } from '../errors'
 import type { RuntimeCallServer } from '../ipc/calls'
@@ -25,8 +32,16 @@ export interface RuntimeTarget {
   name?: string
   vmPortBase?: number
   closeBehavior?: CloseBehavior
+  computer?: ComputerKind
   /** Started by the daemon on its own, with no window open. */
   background?: boolean
+}
+
+interface RestartOptions {
+  vm: VmShutdownMode
+  /** Runs once the old runtime exited, before the new one starts. */
+  prepare: () => Promise<void>
+  next: () => RuntimeTarget
 }
 
 export interface RuntimeManagerOptions {
@@ -64,6 +79,8 @@ function callClient(proc: RuntimeProcess): string {
 export class RuntimeManager {
   private readonly processes = new Map<string, RuntimeProcess>()
   private readonly lastStatus = new Map<string, RuntimeStatus>()
+  /** Restarts in progress: `ensure` waits for them, so no request starts a runtime from the old target. */
+  private readonly restarts = new Map<string, Promise<void>>()
   private nextRequestId = 1
 
   constructor(private readonly options: RuntimeManagerOptions) {}
@@ -77,6 +94,7 @@ export class RuntimeManager {
   }
 
   async ensure(workspace: RuntimeTarget, language: Language): Promise<void> {
+    await this.restarts.get(workspace.id)
     const existing = this.processes.get(workspace.id)
     if (existing && !existing.stopping) return existing.ready
     if (existing) await existing.exited
@@ -105,6 +123,7 @@ export class RuntimeManager {
         ...(workspace.vmPortBase ? { [RUNTIME_ENV.vmPortBase]: String(workspace.vmPortBase) } : {}),
         ...(workspace.background ? { [RUNTIME_ENV.background]: '1' } : {}),
         ...(workspace.closeBehavior ? { [RUNTIME_ENV.closeBehavior]: workspace.closeBehavior } : {}),
+        ...(workspace.computer ? { [RUNTIME_ENV.computer]: workspace.computer } : {}),
       },
       stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
     })
@@ -265,6 +284,29 @@ export class RuntimeManager {
     const timer = setTimeout(() => proc.child.kill('SIGKILL'), timeoutMs)
     await proc.exited
     clearTimeout(timer)
+  }
+
+  /**
+   * Stops the workspace's runtime (if any), runs `prepare` while none runs, then starts `next()`. Requests
+   * arriving meanwhile wait and reach the new runtime.
+   */
+  async restart(workspaceId: string, language: Language, options: RestartOptions): Promise<void> {
+    const restarted = this.runRestart(workspaceId, language, options)
+    this.restarts.set(
+      workspaceId,
+      restarted.catch(() => undefined),
+    )
+    try {
+      await restarted
+    } finally {
+      this.restarts.delete(workspaceId)
+    }
+  }
+
+  private async runRestart(workspaceId: string, language: Language, options: RestartOptions): Promise<void> {
+    await this.stop(workspaceId, { vm: options.vm })
+    await options.prepare()
+    await this.spawn(options.next(), language).ready
   }
 
   async stopAll(vmFor: (workspaceId: string) => VmShutdownMode = () => 'keep'): Promise<void> {

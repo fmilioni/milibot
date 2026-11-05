@@ -1,6 +1,6 @@
 import type { ToolExecContext, ToolResult, WriteTextRequest } from '@milibot/agent'
 import { makeBot } from '@milibot/agent/testing'
-import type { ExtractResult } from '@milibot/shared'
+import { computerCapabilities, type ExtractResult } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import type { VmController } from '../../../src/runtime/vm/controller'
@@ -37,6 +37,7 @@ function service(overrides: Partial<WebDeps> & { pages?: Record<string, VmFetchR
   const reports: Array<string | null> = []
   const web = new WebService({
     vm: {} as VmController,
+    capabilities: computerCapabilities('vm'),
     host: {
       writeText: async (request) => {
         writes.push(request)
@@ -148,6 +149,33 @@ describe('WebTools', () => {
     const image = await run('web_fetch', { url: 'https://tool.dev/logo.png' })
     expect(image.isError).toBe(true)
     expect(text(image)).toContain('curl -o')
+  })
+
+  it('without a computer, refuses documents and files it cannot download anywhere', async () => {
+    const pdf = fetched(Buffer.from('%PDF-1.7\n...'), 'application/pdf', 'https://tool.dev/invoice.pdf')
+    const zip = fetched(
+      Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0]),
+      'application/zip',
+      'https://tool.dev/a.zip',
+    )
+    const { run } = service({
+      capabilities: computerCapabilities('none'),
+      extract: async () => {
+        throw new Error('no extraction without a computer')
+      },
+      pages: { 'https://tool.dev/invoice.pdf': pdf, 'https://tool.dev/a.zip': zip },
+    })
+
+    const doc = await run('web_fetch', { url: 'https://tool.dev/invoice.pdf' })
+    const archive = await run('web_fetch', { url: 'https://tool.dev/a.zip' })
+    const local = await run('web_fetch', { url: 'http://127.0.0.1:3000/' })
+
+    expect(doc.isError).toBe(true)
+    expect(text(doc)).toContain('reading documents needs a computer')
+    expect(text(archive)).toContain('can only be read on a computer')
+    expect(text(archive)).not.toContain('bash')
+    expect(text(local)).toContain('reads public sites only')
+    expect(text(local)).not.toContain('bash')
   })
 
   it('without a key, tells the bot how to search instead', async () => {

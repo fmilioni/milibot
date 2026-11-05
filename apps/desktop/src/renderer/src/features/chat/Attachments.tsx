@@ -1,4 +1,5 @@
 import { ApiError, type MessageAttachment } from '@milibot/shared'
+import type { TFunction } from 'i18next'
 import {
   BookCheck,
   BookPlus,
@@ -19,7 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { type AttachmentKind, attachmentKind } from '@/features/chat/lib/attachment-upload'
 import { fileErrorToast, openChatFile, revealChatFile, saveChatFile } from '@/features/files/store'
 import { useKnowledgeStore } from '@/features/knowledge/store'
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useBlobSrc } from '@/features/workspace/use-blob-src'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { cn } from '@/lib/cn'
@@ -48,6 +49,7 @@ export function ComposerAttachments({
   onRemove: (key: string) => void
 }) {
   const { t, i18n } = useTranslation()
+  const hasComputer = useComputerHas('shell')
   return (
     <div className="flex flex-wrap gap-2" aria-label={t('chat.attachments.list')}>
       {items.map((item) => {
@@ -57,19 +59,7 @@ export function ComposerAttachments({
         const busy = !item.error && (!item.attachment || status === 'uploading' || status === 'copying')
         const progress =
           !item.attachment || status === 'uploading' ? item.uploaded : (item.attachment?.progress ?? 0)
-        const detail = item.error
-          ? item.error === 'too_large'
-            ? t('chat.attachments.tooLarge', { max: maxFileMb })
-            : t('chat.attachments.failed')
-          : status === 'queued'
-            ? t('chat.attachments.waitingVm')
-            : status === 'copying'
-              ? t('chat.attachments.copying', { percent: Math.round(progress * 100) })
-              : status === 'failed'
-                ? t('chat.attachments.failed')
-                : status === 'ready'
-                  ? formatBytes(item.size, i18n.language)
-                  : t('chat.attachments.uploading', { percent: Math.round(progress * 100) })
+        const detail = composerDetail(item, progress, { t, language: i18n.language, maxFileMb, hasComputer })
         const failed = Boolean(item.error) || status === 'failed'
         return (
           <div
@@ -125,6 +115,55 @@ export function ComposerAttachments({
 /** Kinds opened right away with the default app; the others (zips, binaries) are saved where the user picks. */
 const OPENABLE_KINDS: ReadonlySet<AttachmentKind> = new Set(['image', 'pdf', 'text'])
 
+interface DetailContext {
+  t: TFunction
+  language: string
+  maxFileMb: number
+  /** Without one, a `queued` file stays on this computer for good: it is as ready as it gets. */
+  hasComputer: boolean
+}
+
+/** The line under a composer chip: an error, the upload or copy progress, or the size once it is ready. */
+function composerDetail(item: PendingAttachment, progress: number, context: DetailContext): string {
+  const { t, language, maxFileMb, hasComputer } = context
+  const percent = Math.round(progress * 100)
+
+  if (item.error) {
+    return item.error === 'too_large'
+      ? t('chat.attachments.tooLarge', { max: maxFileMb })
+      : t('chat.attachments.failed')
+  }
+
+  switch (item.attachment?.status) {
+    case 'queued':
+      return hasComputer ? t('chat.attachments.waitingVm') : formatBytes(item.size, language)
+    case 'copying':
+      return t('chat.attachments.copying', { percent })
+    case 'failed':
+      return t('chat.attachments.failed')
+    case 'ready':
+      return formatBytes(item.size, language)
+    default:
+      return t('chat.attachments.uploading', { percent })
+  }
+}
+
+/** A sent file's status next to its name; null once it is in place. */
+function chipStatus(status: MessageAttachment['status'], t: TFunction, hasComputer: boolean): string | null {
+  switch (status) {
+    case 'queued':
+      return hasComputer ? t('chat.attachments.waitingVm') : null
+    case 'copying':
+      return t('chat.attachments.copyingShort')
+    case 'failed':
+      return t('chat.attachments.failed')
+    case 'removed':
+      return t('chat.attachments.removed')
+    default:
+      return null
+  }
+}
+
 function MessageAttachmentChip({ attachment }: { attachment: MessageAttachment }) {
   const { t, i18n } = useTranslation()
   const workspaceId = useWorkspaceId()
@@ -133,17 +172,9 @@ function MessageAttachmentChip({ attachment }: { attachment: MessageAttachment }
   const src = useBlobSrc(attachment.image?.sha256)
   const kind = attachmentKind(attachment.mimeType, attachment.name)
   const Icon = KIND_ICONS[kind]
+  const hasComputer = useComputerHas('shell')
   const removed = attachment.status === 'removed'
-  const status =
-    attachment.status === 'queued'
-      ? t('chat.attachments.waitingVm')
-      : attachment.status === 'copying'
-        ? t('chat.attachments.copyingShort')
-        : attachment.status === 'failed'
-          ? t('chat.attachments.failed')
-          : removed
-            ? t('chat.attachments.removed')
-            : null
+  const status = chipStatus(attachment.status, t, hasComputer)
 
   const failed = (err: unknown) => showToast(fileErrorToast(err))
   const save = () => {

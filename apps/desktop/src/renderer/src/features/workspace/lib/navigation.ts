@@ -6,7 +6,7 @@ export type PanelSection = 'routines'
 export type SettingsSection =
   | 'general'
   | 'providers'
-  | 'vm'
+  | 'computer'
   | 'credentials'
   | 'mcp'
   | 'skills'

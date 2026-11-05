@@ -35,6 +35,7 @@
     "kind": "Where the server runs",
     "stdio": "In the VM (command)",
     "http": "Remote (URL)",
+    "commandNeedsVm": "Command servers run on the virtual machine, which this workspace doesn't have. You can add remote servers here.",
     "name": "Name",
     "namePlaceholder": "GitHub",
     "command": "Command",

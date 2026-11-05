@@ -15,3 +15,8 @@ export function apiErrorReason(err: unknown): string | undefined {
 export function isApiError(err: unknown, code?: ApiErrorCode | 'network'): err is ApiError {
   return err instanceof ApiError && (code === undefined || err.code === code)
 }
+
+/** The daemon refused because the workspace has no computer to do it on. */
+export function isNoComputer(err: unknown): boolean {
+  return apiErrorReason(err) === 'no_computer'
+}

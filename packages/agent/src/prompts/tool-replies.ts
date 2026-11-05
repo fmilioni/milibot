@@ -6,6 +6,8 @@ export const CANCELLED = 'Cancelled: the user stopped this task.'
 
 export const gateReplies = {
   notHere: (tool: string) => `Not executed: ${tool} is not available here.`,
+  noComputer: (tool: string) =>
+    `Not executed: ${tool} needs a computer this workspace does not have. Do the task another way or tell the user it needs one (the workspace's computer setting).`,
   skillOff: (tool: string) =>
     `Not executed: ${tool} belongs to a skill that is turned off for you. Do the task another way or tell the user.`,
   readOnly: (tool: string) =>

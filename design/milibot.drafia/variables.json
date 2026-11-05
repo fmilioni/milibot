@@ -1,0 +1,168 @@
+{
+  "collections": [
+    {
+      "id": "Pr840V",
+      "name": "Tokens",
+      "modes": ["Light", "Dark"],
+      "variables": [
+        {
+          "name": "color/bg",
+          "type": "color",
+          "values": {
+            "Dark": "#0D0E11",
+            "Light": "#FBFBFA"
+          }
+        },
+        {
+          "name": "color/surface",
+          "type": "color",
+          "values": {
+            "Dark": "#14161A",
+            "Light": "#F4F4F2"
+          }
+        },
+        {
+          "name": "color/surface-2",
+          "type": "color",
+          "values": {
+            "Dark": "#1B1E24",
+            "Light": "#FFFFFF"
+          }
+        },
+        {
+          "name": "color/surface-3",
+          "type": "color",
+          "values": {
+            "Dark": "#23272F",
+            "Light": "#E9E9E6"
+          }
+        },
+        {
+          "name": "color/border",
+          "type": "color",
+          "values": {
+            "Dark": "#262A32",
+            "Light": "#E4E4E0"
+          }
+        },
+        {
+          "name": "color/fg",
+          "type": "color",
+          "values": {
+            "Dark": "#ECEDEF",
+            "Light": "#17181B"
+          }
+        },
+        {
+          "name": "color/fg-secondary",
+          "type": "color",
+          "values": {
+            "Dark": "#A0A6B1",
+            "Light": "#5E636B"
+          }
+        },
+        {
+          "name": "color/fg-muted",
+          "type": "color",
+          "values": {
+            "Dark": "#6C7380",
+            "Light": "#9A9EA6"
+          }
+        },
+        {
+          "name": "color/accent",
+          "type": "color",
+          "values": {
+            "Dark": "#8B93FF",
+            "Light": "#3B82F6"
+          }
+        },
+        {
+          "name": "color/accent-soft",
+          "type": "color",
+          "values": {
+            "Dark": "#8B93FF22",
+            "Light": "#3B82F614"
+          }
+        },
+        {
+          "name": "color/on-accent",
+          "type": "color",
+          "values": {
+            "Dark": "#0D0E11",
+            "Light": "#FFFFFF"
+          }
+        },
+        {
+          "name": "color/success",
+          "type": "color",
+          "values": {
+            "Dark": "#3DD68C",
+            "Light": "#1FA971"
+          }
+        },
+        {
+          "name": "color/warning",
+          "type": "color",
+          "values": {
+            "Dark": "#F5B94A",
+            "Light": "#E9A23B"
+          }
+        },
+        {
+          "name": "color/warning-strong",
+          "type": "color",
+          "values": {
+            "Dark": "#F5B94A",
+            "Light": "#B45309"
+          }
+        },
+        {
+          "name": "color/warning-tint",
+          "type": "color",
+          "values": {
+            "Dark": "#F5B94A1A",
+            "Light": "#E9A23B1A"
+          }
+        },
+        {
+          "name": "color/danger",
+          "type": "color",
+          "values": {
+            "Dark": "#F26D6D",
+            "Light": "#E5484D"
+          }
+        },
+        {
+          "name": "color/danger-tint",
+          "type": "color",
+          "values": {
+            "Dark": "#F26D6D14",
+            "Light": "#E5484D12"
+          }
+        },
+        {
+          "name": "font/sans",
+          "type": "string",
+          "values": {
+            "Light": "Inter"
+          }
+        },
+        {
+          "name": "radius/card",
+          "type": "number",
+          "values": {
+            "Light": 10
+          }
+        },
+        {
+          "name": "radius/lg",
+          "type": "number",
+          "values": {
+            "Light": 8
+          }
+        }
+      ]
+    }
+  ]
+}

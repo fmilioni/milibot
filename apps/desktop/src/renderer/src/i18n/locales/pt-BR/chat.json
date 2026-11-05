@@ -513,6 +513,11 @@
       "cli_unavailable": "O {{engine}} precisa da máquina virtual do workspace",
       "turn_crashed": "Algo deu errado e não consegui terminar"
     },
+    "details": {
+      "no_provider": "Adicione um provedor em Configurações › Provedores e modelos.",
+      "no_model": "Escolha um modelo para o provedor “{{provider}}” (ou para este bot) em Configurações › Provedores e modelos.",
+      "cli_unavailable": "O {{engine}} roda na máquina virtual, que este workspace não tem agora. Ligue-a em Configurações › Computador, ou escolha outro modelo para este bot."
+    },
     "openLoginTerminal": "Abrir terminal de login"
   },
   "task": {

@@ -6,6 +6,29 @@
   "stepDone": "Etapa {{number}} concluída",
   "pending": "Configuração pendente",
   "back": "Voltar para {{name}}",
+  "computer": {
+    "title": "Onde os bots trabalham",
+    "subtitle": "Escolha o computador dos bots. Dá para mudar depois nas configurações.",
+    "vm": {
+      "name": "Máquina virtual",
+      "description": "Um computador Linux só para os bots, com tela, navegador e terminal. Usa memória e disco deste computador.",
+      "limits": {
+        "qemu": "Falta o QEMU nesta instalação",
+        "slow": "Lenta neste computador",
+        "memory": "Pouca memória neste computador"
+      }
+    },
+    "none": {
+      "name": "Sem computador",
+      "description": "Os bots conversam, pesquisam na web, organizam quadros e lembram de tudo, mas não usam terminal, tela nem navegador. Leve: não precisa de virtualização."
+    },
+    "suggestion": {
+      "title": "Sugerimos começar sem computador",
+      "qemu": "O QEMU, que liga a máquina virtual, não está nesta instalação do Milibot. Você pode ligar a máquina virtual depois nas configurações.",
+      "slow": "A virtualização deste computador está desligada ou indisponível, então uma máquina virtual rodaria muito devagar. Você pode ligar a máquina virtual depois nas configurações.",
+      "memory": "Este computador não tem memória sobrando para uma máquina virtual (a menor pede {{mem}} GB). Você pode ligar a máquina virtual depois nas configurações."
+    }
+  },
   "providers": {
     "title": "Como os bots pensam",
     "summary": "Como os bots pensam · {{names}}",
@@ -97,7 +120,7 @@
     "updatingSystem": "Preparando a versão mais nova do sistema…",
     "updateFailed": "A versão mais nova do sistema não ficou pronta: {{error}}",
     "useCurrent": "Usar a versão atual",
-    "useCurrentHint": "Cria a máquina com o sistema que já está no computador. A atualização aparece depois em Configurações › Máquina virtual.",
+    "useCurrentHint": "Cria a máquina com o sistema que já está no computador. A atualização aparece depois em Configurações › Computador.",
     "vmFailed": "A máquina não ligou: {{error}}",
     "qemu": {
       "title": "O QEMU do Milibot não foi encontrado",
@@ -139,7 +162,8 @@
   "firstBot": {
     "title": "Conhecer o seu primeiro bot",
     "hintPending": "Se escolheu Claude Code ou Codex, você faz o login no terminal da VM. Depois, o seu primeiro bot se apresenta.",
-    "hint": "Ele conversa com você, faz as tarefas e monta a equipe quando você pedir."
+    "hint": "Ele conversa com você, faz as tarefas e monta a equipe quando você pedir.",
+    "hintNoComputer": "Ele se apresenta assim que você continuar."
   },
   "login": {
     "title": "Entrar na sua conta {{account}}",

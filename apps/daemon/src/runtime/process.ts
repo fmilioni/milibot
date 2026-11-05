@@ -2,7 +2,13 @@ import { join } from 'node:path'
 
 import { type AgentHost, createAgentHost } from '@milibot/agent'
 import { fakeGenerateImages } from '@milibot/agent/images'
-import { type CloseBehavior, DEFAULT_VM_CONFIG, type LogFn, type WorkspaceEvent } from '@milibot/shared'
+import {
+  type CloseBehavior,
+  computerCapabilities,
+  DEFAULT_VM_CONFIG,
+  type LogFn,
+  type WorkspaceEvent,
+} from '@milibot/shared'
 
 import type { RuntimeConfig } from '../config/env'
 import { DAEMON_VERSION, dataPaths, workspacePaths } from '../config/paths'
@@ -26,7 +32,7 @@ import { SharedLocalEmbeddingProvider } from './embeddings/supervisor-provider'
 import { createWorkspaceRuntime, type WorkspaceRuntime } from './runtime'
 import { botSliceLimits, readPreferences } from './settings'
 import { readVmConfig } from './vm'
-import { createPlaceholderVm, QemuVmController, type QemuVmOptions, type VmController } from './vm/controller'
+import { createNoComputerVm, QemuVmController, type QemuVmOptions, type VmController } from './vm/controller'
 
 /** What a runtime process plugs in, and the seams tests replace. */
 export interface RuntimeProcessOverrides {
@@ -66,11 +72,11 @@ export function createRuntimeFromConfig(
   const runtimeRef = lazy<WorkspaceRuntime>('runtime')
   const store = () => runtimeRef.get().store
   const preferences = () => readPreferences((key, fallback) => store().settings.get(key, fallback))
-  const vmEnabled = !config.vmDisabled
+  const vmEnabled = !config.vmDisabled && config.computer === 'vm'
   let closeBehavior = config.closeBehavior
   let background = config.background
 
-  let vm: VmController = createPlaceholderVm()
+  let vm: VmController = createNoComputerVm()
   if (vmEnabled) {
     try {
       const vmScript = defaultVmScript(config.vmScripts.cli)
@@ -116,13 +122,14 @@ export function createRuntimeFromConfig(
       db,
       emit,
       vm,
+      computer: config.computer,
       agentHost: overrides.agentHost ?? createAgentHost(),
       secrets:
         overrides.secrets ?? createSecretStore({ kind: config.secretStore, dataRoot: config.dataRoot }),
       fakeScriptPath: config.fakeLlm,
       // Without a window, a workspace set to suspend its VM on close keeps it off until one opens.
       vmAutostart: () => vmAutostart() && !(background && closeBehavior === 'suspend_vm'),
-      enableCliEngines: true,
+      enableCliEngines: computerCapabilities(config.computer).has('shell'),
       closeBehavior: vmEnabled ? () => closeBehavior : undefined,
       version: DAEMON_VERSION,
       log,

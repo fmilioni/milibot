@@ -532,7 +532,7 @@
   flex-shrink: 0;
 }
 
-/* Settings › Virtual machine: range sliders (track painted inline with the accent fill). */
+/* Settings › Computer (VM): range sliders (track painted inline with the accent fill). */
 .vm-slider::-webkit-slider-thumb {
   appearance: none;
   width: 16px;

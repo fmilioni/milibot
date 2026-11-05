@@ -1,5 +1,6 @@
 import {
   type CliEngine,
+  ComputerCapability,
   SKILL_LIMITS,
   SKILL_NAME_PATTERN,
   type SkillErrorCode,
@@ -15,8 +16,11 @@ export interface SkillMeta {
   description: string
   license: string | null
   metadata: Record<string, unknown> | null
-  /** Milibot extension, honored only for built-ins. */
-  milibot: { tools: string[]; default: 'all' | 'first' } | null
+  /**
+   * Milibot extension, honored only for built-ins: the tool families it enables, who has it by default and
+   * what of the workspace's computer it needs (without it the skill is active for no bot).
+   */
+  milibot: { tools: string[]; default: 'all' | 'first'; requires: ComputerCapability[] } | null
 }
 
 /** An invalid skill: the English message (bots, logs) and the code the app translates. */
@@ -106,7 +110,13 @@ function parseMilibotExtension(value: unknown): SkillMeta['milibot'] | string {
     return 'milibot.tools must list tool families.'
   const byDefault = fields.default ?? 'all'
   if (byDefault !== 'all' && byDefault !== 'first') return 'milibot.default must be "all" or "first".'
-  return { tools: tools as string[], default: byDefault }
+
+  const requires = ComputerCapability.array().safeParse(fields.requires ?? [])
+  if (!requires.success) {
+    return `milibot.requires must list ${ComputerCapability.options.join(', ')}.`
+  }
+
+  return { tools: tools as string[], default: byDefault, requires: requires.data }
 }
 
 /**

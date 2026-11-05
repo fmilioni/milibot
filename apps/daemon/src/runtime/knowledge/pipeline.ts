@@ -181,10 +181,15 @@ export class KnowledgePipeline {
     this.summaryTimers.delete(id)
   }
 
+  /** Waits for the VM to copy its file from or extract it there; never without a computer that could. */
   needsVmNow(row: DocRow): boolean {
-    if (row.source === 'bot') return false
-    const hasOriginal = existsSync(originalPath(this.deps.workspaceDir, row.id, row.file_name))
-    return !hasOriginal || needsVm(row.kind)
+    if (row.source === 'bot') {
+      return false
+    }
+
+    const { capabilities } = this.deps
+    const needsCopy = !existsSync(originalPath(this.deps.workspaceDir, row.id, row.file_name))
+    return (needsCopy && capabilities.has('shell')) || (needsVm(row.kind) && capabilities.has('documents'))
   }
 
   private runnable(): DocRow | null {
@@ -313,6 +318,9 @@ export class KnowledgePipeline {
   }
 
   private async fetchOriginal(row: DocRow): Promise<void> {
+    if (!this.deps.capabilities.has('shell')) {
+      throw new DocFailure('no_computer', 'The file is in the VM, and this workspace has no computer')
+    }
     if (this.deps.vm.status().state !== 'running') throw new VmGone()
     const path =
       row.source === 'vm_file'
@@ -353,6 +361,12 @@ export class KnowledgePipeline {
   }
 
   private async extractInVm(row: DocRow, bytes: Uint8Array, signal: AbortSignal) {
+    if (!this.deps.capabilities.has('documents')) {
+      throw new DocFailure(
+        'no_computer',
+        'Reading this kind of file needs a computer, which this workspace does not have',
+      )
+    }
     if (this.deps.vm.status().state !== 'running') throw new VmGone()
     const sniffed = sniffFile(row.file_name, bytes.subarray(0, 64 * 1024))
     const legacy = sniffed.type === 'document' && isLegacyOfficeKind(sniffed.kind) ? sniffed.kind : null

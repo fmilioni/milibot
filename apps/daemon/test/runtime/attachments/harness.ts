@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import {
   type Attachment,
   type Bot,
+  computerCapabilities,
   UPLOAD_CHUNK_BYTES,
   type VmInfo,
   type WorkspaceEvent,
@@ -133,6 +134,7 @@ export function attachmentsHarness(dir: string) {
   const service = new AttachmentService({
     store,
     vm,
+    capabilities: computerCapabilities('vm'),
     blobs: new FileBlobStore(join(dir, 'blobs')),
     stagingDir: join(dir, 'uploads'),
     exportDir: join(dir, 'exports'),

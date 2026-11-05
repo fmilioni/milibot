@@ -4,7 +4,7 @@ import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { joinCommandLine, splitCommandLine } from '@/features/mcp/lib/mcp'
-import { useAppStore } from '@/features/workspace/store'
+import { useAppStore, useComputerHas } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { errorMessage } from '@/lib/errors'
 import { botOptions as sortedBotOptions } from '@/lib/select-options'
@@ -30,7 +30,12 @@ export function McpServerForm({ server, onClose }: { server?: McpServer; onClose
   const createServer = useMcpStore((s) => s.create)
   const updateServer = useMcpStore((s) => s.update)
   const testDraft = useMcpStore((s) => s.testDraft)
-  const [transport, setTransport] = useState<McpTransport>(server?.transport ?? 'stdio_vm')
+  // Command servers run on the bots' computer; without one only remote servers can be added.
+  const runsCommands = useComputerHas('shell')
+  const offersCommand = runsCommands || server?.transport === 'stdio_vm'
+  const [transport, setTransport] = useState<McpTransport>(
+    server?.transport ?? (runsCommands ? 'stdio_vm' : 'http'),
+  )
   const [name, setName] = useState(server?.name ?? '')
   const [commandLine, setCommandLine] = useState(
     server?.transport === 'stdio_vm' ? joinCommandLine([server.command ?? '', ...server.args]) : '',
@@ -160,20 +165,23 @@ export function McpServerForm({ server, onClose }: { server?: McpServer; onClose
           <X size={14} />
         </button>
       </div>
-      <Segmented
-        size="sm"
-        className="w-fit"
-        label={t('mcp.form.kind')}
-        value={transport}
-        options={[
-          { value: 'stdio_vm', label: t('mcp.form.stdio') },
-          { value: 'http', label: t('mcp.form.http') },
-        ]}
-        onChange={(value) => {
-          setTransport(value)
-          setTest({ status: 'idle' })
-        }}
-      />
+      {offersCommand && (
+        <Segmented
+          size="sm"
+          className="w-fit"
+          label={t('mcp.form.kind')}
+          value={transport}
+          options={[
+            { value: 'stdio_vm', label: t('mcp.form.stdio') },
+            { value: 'http', label: t('mcp.form.http') },
+          ]}
+          onChange={(value) => {
+            setTransport(value)
+            setTest({ status: 'idle' })
+          }}
+        />
+      )}
+      {!runsCommands && <p className="text-sm text-fg-muted">{t('mcp.form.commandNeedsVm')}</p>}
       <div className="flex gap-2.5">
         <div className="flex w-[180px] shrink-0 flex-col gap-1">
           <label htmlFor={`${baseId}-name`} className={fieldLabel}>

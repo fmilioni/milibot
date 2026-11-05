@@ -33,6 +33,7 @@
   "cancelled": "Backup cancelado",
   "failed": "O backup falhou: {{error}}",
   "restorePending": "Os arquivos do /workspace do backup serão restaurados assim que a VM ligar.",
+  "restorePendingNoComputer": "Os arquivos do /workspace voltam quando este workspace usar uma máquina virtual.",
   "restoreRunning": "Restaurando o /workspace do backup… {{done}} de {{total}}",
   "restoreDone": "Arquivos do /workspace restaurados do backup.",
   "restoreFailed": "Não foi possível restaurar o /workspace do backup: {{error}}",

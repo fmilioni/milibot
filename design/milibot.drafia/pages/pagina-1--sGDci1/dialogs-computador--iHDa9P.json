@@ -1,0 +1,635 @@
+{
+  "id": "iHDa9P",
+  "type": "frame",
+  "name": "Dialogs · Computador",
+  "x": 0,
+  "y": 2300,
+  "width": "hug",
+  "height": "hug",
+  "layout": "horizontal",
+  "gap": 40,
+  "padding": 40,
+  "align": "start",
+  "modes": {
+    "Tokens": "Dark"
+  },
+  "fills": ["$color/bg"],
+  "children": [
+    {
+      "id": "Igu3vC",
+      "type": "frame",
+      "name": "Dialog · Leave VM",
+      "width": 460,
+      "layout": "vertical",
+      "gap": 14,
+      "padding": 20,
+      "fills": ["$color/surface-2"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "effects": [
+        {
+          "type": "drop-shadow",
+          "y": 12,
+          "radius": 32,
+          "color": "#00000066"
+        }
+      ],
+      "cornerRadius": 12,
+      "children": [
+        {
+          "id": "3Adyxu",
+          "type": "text",
+          "name": "Title",
+          "fills": ["$color/fg"],
+          "content": "Trabalhar sem computador?",
+          "fontFamily": "$font/sans",
+          "fontSize": 16,
+          "fontWeight": 700
+        },
+        {
+          "id": "wEcAPi",
+          "type": "text",
+          "name": "Body",
+          "width": "fill",
+          "fills": ["$color/fg-secondary"],
+          "content": "A máquina virtual será desligada e os bots que estiverem trabalhando param. O disco fica guardado: dá para voltar depois e continuar de onde parou.",
+          "fontFamily": "$font/sans",
+          "fontSize": 13,
+          "lineHeight": 1.5,
+          "textGrowth": "fixed-width"
+        },
+        {
+          "id": "EDm9BU",
+          "type": "frame",
+          "name": "Footer",
+          "width": "fill",
+          "layout": "horizontal",
+          "gap": 8,
+          "padding": [6, 0, 0, 0],
+          "justify": "end",
+          "children": [
+            {
+              "id": "iVjKWz",
+              "type": "frame",
+              "name": "Button · Cancelar",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["$color/surface-2"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "RNx9yS",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg"],
+                  "content": "Cancelar",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            },
+            {
+              "id": "89GDec",
+              "type": "frame",
+              "name": "Button · Desligar e trocar",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["$color/accent"],
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "wTX0mN",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 13,
+                  "height": 13,
+                  "fills": ["$color/on-accent"],
+                  "icon": "lucide:power"
+                },
+                {
+                  "id": "fZxvV7",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/on-accent"],
+                  "content": "Desligar e trocar",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "XJLfU0",
+      "type": "frame",
+      "name": "Dialog · Use a VM",
+      "width": 520,
+      "layout": "vertical",
+      "gap": 14,
+      "padding": 20,
+      "fills": ["$color/surface-2"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "effects": [
+        {
+          "type": "drop-shadow",
+          "y": 12,
+          "radius": 32,
+          "color": "#00000066"
+        }
+      ],
+      "cornerRadius": 12,
+      "note": "When the workspace still has its previous VM disk, the dialog skips the presets (the stored size is kept, editable later on the page) and the action is 'Ligar a máquina virtual'.",
+      "children": [
+        {
+          "id": "RrN5sf",
+          "type": "text",
+          "name": "Title",
+          "fills": ["$color/fg"],
+          "content": "Usar uma máquina virtual",
+          "fontFamily": "$font/sans",
+          "fontSize": 16,
+          "fontWeight": 700
+        },
+        {
+          "id": "KBIp6k",
+          "type": "text",
+          "name": "Body",
+          "width": "fill",
+          "fills": ["$color/fg-secondary"],
+          "content": "Os bots ganham terminal, tela e navegador. Criar a máquina leva uns 6 minutos; você pode continuar conversando enquanto isso.",
+          "fontFamily": "$font/sans",
+          "fontSize": 13,
+          "lineHeight": 1.5,
+          "textGrowth": "fixed-width"
+        },
+        {
+          "id": "wuMnOq",
+          "type": "frame",
+          "name": "Presets",
+          "width": "fill",
+          "layout": "horizontal",
+          "gap": 8,
+          "children": [
+            {
+              "id": "jyfXjH",
+              "type": "frame",
+              "name": "Preset · Leve",
+              "width": "fill",
+              "layout": "vertical",
+              "gap": 3,
+              "padding": [10, 12],
+              "fills": ["$color/surface-2"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": "$radius/lg",
+              "children": [
+                {
+                  "id": "htq25H",
+                  "type": "text",
+                  "name": "Name",
+                  "fills": ["$color/fg"],
+                  "content": "Leve",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                },
+                {
+                  "id": "GnyFLm",
+                  "type": "text",
+                  "name": "Spec",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "2 CPUs · 4 GB · 40 GB",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                },
+                {
+                  "id": "uu5x4q",
+                  "type": "text",
+                  "name": "Hint",
+                  "fills": ["$color/fg-muted"],
+                  "content": "1–2 bots",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                }
+              ]
+            },
+            {
+              "id": "NOvmqu",
+              "type": "frame",
+              "name": "Preset · Recomendado",
+              "width": "fill",
+              "layout": "vertical",
+              "gap": 3,
+              "padding": [10, 12],
+              "fills": ["$color/accent-soft"],
+              "strokes": ["$color/accent"],
+              "strokeWeight": 1,
+              "cornerRadius": "$radius/lg",
+              "children": [
+                {
+                  "id": "pVMy72",
+                  "type": "text",
+                  "name": "Name",
+                  "fills": ["$color/accent"],
+                  "content": "Recomendado",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                },
+                {
+                  "id": "aV3pR4",
+                  "type": "text",
+                  "name": "Spec",
+                  "fills": ["$color/accent"],
+                  "content": "4 CPUs · 8 GB · 60 GB",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                },
+                {
+                  "id": "oxt8kb",
+                  "type": "text",
+                  "name": "Hint",
+                  "fills": ["$color/accent"],
+                  "content": "~3 bots",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                }
+              ]
+            },
+            {
+              "id": "fXmX9W",
+              "type": "frame",
+              "name": "Preset · Potente",
+              "width": "fill",
+              "layout": "vertical",
+              "gap": 3,
+              "padding": [10, 12],
+              "fills": ["$color/surface-2"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": "$radius/lg",
+              "children": [
+                {
+                  "id": "kUDs0k",
+                  "type": "text",
+                  "name": "Name",
+                  "fills": ["$color/fg"],
+                  "content": "Potente",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                },
+                {
+                  "id": "YIcUNT",
+                  "type": "text",
+                  "name": "Spec",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "8 CPUs · 16 GB · 80 GB",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                },
+                {
+                  "id": "5gm0qn",
+                  "type": "text",
+                  "name": "Hint",
+                  "fills": ["$color/fg-muted"],
+                  "content": "5+ bots",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "VXWYYx",
+          "type": "frame",
+          "name": "Customize",
+          "width": "fill",
+          "layout": "horizontal",
+          "gap": 6,
+          "padding": [8, 12],
+          "align": "center",
+          "fills": ["$color/surface"],
+          "strokes": ["$color/border"],
+          "strokeWeight": 1,
+          "cornerRadius": "$radius/lg",
+          "children": [
+            {
+              "id": "zRkPLK",
+              "type": "icon",
+              "name": "Chevron",
+              "width": 12,
+              "height": 12,
+              "fills": ["$color/fg-secondary"],
+              "icon": "lucide:chevron-right"
+            },
+            {
+              "id": "Bc3I3E",
+              "type": "text",
+              "name": "Label",
+              "fills": ["$color/fg"],
+              "content": "Personalizar",
+              "fontFamily": "$font/sans",
+              "fontSize": 12,
+              "fontWeight": 500
+            }
+          ]
+        },
+        {
+          "id": "Mgshui",
+          "type": "frame",
+          "name": "Footer",
+          "width": "fill",
+          "layout": "horizontal",
+          "gap": 8,
+          "padding": [6, 0, 0, 0],
+          "justify": "end",
+          "children": [
+            {
+              "id": "XP8Egx",
+              "type": "frame",
+              "name": "Button · Cancelar",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["$color/surface-2"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "ysgyCZ",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg"],
+                  "content": "Cancelar",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            },
+            {
+              "id": "dp2KUD",
+              "type": "frame",
+              "name": "Button · Criar máquina (~6 min)",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["$color/accent"],
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "gJBqUa",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 13,
+                  "height": 13,
+                  "fills": ["$color/on-accent"],
+                  "icon": "lucide:play"
+                },
+                {
+                  "id": "MHzL1s",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/on-accent"],
+                  "content": "Criar máquina (~6 min)",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ykZcsg",
+      "type": "frame",
+      "name": "Dialog · Delete VM disk",
+      "width": 460,
+      "layout": "vertical",
+      "gap": 14,
+      "padding": 20,
+      "fills": ["$color/surface-2"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "effects": [
+        {
+          "type": "drop-shadow",
+          "y": 12,
+          "radius": 32,
+          "color": "#00000066"
+        }
+      ],
+      "cornerRadius": 12,
+      "children": [
+        {
+          "id": "ojzlsq",
+          "type": "text",
+          "name": "Title",
+          "fills": ["$color/fg"],
+          "content": "Apagar o disco da máquina virtual?",
+          "fontFamily": "$font/sans",
+          "fontSize": 16,
+          "fontWeight": 700
+        },
+        {
+          "id": "Op4E4T",
+          "type": "text",
+          "name": "Body",
+          "width": "fill",
+          "fills": ["$color/fg-secondary"],
+          "content": "Os arquivos dos bots em /workspace, os programas instalados e os pontos de restauração somem para sempre. Libera 18,2 GB. Os bots, conversas e quadros continuam.",
+          "fontFamily": "$font/sans",
+          "fontSize": 13,
+          "lineHeight": 1.5,
+          "textGrowth": "fixed-width"
+        },
+        {
+          "id": "uXf4cl",
+          "type": "frame",
+          "name": "Footer",
+          "width": "fill",
+          "layout": "horizontal",
+          "gap": 8,
+          "padding": [6, 0, 0, 0],
+          "justify": "end",
+          "children": [
+            {
+              "id": "R6UKjz",
+              "type": "frame",
+              "name": "Button · Cancelar",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["$color/surface-2"],
+              "strokes": ["$color/border"],
+              "strokeWeight": 1,
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "6Li8e9",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg"],
+                  "content": "Cancelar",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            },
+            {
+              "id": "L4kGE9",
+              "type": "frame",
+              "name": "Button · Apagar disco",
+              "layout": "horizontal",
+              "gap": 6,
+              "padding": [7, 12],
+              "align": "center",
+              "fills": ["#00000000"],
+              "strokes": ["$color/danger"],
+              "strokeWeight": 1,
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "EiXrhs",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 13,
+                  "height": 13,
+                  "fills": ["$color/danger"],
+                  "icon": "lucide:trash-2"
+                },
+                {
+                  "id": "O8Jr7A",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/danger"],
+                  "content": "Apagar disco",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uDBjxk",
+      "type": "frame",
+      "name": "Notice · Creating VM",
+      "width": 520,
+      "layout": "vertical",
+      "gap": 10,
+      "padding": [14, 16],
+      "fills": ["$color/surface"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "cornerRadius": "$radius/card",
+      "note": "Top of the Computador page after switching to a VM while the system image builds or the VM boots (same progress data as the setup's MachineProgress).",
+      "children": [
+        {
+          "id": "DEzyeT",
+          "type": "frame",
+          "name": "Top",
+          "width": "fill",
+          "layout": "horizontal",
+          "justify": "space-between",
+          "align": "center",
+          "children": [
+            {
+              "id": "QfGJS3",
+              "type": "frame",
+              "name": "Left",
+              "layout": "horizontal",
+              "gap": 8,
+              "align": "center",
+              "children": [
+                {
+                  "id": "YA0NuV",
+                  "type": "icon",
+                  "name": "Spinner",
+                  "width": 14,
+                  "height": 14,
+                  "fills": ["$color/accent"],
+                  "icon": "lucide:loader-circle"
+                },
+                {
+                  "id": "nghV9V",
+                  "type": "text",
+                  "name": "Title",
+                  "fills": ["$color/fg"],
+                  "content": "Criando a máquina virtual · instalando o sistema",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 13,
+                  "fontWeight": 600
+                }
+              ]
+            },
+            {
+              "id": "4itObb",
+              "type": "text",
+              "name": "Eta",
+              "fills": ["$color/fg-muted"],
+              "content": "~4 min",
+              "fontFamily": "$font/sans",
+              "fontSize": 12
+            }
+          ]
+        },
+        {
+          "id": "uHMtP5",
+          "type": "frame",
+          "name": "Track",
+          "width": "fill",
+          "height": 4,
+          "layout": "horizontal",
+          "fills": ["$color/surface-3"],
+          "cornerRadius": 2,
+          "children": [
+            {
+              "id": "iOnk5y",
+              "type": "rectangle",
+              "name": "Fill",
+              "width": 210,
+              "height": 4,
+              "fills": ["$color/accent"],
+              "cornerRadius": 2
+            }
+          ]
+        },
+        {
+          "id": "YVOp4O",
+          "type": "text",
+          "name": "Hint",
+          "width": "fill",
+          "fills": ["$color/fg-muted"],
+          "content": "Os bots continuam conversando; terminal, tela e navegador chegam quando ela ligar.",
+          "fontFamily": "$font/sans",
+          "fontSize": 11,
+          "textGrowth": "fixed-width"
+        }
+      ]
+    }
+  ]
+}

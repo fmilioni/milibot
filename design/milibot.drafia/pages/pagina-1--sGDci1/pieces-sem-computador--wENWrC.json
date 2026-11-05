@@ -1,0 +1,238 @@
+{
+  "id": "wENWrC",
+  "type": "frame",
+  "name": "Pieces · Sem computador",
+  "x": 3080,
+  "y": 2300,
+  "width": "hug",
+  "height": "hug",
+  "layout": "horizontal",
+  "gap": 32,
+  "padding": 40,
+  "align": "start",
+  "modes": {
+    "Tokens": "Dark"
+  },
+  "fills": ["$color/bg"],
+  "children": [
+    {
+      "id": "ckCzlw",
+      "type": "frame",
+      "name": "Skill row · requires",
+      "width": 380,
+      "layout": "horizontal",
+      "gap": 12,
+      "padding": 16,
+      "align": "center",
+      "fills": ["$color/surface"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "cornerRadius": "$radius/card",
+      "note": "The workspace switch still works; the chip says why the skill is off for every bot. Same chip in the skill detail header and in the bot's skills section.",
+      "children": [
+        {
+          "id": "PEhMYD",
+          "type": "icon",
+          "name": "Icon",
+          "width": 18,
+          "height": 18,
+          "fills": ["$color/fg-muted"],
+          "icon": "lucide:globe"
+        },
+        {
+          "id": "k6uKEC",
+          "type": "frame",
+          "name": "Text",
+          "width": "fill",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "id": "WqaDLe",
+              "type": "text",
+              "name": "Name",
+              "fills": ["$color/fg-secondary"],
+              "content": "Navegar na web",
+              "fontFamily": "$font/sans",
+              "fontSize": 13,
+              "fontWeight": 600
+            },
+            {
+              "id": "lnKad2",
+              "type": "frame",
+              "name": "Chip",
+              "layout": "horizontal",
+              "gap": 4,
+              "padding": [2, 6],
+              "align": "center",
+              "fills": ["$color/surface-3"],
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "vwWRdl",
+                  "type": "icon",
+                  "name": "Icon",
+                  "width": 11,
+                  "height": 11,
+                  "fills": ["$color/fg-secondary"],
+                  "icon": "lucide:monitor-off"
+                },
+                {
+                  "id": "QRonck",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "Precisa da máquina virtual",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "5m7kkW",
+          "type": "frame",
+          "name": "Switch (on)",
+          "width": 28,
+          "height": 16,
+          "opacity": 1,
+          "fills": ["$color/accent"],
+          "cornerRadius": 8
+        }
+      ]
+    },
+    {
+      "id": "ds6HZA",
+      "type": "frame",
+      "name": "MCP form · transport",
+      "width": 380,
+      "layout": "vertical",
+      "gap": 10,
+      "padding": 16,
+      "fills": ["$color/surface"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "cornerRadius": "$radius/card",
+      "children": [
+        {
+          "id": "F3EoYj",
+          "type": "text",
+          "name": "Label",
+          "fills": ["$color/fg"],
+          "content": "Onde o servidor roda",
+          "fontFamily": "$font/sans",
+          "fontSize": 12,
+          "fontWeight": 600
+        },
+        {
+          "id": "W4b0UK",
+          "type": "frame",
+          "name": "Segmented",
+          "width": "fill",
+          "layout": "horizontal",
+          "padding": 2,
+          "fills": ["$color/surface-3"],
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "ec4EHV",
+              "type": "frame",
+              "name": "Remote (selected)",
+              "width": "fill",
+              "layout": "horizontal",
+              "padding": [6, 0],
+              "justify": "center",
+              "fills": ["$color/surface-2"],
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "lmYXF8",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg"],
+                  "content": "Remoto (URL)",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 12,
+                  "fontWeight": 500
+                }
+              ]
+            },
+            {
+              "id": "d5CMFb",
+              "type": "frame",
+              "name": "In the VM (disabled)",
+              "width": "fill",
+              "opacity": 0.45,
+              "layout": "horizontal",
+              "padding": [6, 0],
+              "justify": "center",
+              "children": [
+                {
+                  "id": "6HGIa3",
+                  "type": "text",
+                  "name": "Label",
+                  "fills": ["$color/fg-secondary"],
+                  "content": "Na VM (comando)",
+                  "fontFamily": "$font/sans",
+                  "fontSize": 12
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "9lJDSB",
+          "type": "text",
+          "name": "Hint",
+          "width": "fill",
+          "fills": ["$color/fg-muted"],
+          "content": "Servidores por comando rodam na máquina virtual, que este workspace não tem.",
+          "fontFamily": "$font/sans",
+          "fontSize": 11,
+          "textGrowth": "fixed-width"
+        }
+      ]
+    },
+    {
+      "id": "GZlz4C",
+      "type": "frame",
+      "name": "Providers · CLI note",
+      "width": 380,
+      "layout": "horizontal",
+      "gap": 10,
+      "padding": 16,
+      "align": "center",
+      "fills": ["#00000000"],
+      "strokes": ["$color/border"],
+      "strokeWeight": 1,
+      "stroke": {
+        "dash": [4, 3]
+      },
+      "cornerRadius": "$radius/card",
+      "children": [
+        {
+          "id": "ogEu2n",
+          "type": "icon",
+          "name": "Icon",
+          "width": 14,
+          "height": 14,
+          "fills": ["$color/fg-muted"],
+          "icon": "lucide:terminal"
+        },
+        {
+          "id": "PvttUV",
+          "type": "text",
+          "name": "Text",
+          "width": "fill",
+          "fills": ["$color/fg-secondary"],
+          "content": "Claude Code, Codex e Antigravity rodam na máquina virtual. Ligue-a em Computador para usá-los.",
+          "fontFamily": "$font/sans",
+          "fontSize": 12,
+          "lineHeight": 1.45,
+          "textGrowth": "fixed-width"
+        }
+      ]
+    }
+  ]
+}

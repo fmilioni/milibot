@@ -40,3 +40,26 @@ describe('VM port ranges', () => {
     store.close()
   })
 })
+
+describe('workspace computer', () => {
+  it('defaults to the VM, stores a switch and refuses a stored kind it does not know', () => {
+    const store = AppStore.open(':memory:')
+    store.insertWorkspace({ id: 'ws_a', name: 'a', color: 'blue', icon: null, dir: '/data/a' })
+    store.insertWorkspace({
+      id: 'ws_b',
+      name: 'b',
+      color: 'blue',
+      icon: null,
+      dir: '/data/b',
+      computer: 'none',
+    })
+
+    expect(store.getWorkspace('ws_a').computer).toBe('vm')
+    expect(store.getWorkspace('ws_b').computer).toBe('none')
+    expect(store.setComputer('ws_a', 'none').computer).toBe('none')
+
+    store.db.prepare("UPDATE workspaces SET computer = 'mainframe' WHERE id = ?").run('ws_b')
+    expect(() => store.getWorkspace('ws_b')).toThrow()
+    store.close()
+  })
+})

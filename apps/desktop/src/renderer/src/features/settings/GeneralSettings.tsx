@@ -3,7 +3,7 @@ import { FolderOpen, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useAppStore, useCurrentWorkspace } from '@/features/workspace/store'
+import { useAppStore, useComputerHas, useCurrentWorkspace } from '@/features/workspace/store'
 import { useWorkspaceId } from '@/features/workspace/use-workspace-id'
 import { WorkspaceBadge } from '@/features/workspace/WorkspaceBadge'
 import { useDismiss } from '@/hooks/use-dismiss'
@@ -189,6 +189,8 @@ export function GeneralSettings() {
   const { prefs, loaded, set } = useWorkspacePreferences(workspaceId)
   const [name, setName] = useDraft(workspace?.name ?? '')
   const [deleting, setDeleting] = useState(false)
+  // Starting with the app and suspending on close act on the computer.
+  const hasComputer = useComputerHas('shell')
 
   if (!workspace) return null
 
@@ -248,26 +250,33 @@ export function GeneralSettings() {
       </SettingsCard>
 
       <SettingsCard title={t('settings.general.behavior')}>
-        <SettingsRow label={t('settings.general.vmAutostart')} hint={t('settings.general.vmAutostartHint')}>
-          <Switch
-            checked={prefs.vmAutostart}
-            disabled={!loaded}
-            label={t('settings.general.vmAutostart')}
-            onChange={(vmAutostart) => void set({ vmAutostart })}
-          />
-        </SettingsRow>
-        <SettingsRow label={t('settings.general.closeLabel')} hint={t('settings.general.closeHint')}>
-          <div className="w-[210px]">
-            <Select
-              label={t('settings.general.closeLabel')}
-              value={workspace.closeBehavior}
-              options={closeOptions}
-              size="sm"
-              tone="surface-2"
-              onChange={(closeBehavior) => void update(workspace.id, { closeBehavior })}
-            />
-          </div>
-        </SettingsRow>
+        {hasComputer && (
+          <>
+            <SettingsRow
+              label={t('settings.general.vmAutostart')}
+              hint={t('settings.general.vmAutostartHint')}
+            >
+              <Switch
+                checked={prefs.vmAutostart}
+                disabled={!loaded}
+                label={t('settings.general.vmAutostart')}
+                onChange={(vmAutostart) => void set({ vmAutostart })}
+              />
+            </SettingsRow>
+            <SettingsRow label={t('settings.general.closeLabel')} hint={t('settings.general.closeHint')}>
+              <div className="w-[210px]">
+                <Select
+                  label={t('settings.general.closeLabel')}
+                  value={workspace.closeBehavior}
+                  options={closeOptions}
+                  size="sm"
+                  tone="surface-2"
+                  onChange={(closeBehavior) => void update(workspace.id, { closeBehavior })}
+                />
+              </div>
+            </SettingsRow>
+          </>
+        )}
         <SettingsRow
           label={t('settings.general.routinesCatchUp')}
           hint={t('settings.general.routinesCatchUpHint')}

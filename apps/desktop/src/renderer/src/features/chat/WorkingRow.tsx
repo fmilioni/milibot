@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { BotAvatar } from '@/features/bots/avatar/BotAvatar'
 import { botStatusLabel, statusActivity } from '@/features/bots/lib/bot-status'
 import { openDesignFor } from '@/features/canvas/store'
-import { toastOnError, useAppStore } from '@/features/workspace/store'
+import { toastOnError, useAppStore, useComputerHas } from '@/features/workspace/store'
 import { cn } from '@/lib/cn'
 import { Spinner } from '@/ui/Spinner'
 
@@ -87,10 +87,11 @@ export function InternalWorkingRow({
   const conversationId = useAppStore((s) => s.selectedConversationId)
   const detail = useAppStore((s) => s.statusDetail[bot.id])
   const showScreen = useAppStore((s) => s.showBotScreen)
+  const hasDesktop = useComputerHas('desktop')
   const activity = isBusyStatus(bot.status) ? bot.status : 'thinking'
   const doing = statusActivity(detail?.detail)
   const watch =
-    doing === 'computer' || doing === 'browser'
+    hasDesktop && (doing === 'computer' || doing === 'browser')
       ? { label: t('chat.activity.showScreen'), onClick: () => showScreen(bot.id) }
       : doing === 'design'
         ? {

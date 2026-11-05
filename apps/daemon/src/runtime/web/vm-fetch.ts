@@ -12,7 +12,7 @@ import {
   FETCH_TIMEOUT_MS,
 } from './limits'
 import { FETCH_SCRIPT } from './scripts/fetch.generated'
-import { BLOCKED_SUBNETS } from './url-policy'
+import { BLOCKED_SUBNETS, LOCAL_ONLY } from './url-policy'
 
 export interface VmFetchRequest {
   url: string
@@ -49,14 +49,13 @@ export function fetchScriptInput(request: VmFetchRequest, allowPrivate = false):
 }
 
 const FAILURES: Record<string, string> = {
-  blocked_address: 'web_fetch reads public sites only; for local addresses use bash (curl) or your browser.',
   timeout: `the site did not answer within ${FETCH_TIMEOUT_MS / 1000}s`,
   dns: 'host not found',
   too_many_redirects: `more than ${FETCH_MAX_REDIRECTS} redirects`,
 }
 
 /** The script's output line as a result, or the failure it reports as a `DaemonError` the bot can act on. */
-export function parseFetchOutput(stdout: string, stderr: string): VmFetchResult {
+export function parseFetchOutput(stdout: string, stderr: string, localOnly = LOCAL_ONLY): VmFetchResult {
   const line = stdout.trim().split('\n').pop() ?? ''
   let parsed: Record<string, unknown>
   try {
@@ -67,7 +66,8 @@ export function parseFetchOutput(stdout: string, stderr: string): VmFetchResult 
   }
   if (parsed.ok !== true) {
     const code = String(parsed.code ?? 'connect')
-    const message = FAILURES[code] ?? String(parsed.message ?? 'failed')
+    const message =
+      code === 'blocked_address' ? localOnly : (FAILURES[code] ?? String(parsed.message ?? 'failed'))
     throw new DaemonError('validation_failed', `Could not fetch the page (${code}): ${message}`)
   }
   return {

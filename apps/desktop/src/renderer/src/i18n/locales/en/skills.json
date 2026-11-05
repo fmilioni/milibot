@@ -42,6 +42,7 @@
     "tokens": "~{{tokens}} tokens",
     "tokensOnLoad": "~{{tokens}} tokens when loaded",
     "scripts": "Has scripts",
+    "needsVm": "Needs the virtual machine",
     "files_one": "{{count}} file",
     "files_other": "{{count}} files",
     "captures_one": "{{count}} screenshot",
@@ -66,6 +67,7 @@
   },
   "deleteConfirm": "Delete “{{name}}”? Its folder is removed and the bots stop using it.",
   "folderNote": "Each skill is a folder with a SKILL.md (and, if you want, scripts and templates). Copy folders into {{path}} and they show up here by themselves. In the VM the skill files are in {{vmPath}}, readable by every bot.",
+  "folderNoteNoComputer": "Each skill is a folder with a SKILL.md (and, if you want, scripts and templates). Copy folders into {{path}} and they show up here by themselves.",
   "errors": {
     "noDescription": "The SKILL.md has no “description”: bots only see the skill once it says what it is for.",
     "noFrontmatter": "The SKILL.md must start with a block between --- lines with name and description.",

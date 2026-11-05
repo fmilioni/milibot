@@ -18,6 +18,7 @@ import { MoreMenu } from '@/ui/MoreMenu'
 import { StatusDot } from '@/ui/Tag'
 import { TextInput } from '@/ui/TextInput'
 
+import { workspaceHas } from './lib/computer'
 import { useAppStore } from './store'
 import { WorkspaceBadge } from './WorkspaceBadge'
 
@@ -45,17 +46,18 @@ function WorkspaceRow({
   const now = useNow(60_000)
 
   const state = overview?.vmState ?? 'not_created'
+  const hasComputer = workspaceHas(workspace, 'shell')
   const pendingSetup = workspace.setup !== 'done'
   const status = pendingSetup
     ? [t('setup.pending')]
     : [
-        t(`settings.workspaces.vm.${state}`),
+        hasComputer ? t(`settings.workspaces.vm.${state}`) : t('workspace.noComputer'),
         state === 'running' && overview?.workingBots
           ? t('settings.workspaces.working', { count: overview.workingBots })
           : null,
       ].filter(Boolean)
   const specs = [
-    overview?.cpus && overview.memGb
+    hasComputer && overview?.cpus && overview.memGb
       ? t('settings.workspaces.specs', { cpus: overview.cpus, mem: overview.memGb })
       : null,
     overview?.diskUsedBytes != null && overview.dataGb

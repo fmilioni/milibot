@@ -60,7 +60,8 @@ export function workspaceSlice(ctx: StoreContext): WorkspaceSlice {
     },
 
     async setupVm(size) {
-      ctx.upsertWorkspace(await api().call('setupWorkspaceVm', { params: { workspaceId: ws() }, body: size }))
+      const body = { kind: 'vm', size } as const
+      ctx.upsertWorkspace(await api().call('setupWorkspaceComputer', { params: { workspaceId: ws() }, body }))
     },
 
     openWorkspaceInNewWindow(workspaceId) {

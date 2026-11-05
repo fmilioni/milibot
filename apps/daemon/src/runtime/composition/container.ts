@@ -16,6 +16,7 @@ import {
   CLI_ENGINES,
   type CliEngine,
   type CloseBehavior,
+  type ComputerKind,
   LLM_CALL_RUNNING,
   type LogFn,
   type WorkspaceEvent,
@@ -175,6 +176,7 @@ export interface ContainerOptions {
   now: () => number
   secrets: SecretStore
   vm: VmController
+  computer: ComputerKind
   host: AgentHost
   version: string
   /** `MILIBOT_FAKE_LLM`: every provider becomes this script's `FakeProvider`. */
@@ -1030,7 +1032,15 @@ export function createContainer(options: ContainerOptions) {
     conversations.handlers(),
     bots.handlers(),
     new SidebarRoutes({ store, emit, now }).handlers(),
-    new VmRoutes({ vm, settings: store.settings, admin: vmAdmin, stats: vmStats, now, log }).handlers(),
+    new VmRoutes({
+      vm,
+      computer: options.computer,
+      settings: store.settings,
+      admin: vmAdmin,
+      stats: vmStats,
+      now,
+      log,
+    }).handlers(),
     new ObservabilityRoutes({
       store,
       llmCalls,

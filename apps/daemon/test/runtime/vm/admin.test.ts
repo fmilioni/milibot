@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DaemonError } from '../../../src/errors'
 import { readVmConfig, type SystemUpdateRequest, VmAdmin } from '../../../src/runtime/vm/admin'
-import { createPlaceholderVm, type VmController } from '../../../src/runtime/vm/controller'
+import { createNoComputerVm, type VmController } from '../../../src/runtime/vm/controller'
 
 function fakeVm(options: { state?: VmInfo['state']; revision?: number | null; latest?: number } = {}) {
   const latest = options.latest ?? 2
@@ -21,7 +21,7 @@ function fakeVm(options: { state?: VmInfo['state']; revision?: number | null; la
     resets: [] as Array<{ boot?: boolean }>,
   }
   const vm: VmController = {
-    ...createPlaceholderVm(),
+    ...createNoComputerVm(),
     info: () => state.info,
     processRunning: () => state.info.state === 'running',
     start: async () => {

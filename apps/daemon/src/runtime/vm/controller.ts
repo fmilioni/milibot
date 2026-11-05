@@ -24,6 +24,7 @@ import {
 import { pidAlive } from '@milibot/vm-host'
 
 import { workspacePaths } from '../../config/paths'
+import { DaemonError } from '../../errors'
 import { goldenRevision, goldenVersionOf } from '../../golden/revision'
 import { sleep } from '../../util/sleep'
 import { type GuestAgentBundle, parseVmCliOutput, type VmCli, VmCliError } from '../../vm-cli'
@@ -730,10 +731,16 @@ export class QemuVmController implements VmController {
   }
 }
 
-export function createPlaceholderVm(): VmController {
+/** What reaching for the VM of a workspace without a computer throws (`details.reason` = `no_computer`). */
+export function noComputerError(): DaemonError {
+  return new DaemonError('unsupported', 'This workspace has no computer', { reason: 'no_computer' })
+}
+
+/** The controller of a workspace without a computer: reports no VM and refuses everything that needs one. */
+export function createNoComputerVm(): VmController {
   const info: VmInfo = { state: 'not_created', config: DEFAULT_VM_CONFIG, portBase: null, desktops: 0 }
-  const unavailable = () =>
-    Promise.reject(new VmCliError('VM_UNAVAILABLE', 'No VM is configured for this runtime'))
+  const unavailable = () => Promise.reject(noComputerError())
+
   return {
     status: () => ({ state: 'not_created', desktops: 0 }),
     info: () => info,
@@ -742,7 +749,7 @@ export function createPlaceholderVm(): VmController {
     reset: unavailable,
     guest: unavailable,
     runningGuest: () => {
-      throw new VmCliError('VM_UNAVAILABLE', 'No VM is configured for this runtime')
+      throw noComputerError()
     },
     provisionBot: async () => {},
     removeBot: async () => false,

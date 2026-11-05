@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { AvatarColor } from '../bots/avatar'
 import { endpoint, Ok } from '../http/endpoint'
 import { VmState } from '../vm/vm'
+import { ComputerChoice, ComputerKind, DeletedVm } from './computer'
 
 export const CloseBehavior = z.enum(['keep_running', 'suspend_vm'])
 export type CloseBehavior = z.infer<typeof CloseBehavior>
@@ -27,6 +28,7 @@ export const Workspace = z.object({
   createdAt: z.number().int(),
   lastOpenedAt: z.number().int().nullable(),
   setup: SetupStep,
+  computer: ComputerKind,
 })
 export type Workspace = z.infer<typeof Workspace>
 
@@ -110,6 +112,8 @@ const CreateWorkspaceBody = z.object({
   /** Starts at the setup (providers → VM → login) instead of being ready right away. */
   setup: z.boolean().optional(),
   closeBehavior: CloseBehavior.optional(),
+  /** Default `vm`; a workspace going through the setup chooses it there. */
+  computer: ComputerKind.optional(),
   copyFrom: CopyWorkspaceOptions.optional(),
 })
 
@@ -157,6 +161,22 @@ export const workspaceEndpoints = {
     response: WorkspaceSummary,
   }),
   deleteWorkspace: endpoint({ method: 'DELETE', path: '/workspaces/:workspaceId', response: Ok }),
+  /**
+   * Switches a set-up workspace's computer, restarting its runtime (running turns stop). Leaving the VM stops
+   * it and keeps its disks; a VM without a size keeps the stored one.
+   */
+  setWorkspaceComputer: endpoint({
+    method: 'POST',
+    path: '/workspaces/:workspaceId/computer',
+    body: ComputerChoice,
+    response: WorkspaceSummary,
+  }),
+  /** Deletes the disks of a workspace that left its VM (`conflict` while its computer is the VM). */
+  deleteWorkspaceVm: endpoint({
+    method: 'DELETE',
+    path: '/workspaces/:workspaceId/vm',
+    response: DeletedVm,
+  }),
   openWorkspace: endpoint({
     method: 'POST',
     path: '/workspaces/:workspaceId/open',

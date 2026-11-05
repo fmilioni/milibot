@@ -143,9 +143,9 @@ describe('workspace setup', () => {
   it('builds the missing golden image, reporting progress, and retries after a failure', async () => {
     expect((await client.call('getGoldenImage', {})).state).toBe('missing')
     writeFileSync(join(dataRoot, 'fail-once'), '')
-    const updated = await client.call('setupWorkspaceVm', {
+    const updated = await client.call('setupWorkspaceComputer', {
       params: { workspaceId: workspace.id },
-      body: { cpus: 2, memGb: 4, dataGb: 40 },
+      body: { kind: 'vm', size: { cpus: 2, memGb: 4, dataGb: 40 } },
     })
     expect(updated.setup).toBe('vm')
     const failed = await until(
@@ -254,9 +254,9 @@ describe('workspace setup', () => {
       }
     }
     const runsBefore = readFileSync(join(dataRoot, 'build-args'), 'utf8').trim().split('\n').length
-    await client.call('setupWorkspaceVm', {
+    await client.call('setupWorkspaceComputer', {
       params: { workspaceId: fresh.id },
-      body: { cpus: 2, memGb: 4, dataGb: 40 },
+      body: { kind: 'vm', size: { cpus: 2, memGb: 4, dataGb: 40 } },
     })
     expect((await client.call('getGoldenImage', {})).state).toBe('building')
     expect(waitsForGolden()).toBe('true')

@@ -13,7 +13,7 @@ import type { WorkspaceStore } from '../workspace-store'
 
 type SetupEndpoint = Extract<
   keyof typeof setupEndpoints,
-  'configureSetupVm' | 'finishSetup' | 'checkOpenRouterKey'
+  'configureComputer' | 'finishSetup' | 'checkOpenRouterKey'
 >
 
 export interface SetupDeps {
@@ -44,15 +44,25 @@ export class SetupRoutes {
     }
 
     return {
-      configureSetupVm: ({ body }) => {
-        store.settings.set(VM_SETTING_KEYS.cpus, body.cpus)
-        store.settings.set(VM_SETTING_KEYS.memGb, body.memGb)
-        store.settings.set(VM_SETTING_KEYS.dataGb, body.dataGb)
+      configureComputer: ({ body: { choice, start } }) => {
         store.settings.set(SETUP_VM_PENDING_KEY, false)
-        store.settings.set(SETUP_VM_WAIT_GOLDEN_KEY, !body.start)
-        if (body.start) {
-          vm.start().catch((err: unknown) => log('warn', 'setup vm start failed', { err: errorMessage(err) }))
+
+        if (choice.kind === 'none') {
+          store.settings.set(SETUP_VM_WAIT_GOLDEN_KEY, false)
+          return vm.info()
         }
+
+        if (choice.size) {
+          store.settings.set(VM_SETTING_KEYS.cpus, choice.size.cpus)
+          store.settings.set(VM_SETTING_KEYS.memGb, choice.size.memGb)
+          store.settings.set(VM_SETTING_KEYS.dataGb, choice.size.dataGb)
+        }
+
+        store.settings.set(SETUP_VM_WAIT_GOLDEN_KEY, !start)
+        if (start) {
+          vm.start().catch((err: unknown) => log('warn', 'vm start failed', { err: errorMessage(err) }))
+        }
+
         return vm.info()
       },
       finishSetup: async () => {

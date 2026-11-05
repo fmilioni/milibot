@@ -2,6 +2,7 @@ import {
   AppSettings,
   type AvatarColor,
   type CloseBehavior,
+  ComputerKind,
   DEFAULT_APP_SETTINGS,
   type SetupStep,
   type Workspace,
@@ -23,6 +24,7 @@ interface WorkspaceRow {
   created_at: number
   last_opened_at: number | null
   setup_step: SetupStep
+  computer: string
 }
 
 function toWorkspace(row: WorkspaceRow): Workspace {
@@ -36,6 +38,7 @@ function toWorkspace(row: WorkspaceRow): Workspace {
     createdAt: row.created_at,
     lastOpenedAt: row.last_opened_at,
     setup: row.setup_step,
+    computer: ComputerKind.parse(row.computer),
   }
 }
 
@@ -88,6 +91,7 @@ export class AppStore {
     dir: string
     closeBehavior?: CloseBehavior
     setup?: SetupStep
+    computer?: ComputerKind
   }): Workspace {
     const { next } = this.db
       .prepare('SELECT COALESCE(MAX(position), -1) + 1 AS next FROM workspaces')
@@ -96,8 +100,9 @@ export class AppStore {
     }
     this.db
       .prepare(
-        `INSERT INTO workspaces (id, name, color, icon, dir, close_behavior, position, created_at, setup_step)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO workspaces
+           (id, name, color, icon, dir, close_behavior, position, created_at, setup_step, computer)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         input.id,
@@ -109,6 +114,7 @@ export class AppStore {
         next,
         this.now(),
         input.setup ?? 'done',
+        input.computer ?? 'vm',
       )
     return this.getWorkspace(input.id)
   }
@@ -127,6 +133,12 @@ export class AppStore {
         patch.closeBehavior ?? current.closeBehavior,
         id,
       )
+    return this.getWorkspace(id)
+  }
+
+  setComputer(id: string, computer: ComputerKind): Workspace {
+    this.getWorkspace(id)
+    this.db.prepare('UPDATE workspaces SET computer = ? WHERE id = ?').run(computer, id)
     return this.getWorkspace(id)
   }
 

@@ -127,6 +127,8 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
     return summary
   }
 
+  /** Set-up workspaces switched to a VM while the golden image was missing or outdated (in memory only). */
+  const switchedWaitingForGolden = new Set<string>()
   const golden = new GoldenBuilder({
     dataRoot: options.dataRoot,
     golden: goldenImage,
@@ -135,12 +137,17 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
     accelEnv: (): Record<string, string> =>
       windowsHypervisor && !whpxUsable(windowsHypervisor.lastKnown()) ? { MILIBOT_VM_ACCEL: 'tcg' } : {},
     onStatus: (status) => hub.publishApp({ type: 'golden.status', payload: { status } }),
-    // Workspaces whose setup was waiting for the image create their VM now (the others boot it on open).
+    // Workspaces waiting for the image (setup, a switch to the VM) create their VM now; others boot on open.
     onReady: () => {
       for (const workspace of store.listWorkspaces()) {
-        if (workspace.setup !== 'vm' || !runtimes.isRunning(workspace.id)) continue
+        const switched = switchedWaitingForGolden.delete(workspace.id)
+        const waits = workspace.setup === 'vm' || switched
+        if (!waits || workspace.computer !== 'vm' || !runtimes.isRunning(workspace.id)) {
+          continue
+        }
+
         requestRuntime(workspace, 'startVm').catch((err: unknown) =>
-          app.log.warn({ err, workspaceId: workspace.id }, 'setup VM start failed'),
+          app.log.warn({ err, workspaceId: workspace.id }, 'VM start after the golden build failed'),
         )
       }
     },
@@ -154,6 +161,7 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
     name: workspace.name,
     vmPortBase: store.vmPortBase(workspace.id),
     closeBehavior: workspace.closeBehavior,
+    computer: workspace.computer,
   })
 
   /** A workspace endpoint without path params besides the workspace, called by the supervisor itself. */
@@ -212,6 +220,7 @@ export function createSupervisor(options: SupervisorOptions): Supervisor {
       publishWorkspace,
       target,
       requestRuntime,
+      waitForGolden: (workspaceId) => switchedWaitingForGolden.add(workspaceId),
     }),
   }
 

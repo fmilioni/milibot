@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SetupRoutes } from '../../../src/runtime/setup/handlers'
-import { createPlaceholderVm, type VmController } from '../../../src/runtime/vm/controller'
+import { createNoComputerVm, type VmController } from '../../../src/runtime/vm/controller'
 import type { GuestClient } from '../../../src/runtime/vm/guest-client'
 import { WorkspaceStore } from '../../../src/runtime/workspace-store'
 import { openWorkspaceDb } from '../../../src/workspace-db/open'
 import { seedWorkspace } from '../../../src/workspace-db/seed'
-import { SETUP_PENDING_KEY, SETUP_VM_PENDING_KEY } from '../../../src/workspace-db/setup-keys'
+import {
+  SETUP_PENDING_KEY,
+  SETUP_VM_PENDING_KEY,
+  SETUP_VM_WAIT_GOLDEN_KEY,
+} from '../../../src/workspace-db/setup-keys'
 
 let store: WorkspaceStore
 
@@ -19,10 +23,18 @@ beforeEach(() => {
 })
 
 function vmWith(overrides: Partial<VmController>): VmController {
-  return { ...createPlaceholderVm(), ...overrides }
+  return { ...createNoComputerVm(), ...overrides }
 }
 
 const noArgs = { params: { workspaceId: 'ws' }, query: undefined, body: undefined }
+
+function storedVmSize(): number[] {
+  return [
+    store.settings.get('vm.vcpus', 0),
+    store.settings.get('vm.memory_gb', 0),
+    store.settings.get('vm.data_disk_gb', 0),
+  ]
+}
 
 describe('setup runtime', () => {
   it('stores the chosen VM size, clears the VM hold and boots only when asked', async () => {
@@ -33,16 +45,60 @@ describe('setup runtime', () => {
       introduceFirstBot: () => {},
       log: () => {},
     }).handlers()
-    await handlers.configureSetupVm({ ...noArgs, body: { cpus: 2, memGb: 4, dataGb: 40, start: false } })
+
+    await handlers.configureComputer({
+      ...noArgs,
+      body: { choice: { kind: 'vm', size: { cpus: 2, memGb: 4, dataGb: 40 } }, start: false },
+    })
+
     expect(start).not.toHaveBeenCalled()
     expect(store.settings.get(SETUP_VM_PENDING_KEY, true)).toBe(false)
-    expect([
-      store.settings.get('vm.vcpus', 0),
-      store.settings.get('vm.memory_gb', 0),
-      store.settings.get('vm.data_disk_gb', 0),
-    ]).toEqual([2, 4, 40])
-    await handlers.configureSetupVm({ ...noArgs, body: { cpus: 4, memGb: 8, dataGb: 60, start: true } })
+    expect(store.settings.get(SETUP_VM_WAIT_GOLDEN_KEY, false)).toBe(true)
+    expect(storedVmSize()).toEqual([2, 4, 40])
+
+    await handlers.configureComputer({
+      ...noArgs,
+      body: { choice: { kind: 'vm', size: { cpus: 4, memGb: 8, dataGb: 60 } }, start: true },
+    })
+
     expect(start).toHaveBeenCalledTimes(1)
+    expect(store.settings.get(SETUP_VM_WAIT_GOLDEN_KEY, true)).toBe(false)
+  })
+
+  it('keeps the stored VM size when the choice has none', async () => {
+    const handlers = new SetupRoutes({
+      store,
+      vm: vmWith({ start: () => Promise.resolve() }),
+      introduceFirstBot: () => {},
+      log: () => {},
+    }).handlers()
+    await handlers.configureComputer({
+      ...noArgs,
+      body: { choice: { kind: 'vm', size: { cpus: 2, memGb: 4, dataGb: 40 } }, start: false },
+    })
+
+    await handlers.configureComputer({ ...noArgs, body: { choice: { kind: 'vm' }, start: true } })
+
+    expect(storedVmSize()).toEqual([2, 4, 40])
+  })
+
+  it('without a computer only clears the VM holds, never booting', async () => {
+    const start = vi.fn(() => Promise.resolve())
+    store.settings.set(SETUP_VM_WAIT_GOLDEN_KEY, true)
+    const seededSize = storedVmSize()
+    const handlers = new SetupRoutes({
+      store,
+      vm: vmWith({ start }),
+      introduceFirstBot: () => {},
+      log: () => {},
+    }).handlers()
+
+    await handlers.configureComputer({ ...noArgs, body: { choice: { kind: 'none' }, start: true } })
+
+    expect(start).not.toHaveBeenCalled()
+    expect(store.settings.get(SETUP_VM_PENDING_KEY, true)).toBe(false)
+    expect(store.settings.get(SETUP_VM_WAIT_GOLDEN_KEY, true)).toBe(false)
+    expect(storedVmSize()).toEqual(seededSize)
   })
 
   it('lets the first bot introduce itself when the setup finishes, closing the login terminal', async () => {
@@ -69,7 +125,7 @@ describe('setup runtime', () => {
     }) as unknown as typeof globalThis.fetch
     const handlers = new SetupRoutes({
       store,
-      vm: createPlaceholderVm(),
+      vm: createNoComputerVm(),
       introduceFirstBot: () => {},
       fetch,
       log: () => {},

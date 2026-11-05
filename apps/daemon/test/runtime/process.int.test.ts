@@ -80,6 +80,23 @@ describe('a runtime built from its environment', () => {
     expect(cli.calls).toEqual([])
   })
 
+  it('never touches the VM CLI in a workspace without a computer, refusing what needs one', async () => {
+    const { proc, cli } = start({ [RUNTIME_ENV.computer]: 'none' })
+    await proc.start()
+    proc.opened()
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(proc.vm.info().state).toBe('not_created')
+    expect(cli.calls).toEqual([])
+    await expect(proc.vm.guest()).rejects.toMatchObject({
+      code: 'unsupported',
+      details: { reason: 'no_computer' },
+    })
+    await expect(
+      proc.runtime.handle('startVm', { workspaceId: 'ws_proc' }, {}, undefined),
+    ).rejects.toMatchObject({ code: 'unsupported' })
+  })
+
   it('runs without a VM when it is disabled', async () => {
     const { proc, cli } = start({ MILIBOT_VM_DISABLED: '1' })
     await proc.start()

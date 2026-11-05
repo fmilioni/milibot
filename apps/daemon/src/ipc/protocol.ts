@@ -76,4 +76,5 @@ export const RUNTIME_ENV = {
   /** Started by the daemon without a window (a "suspend VM" workspace leaves its VM off). */
   background: 'MILIBOT_RUNTIME_BACKGROUND',
   closeBehavior: 'MILIBOT_CLOSE_BEHAVIOR',
+  computer: 'MILIBOT_COMPUTER',
 } as const

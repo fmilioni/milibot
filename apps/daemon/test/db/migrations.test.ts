@@ -38,10 +38,25 @@ function insertBot(db: ReturnType<typeof openDatabase>) {
 describe('migrations', () => {
   it('creates the app schema and is idempotent', () => {
     const db = openDatabase(':memory:')
-    expect(migrate(db, appMigrations).applied).toEqual(['1_init'])
+    expect(migrate(db, appMigrations).applied).toEqual(['1_init', '2_workspace_computer'])
     expect(migrate(db, appMigrations).applied).toEqual([])
     expect(tableNames(db)).toEqual(expect.arrayContaining(['workspaces', 'app_settings']))
     expect(db.pragma('user_version', { simple: true })).toBe(appMigrations.length)
+  })
+
+  it('keeps the VM as the computer of workspaces created before computers could be chosen', () => {
+    const db = openDatabase(':memory:')
+    migrate(db, appMigrations.slice(0, 1))
+    db.prepare(
+      `INSERT INTO workspaces (id, name, color, dir, setup_step, created_at)
+       VALUES ('ws_old', 'Old', 'blue', '/data/old', 'done', 1)`,
+    ).run()
+
+    migrate(db, appMigrations)
+
+    expect(db.prepare("SELECT computer FROM workspaces WHERE id = 'ws_old'").get()).toEqual({
+      computer: 'vm',
+    })
   })
 
   it.each(DATABASES)('lists every %s migration file under its own version', async (name, migrations) => {

@@ -23,4 +23,4 @@ setup_step TEXT NOT NULL CHECK (setup_step IN ('providers', 'vm', 'login', 'done
 last_running INTEGER NOT NULL DEFAULT 0,
 created_at INTEGER NOT NULL,
 last_opened_at INTEGER
-);
+, computer TEXT NOT NULL DEFAULT 'vm');

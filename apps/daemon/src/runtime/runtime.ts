@@ -2,14 +2,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { type AgentHost, createNoopAgentHost } from '@milibot/agent'
-import type { CloseBehavior, LogFn, WorkspaceEvent } from '@milibot/shared'
+import type { CloseBehavior, ComputerKind, LogFn, WorkspaceEvent } from '@milibot/shared'
 
 import type { Db } from '../db/sqlite'
 import type { VmShutdownMode, WorkspaceEndpointName } from '../ipc/protocol'
 import { MemorySecretStore, type SecretStore } from '../secrets/secret-store'
 import { type Container, createContainer, type RuntimeOverrides } from './composition/container'
 import { dispatch } from './composition/routes'
-import { createPlaceholderVm, type VmController } from './vm/controller'
+import { createNoComputerVm, type VmController } from './vm/controller'
 import type { WorkspaceStore } from './workspace-store'
 
 export interface WorkspaceRuntimeOptions {
@@ -22,6 +22,8 @@ export interface WorkspaceRuntimeOptions {
   workspaceName?: string
   agentHost?: AgentHost
   vm?: VmController
+  /** What the bots work on (default `vm`); `none` runs on the no-computer controller. */
+  computer?: ComputerKind
   now?: () => number
   secrets?: SecretStore
   version?: string
@@ -60,7 +62,8 @@ export function createWorkspaceRuntime(options: WorkspaceRuntimeOptions): Worksp
     emit: options.emit,
     now: options.now ?? Date.now,
     secrets: options.secrets ?? new MemorySecretStore(),
-    vm: options.vm ?? createPlaceholderVm(),
+    vm: options.vm ?? createNoComputerVm(),
+    computer: options.computer ?? 'vm',
     host: options.agentHost ?? createNoopAgentHost(),
     version: options.version ?? 'dev',
     fakeScriptPath: options.fakeScriptPath ?? null,

@@ -31,6 +31,17 @@ function vmStateOf(config: Partial<VmConfigFile> | null, qemuPid: string): Works
   return qemuPidFileAlive(qemuPid) ? 'running' : 'stopped'
 }
 
+/** Space both VM disks take on the host (null: neither exists). */
+export function vmDiskBytes(workspace: Pick<Workspace, 'dir'>): number | null {
+  const paths = workspacePaths(workspace.dir)
+  const disks = [paths.systemDisk, paths.dataDisk].map(diskBytes)
+  if (disks.every((bytes) => bytes === null)) {
+    return null
+  }
+
+  return disks.reduce<number>((sum, bytes) => sum + (bytes ?? 0), 0)
+}
+
 /** The VM state of a workspace without a runtime to ask, from its files. */
 export function probeVmState(workspace: Workspace): WorkspaceOverview['vmState'] {
   const paths = workspacePaths(workspace.dir)
@@ -44,7 +55,6 @@ export function probeVmState(workspace: Workspace): WorkspaceOverview['vmState']
 export function workspaceOverview(workspace: Workspace): WorkspaceOverview {
   const paths = workspacePaths(workspace.dir)
   const config = readVmConfigFile(paths.vmConfig)
-  const disks = [paths.systemDisk, paths.dataDisk].map(diskBytes)
   const counts = workspaceCounts(paths.db)
   const vmState = vmStateOf(config, paths.qemuPid)
   return {
@@ -53,7 +63,7 @@ export function workspaceOverview(workspace: Workspace): WorkspaceOverview {
     cpus: config?.cpus ?? null,
     memGb: config?.memGb ?? null,
     dataGb: config?.dataGb ?? null,
-    diskUsedBytes: disks.some((d) => d !== null) ? disks.reduce<number>((sum, d) => sum + (d ?? 0), 0) : null,
+    diskUsedBytes: vmDiskBytes(workspace),
     ...counts,
     workingBots: vmState === 'running' ? counts.workingBots : 0,
   }

@@ -22,6 +22,7 @@ const workspace = (): Workspace => ({
   createdAt: 1,
   lastOpenedAt: null,
   setup: 'done',
+  computer: 'vm',
 })
 
 describe('workspace overview', () => {

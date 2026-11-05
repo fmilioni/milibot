@@ -1,4 +1,4 @@
-import { CloseBehavior, Language } from '@milibot/shared'
+import { CloseBehavior, ComputerKind, Language } from '@milibot/shared'
 import { z } from 'zod'
 
 import { currentHost } from '../host/profile'
@@ -88,6 +88,8 @@ export interface RuntimeConfig extends CommonConfig {
   /** Started by the daemon without a window (a "suspend VM" workspace leaves its VM off until one opens). */
   background: boolean
   closeBehavior: CloseBehavior
+  /** Fixed for the process's lifetime: the supervisor restarts the runtime to switch it. */
+  computer: ComputerKind
   vmDisabled: boolean
   vmAutostart: boolean
   fakeLlm: string | null
@@ -137,6 +139,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
     vmPortBase: Number(env[RUNTIME_ENV.vmPortBase]) || null,
     background: env[RUNTIME_ENV.background] === '1',
     closeBehavior: CloseBehavior.catch('keep_running').parse(env[RUNTIME_ENV.closeBehavior]),
+    computer: ComputerKind.default('vm').parse(env[RUNTIME_ENV.computer]),
     vmDisabled: parsed.MILIBOT_VM_DISABLED,
     vmAutostart: parsed.MILIBOT_VM_AUTOSTART,
     fakeLlm: parsed.MILIBOT_FAKE_LLM ?? null,

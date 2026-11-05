@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CODEX_LOGIN_STATUS_CMD, CodexInstaller } from '../../../src/runtime/providers/cli-engines/codex'
 import { CliEngineRoutes } from '../../../src/runtime/providers/cli-routes'
-import { createPlaceholderVm, type VmController } from '../../../src/runtime/vm/controller'
+import { createNoComputerVm, type VmController } from '../../../src/runtime/vm/controller'
 import { WorkspaceStore } from '../../../src/runtime/workspace-store'
 import { openWorkspaceDb } from '../../../src/workspace-db/open'
 import { seedWorkspace } from '../../../src/workspace-db/seed'
@@ -35,7 +35,7 @@ function fakeVm(
   }
   const start = vi.fn(async () => undefined)
   const vm: VmController = {
-    ...createPlaceholderVm(),
+    ...createNoComputerVm(),
     status: () => ({ state, desktops: 1 }) as VmInfo,
     subscribe: () => () => undefined,
     runningGuest: () => guest as never,

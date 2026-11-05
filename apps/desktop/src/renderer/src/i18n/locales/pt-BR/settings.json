@@ -657,7 +657,7 @@
     }
   },
   "workspaces": {
-    "subtitle": "Ambientes separados, cada um com sua VM, bots, memória e chaves",
+    "subtitle": "Ambientes separados, cada um com seus bots, memória, chaves e computador",
     "vm": {
       "not_created": "VM não criada",
       "stopped": "VM desligada",

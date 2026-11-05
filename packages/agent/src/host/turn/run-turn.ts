@@ -64,7 +64,7 @@ export class TurnRunner {
         }
       }
       if (resolved.kind === 'unavailable') {
-        this.errorCard(turn, resolved.code, resolved.reason)
+        this.errorCard(turn, resolved.code, resolved.reason, resolved.params)
         return
       }
       await this.engines.run({ bot, request, turn }, resolved)

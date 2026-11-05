@@ -657,7 +657,7 @@
     }
   },
   "workspaces": {
-    "subtitle": "Separate environments, each with its own VM, bots, memory and keys",
+    "subtitle": "Separate environments, each with its own bots, memory, keys and computer",
     "vm": {
       "not_created": "VM not created",
       "stopped": "VM off",

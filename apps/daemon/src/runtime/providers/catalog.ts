@@ -218,6 +218,7 @@ export class ModelCatalog {
         kind: 'unavailable',
         code: 'no_model',
         reason: `Choose a model for the provider "${row.name}" (or for this bot).`,
+        params: { provider: row.name },
       }
     }
     const registered = this.deps.store.chatModel(row.id, model)

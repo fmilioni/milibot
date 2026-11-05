@@ -513,6 +513,11 @@
       "cli_unavailable": "{{engine}} needs the workspace's virtual machine",
       "turn_crashed": "Something went wrong and I could not finish"
     },
+    "details": {
+      "no_provider": "Add a provider in Settings › Providers and models.",
+      "no_model": "Choose a model for the provider “{{provider}}” (or for this bot) in Settings › Providers and models.",
+      "cli_unavailable": "{{engine}} runs on the virtual machine, which this workspace doesn't have now. Turn it on in Settings › Computer, or pick another model for this bot."
+    },
     "openLoginTerminal": "Open login terminal"
   },
   "task": {

@@ -141,7 +141,8 @@ export type ResolvedModel =
       contextLimit?: number | null
       maxOutputTokens?: number | null
     }
-  | { kind: 'unavailable'; code: string; reason: string }
+  /** `params` are what the app words the code with (the error card's `params`). */
+  | { kind: 'unavailable'; code: string; reason: string; params?: Record<string, string> }
 
 export type NativeResolvedModel = Extract<ResolvedModel, { kind: 'native' }>
 export type CliResolvedModel = Extract<ResolvedModel, { kind: 'cli' }>

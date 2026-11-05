@@ -30,7 +30,7 @@ const MIN_KNOWN_SECRET = 8
 
 export interface McpServerToolsDeps {
   admin: Pick<McpAdmin, 'list' | 'propose' | 'proposeBot' | 'test' | 'connect'>
-  store: Pick<McpStore, 'validate'>
+  store: Pick<McpStore, 'checkTransport' | 'validate'>
   listBots: () => Bot[]
   /** A bot's switches of the servers it is allowed on. */
   botServers: (botId: string) => BotMcpServer[]
@@ -247,6 +247,7 @@ export class McpServerTools extends ToolSwitch {
     const kv = (items: ProposedKeyValue[]) =>
       items.map((i) => ({ name: i.name, value: i.value ?? null, secret: false }))
     try {
+      this.deps.store.checkTransport(server.transport)
       this.deps.store.validate({
         transport: server.transport,
         command: server.command,

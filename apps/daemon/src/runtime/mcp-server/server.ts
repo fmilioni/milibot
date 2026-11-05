@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 
-import { laneInfo, type LaneKey, type ToolResult } from '@milibot/agent'
+import { laneInfo, type LaneKey, type ToolResult, type ToolScope } from '@milibot/agent'
 import { CLI_ENGINE_DRIVERS } from '@milibot/agent/cli'
 import { type BlobReader, toBase64, type ToolCall } from '@milibot/agent/llm'
 import { mcpInstructions } from '@milibot/agent/prompts'
@@ -35,8 +35,8 @@ export interface McpToolServerDeps {
   getBot(botId: string): Bot | null
   /** `laneKey`: the bot lane whose token made the call (its turn runs the tool). */
   runTool(botId: string, call: ToolCall, laneKey: LaneKey): Promise<ToolResult>
-  /** Tool families of the bot's active skills (absent: every tool). */
-  enabledFamilies?(bot: Bot): ReadonlySet<string>
+  /** The bot's skill families and the computer's capabilities (absent: every tool). */
+  toolScope?(bot: Bot): ToolScope
   /** A read-only helper lane: no tool that changes files, the team or the bot's persona. */
   readOnlyLane?(laneKey: LaneKey): boolean
   proxy?: McpOAuthProxy
@@ -272,12 +272,12 @@ export class McpToolServer {
       isNotification ? null : { jsonrpc: '2.0', id: request.id, error: { code, message } }
     const bot = this.deps.getBot(botId)
     if (!bot) return fail(-32001, 'bot not found')
-    const families = this.deps.enabledFamilies?.(bot)
+    const scope = this.deps.toolScope?.(bot)
     const tools = () =>
       toolsForLane(laneInfo(laneKey).kind, {
         native: CLI_ENGINE_DRIVERS[engine].nativeInMcp,
         readOnly: this.deps.readOnlyLane?.(laneKey) ?? false,
-        ...(families ? { enabledFamilies: families } : {}),
+        ...(scope ? { scope } : {}),
       })
     switch (request.method) {
       case 'initialize':

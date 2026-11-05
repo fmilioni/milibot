@@ -3,6 +3,7 @@ import {
   type BotActivityAction,
   type BotStatus,
   type CliEngine,
+  computerCapabilities,
   type ConversationSummary,
   type Language,
   type Message,
@@ -127,10 +128,11 @@ export class TestEnv implements AgentEnvironment {
     ok: false,
     error: 'Choosing a model is not available here.',
   })
-  /** Every tool family on and no catalog. */
+  /** Every tool family on, the VM's capabilities and no catalog. */
   skillContext: (bot: Bot, lane: string) => SkillContext = () => ({
     catalog: '',
     families: new Set(TOOL_FAMILY_NAMES),
+    capabilities: computerCapabilities('vm'),
   })
   userLanguage: () => Language = () => 'en'
   turnFinished: (info: TurnFinishedInfo) => void = () => undefined

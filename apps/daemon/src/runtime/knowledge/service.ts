@@ -8,6 +8,7 @@ import { lexicalQueryWeight, reciprocalRankFusion } from '@milibot/agent/embeddi
 import {
   type Bot,
   type BotScope,
+  type ComputerCapability,
   type CreateKnowledgeUploadBody,
   DEFAULT_KNOWLEDGE_CATALOG_BUDGET_TOKENS,
   estimateTokens,
@@ -76,6 +77,8 @@ export interface KnowledgeServiceDeps {
   projects: KnowledgeProjects
   workspaceDir: string
   vm: Pick<VmController, 'status' | 'runningGuest' | 'subscribe'>
+  /** Files in the VM need a `shell`, PDF/Office/OCR `documents`: without them such documents fail. */
+  capabilities: ReadonlySet<ComputerCapability>
   host: Pick<AgentHost, 'writeText'>
   providers: ProviderStore
   catalog: ModelCatalog

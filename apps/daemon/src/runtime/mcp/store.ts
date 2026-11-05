@@ -9,6 +9,7 @@ import {
 import {
   type BotMcpServer,
   type BotScope,
+  type ComputerCapability,
   type CreateMcpServerBody,
   type McpKeyValue,
   type McpKeyValueInput,
@@ -25,6 +26,7 @@ import { bool, type Db, parseJson } from '../../db/sqlite'
 import { DaemonError, notFound } from '../../errors'
 import type { Parsed } from '../../handlers'
 import type { SecretStore } from '../../secrets/secret-store'
+import { noComputerError } from '../vm'
 
 interface ServerRow {
   id: string
@@ -104,6 +106,8 @@ export class McpStore {
     private readonly workspaceId: string,
     private readonly secrets: SecretStore,
     private readonly now: () => number,
+    /** `stdio_vm` servers run in the computer's shell: none can be added without one. */
+    private readonly capabilities: ReadonlySet<ComputerCapability>,
   ) {}
 
   private async getSecret(key: string): Promise<string | null> {
@@ -244,6 +248,13 @@ export class McpStore {
     return slug
   }
 
+  /** Refuses a new server (or one moved) to a transport the workspace's computer can't run. */
+  checkTransport(transport: McpTransport): void {
+    if (transport === 'stdio_vm' && !this.capabilities.has('shell')) {
+      throw noComputerError()
+    }
+  }
+
   validate(input: {
     transport: McpTransport
     command: string | null
@@ -322,6 +333,7 @@ export class McpStore {
       env: body.transport === 'stdio_vm' ? (body.env ?? []) : [],
       headers: body.transport === 'http' ? (body.headers ?? []) : [],
     }
+    this.checkTransport(input.transport)
     this.validate(input)
     const id = newId('mcpServer')
     const env = await this.saveSection(id, 'env', input.env, [])
@@ -368,6 +380,9 @@ export class McpStore {
       url: transport === 'http' ? (body.url !== undefined ? body.url : row.url) : null,
       env: transport === 'stdio_vm' ? (body.env ?? keep(previousEnv)) : [],
       headers: transport === 'http' ? (body.headers ?? keep(previousHeaders)) : [],
+    }
+    if (transport !== row.transport) {
+      this.checkTransport(transport)
     }
     this.validate(input)
     // Sections not sent keep their stored entries as they are (secrets are not even read).
@@ -461,6 +476,7 @@ export class McpStore {
       env: body.transport === 'stdio_vm' ? (body.env ?? []) : [],
       headers: body.transport === 'http' ? (body.headers ?? []) : [],
     }
+    this.checkTransport(input.transport)
     this.validate(input)
     const saved = serverId ? await this.config(serverId) : null
     const fill = (items: McpKeyValueInput[], section: 'env' | 'headers'): Record<string, string> => {

@@ -1,7 +1,7 @@
 import type { ToolCall } from '@milibot/agent/llm'
 import { MemoryBlobStore, solidPng } from '@milibot/agent/testing'
 import { READ_ONLY_HELPER_TOOLS, TOOL_FAMILY_NAMES } from '@milibot/agent/tools'
-import type { Bot } from '@milibot/shared'
+import { type Bot, computerCapabilities } from '@milibot/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { McpToolServer } from '../../../src/runtime/mcp-server/server'
@@ -24,7 +24,10 @@ const server = new McpToolServer({
   },
   blobs,
   version: 'test',
-  enabledFamilies: () => new Set(TOOL_FAMILY_NAMES.filter((f) => f !== 'team')),
+  toolScope: () => ({
+    families: new Set(TOOL_FAMILY_NAMES.filter((f) => f !== 'team')),
+    capabilities: computerCapabilities('vm'),
+  }),
   readOnlyLane: (laneKey) => laneKey === `${bot.id}:chat:sub:1`,
 })
 

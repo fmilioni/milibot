@@ -33,6 +33,7 @@ function skill(patch: Partial<Skill> & Pick<Skill, 'slug'>): Skill {
     allowedBots: 'all',
     defaultFor: 'all',
     tools: [],
+    requires: [],
     toolCount: 0,
     enabledFor: [],
     disabledFor: [],

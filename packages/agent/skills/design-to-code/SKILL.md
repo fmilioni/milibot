@@ -3,6 +3,7 @@ name: design-to-code
 description: 'Implementing a canvas design in a codebase. Load it before coding a screen or component from a design: read it, map its tokens and compare the result.'
 milibot:
   tools: [design]
+  requires: [shell]
 ---
 
 # From design to code

@@ -4,6 +4,7 @@ import {
   ATTACHMENT_SETTING_KEYS,
   type attachmentEndpoints,
   type Bot,
+  type ComputerCapability,
   type LogFn,
   type Message,
   type MessageAttachment,
@@ -15,9 +16,10 @@ import type { EndpointHandlers } from '../../handlers'
 import type { VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
 import { FilesScreen } from './files-screen'
-import { COPY_CHUNK_BYTES, maxFileMb, MB } from './limits'
+import { ATTACHED_TEXT_MAX_BYTES, ATTACHED_TEXTS_MAX_BYTES, COPY_CHUNK_BYTES, maxFileMb, MB } from './limits'
 import { MentionedImages } from './mentioned-images'
 import { AttachmentEvents } from './notify'
+import { type AttachedText, userMessageContent, userMessageContentWithoutComputer } from './paths'
 import { ShareFileTools } from './share-file'
 import { AttachmentStore, toAttachment } from './store'
 import { AttachmentUploads } from './uploads'
@@ -25,6 +27,8 @@ import { AttachmentUploads } from './uploads'
 export interface AttachmentServiceDeps {
   store: WorkspaceStore
   vm: Pick<VmController, 'status' | 'runningGuest' | 'subscribe'>
+  /** Without a `shell` attached files stay on the host: models read their names and small texts inline. */
+  capabilities: ReadonlySet<ComputerCapability>
   blobs: BlobStore
   /** Host folder of the bytes not in the VM yet (`<wsDir>/uploads`). */
   stagingDir: string
@@ -99,6 +103,32 @@ export class AttachmentService {
 
   claim(conversationId: string, ids: string[]): MessageAttachment[] {
     return this.uploads.claim(conversationId, ids)
+  }
+
+  /** The text models read for a user message with these files attached. */
+  messageContent(text: string, attachments: MessageAttachment[]): string {
+    if (this.deps.capabilities.has('shell')) {
+      return userMessageContent(text, attachments)
+    }
+
+    return userMessageContentWithoutComputer(text, attachments, this.attachedTexts(attachments))
+  }
+
+  private attachedTexts(attachments: MessageAttachment[]): Map<string, AttachedText> {
+    const texts = new Map<string, AttachedText>()
+    let left = ATTACHED_TEXTS_MAX_BYTES
+    for (const attachment of attachments) {
+      if (left <= 0) {
+        break
+      }
+
+      const attached = this.uploads.stagedText(attachment.id, Math.min(ATTACHED_TEXT_MAX_BYTES, left))
+      if (attached) {
+        texts.set(attachment.id, attached)
+        left -= Buffer.byteLength(attached.text)
+      }
+    }
+    return texts
   }
 
   bind(ids: string[], messageId: string): void {

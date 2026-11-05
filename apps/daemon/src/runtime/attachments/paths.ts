@@ -77,6 +77,39 @@ export function userMessageContent(text: string, attachments: MessageAttachment[
   return text.trim() ? `${text}\n\n${block}` : block
 }
 
+/** The text of a small text file attached in a workspace without a computer; `cut` past the cap. */
+export interface AttachedText {
+  text: string
+  cut: boolean
+}
+
+/**
+ * The text of a user message as the models read it in a workspace without a computer: the files by name (no
+ * VM holds them), API models get the images, and small text files come inline (`texts`, by attachment id).
+ */
+export function userMessageContentWithoutComputer(
+  text: string,
+  attachments: MessageAttachment[],
+  texts: ReadonlyMap<string, AttachedText>,
+): string {
+  if (!attachments.length) {
+    return text
+  }
+
+  const lines = attachments.map((a) => `- ${a.name} (${a.mimeType || 'file'}, ${formatBytesEn(a.size)})`)
+  const contents = attachments.flatMap((a) => {
+    const attached = texts.get(a.id)
+    if (!attached) {
+      return []
+    }
+
+    const cut = attached.cut ? '\n[… the rest of the file is not shown]' : ''
+    return [`--- ${a.name} ---\n${attached.text}${cut}`]
+  })
+  const block = [`[Attached files]\n${lines.join('\n')}`, ...contents].join('\n\n')
+  return text.trim() ? `${text}\n\n${block}` : block
+}
+
 /** A bot's shared file as the models read it: the caption plus where the file is in the VM. */
 export function sharedFileContent(caption: string, file: MessageAttachment): string {
   const block = `[Shared file, saved in the VM]\n- ${file.path} (${file.mimeType || 'file'}, ${formatBytesEn(file.size)})`

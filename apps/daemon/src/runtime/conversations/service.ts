@@ -3,7 +3,7 @@ import type { conversationEndpoints, Message, WorkspaceEvent } from '@milibot/sh
 
 import { DaemonError } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
-import { type AttachmentService, userMessageContent } from '../attachments'
+import type { AttachmentService } from '../attachments'
 import type { WorkSessionService } from '../sessions'
 import type { SetAsideService } from '../set-aside'
 import type { UserRequestService } from '../user-requests'
@@ -13,7 +13,7 @@ export interface ConversationServiceDeps {
   store: WorkspaceStore
   emit: (event: WorkspaceEvent) => void
   host: Pick<AgentHost, 'onMessageCreated'>
-  attachments: Pick<AttachmentService, 'claim' | 'bind' | 'settle'>
+  attachments: Pick<AttachmentService, 'claim' | 'bind' | 'settle' | 'messageContent'>
   userRequests: Pick<UserRequestService, 'answerFromChat'>
   workSessions: Pick<WorkSessionService, 'onUserMessage'>
   setAside: Pick<SetAsideService, 'dropConversation'>
@@ -33,7 +33,7 @@ export class ConversationService {
     const message = store.messages.create({
       conversationId,
       authorType: 'user',
-      content: userMessageContent(content, claimed),
+      content: attachments.messageContent(content, claimed),
       ...(claimed.length
         ? { payload: { type: 'user_message' as const, text: content, attachments: claimed } }
         : {}),

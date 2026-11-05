@@ -75,7 +75,7 @@ export {
   type ProcedureDraft,
   procedureStepImage,
 } from './procedures/procedure'
-export type { SkillContext } from './skills/context'
+export type { SkillContext, ToolScope } from './skills/context'
 export {
   looksLikeScript,
   parseSkillMd,

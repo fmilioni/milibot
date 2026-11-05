@@ -181,9 +181,9 @@ export class CliTurns implements TurnEngine<CliResolvedModel> {
       },
     )
     const laneRules = helper
-      ? subagentRules(session, helper.readOnly, driver.wording)
+      ? subagentRules(session, helper.readOnly, driver.wording, skills)
       : session
-        ? sessionRules(session, driver.wording, skills.families.has('secrets'))
+        ? sessionRules(session, driver.wording, skills)
         : null
     const instructions = laneRules ? `${prompt.instructions}\n\n${laneRules}` : prompt.instructions
     const nativeTools = driver.nativeTools({ inSession: session !== null, readOnly })

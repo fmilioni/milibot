@@ -37,7 +37,7 @@ export function cliPrompt(
     mcpTools: toolsForLane(lane, {
       native: driver.nativeInMcp,
       readOnly: options.readOnly === true,
-      ...(skills ? { enabledFamilies: skills.families } : {}),
+      ...(skills ? { scope: skills } : {}),
     }),
   }
 }

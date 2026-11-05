@@ -2,7 +2,13 @@ import { join } from 'node:path'
 
 import { type AgentHost, createAgentHost } from '@milibot/agent'
 import { fakeGenerateImages } from '@milibot/agent/images'
-import { type CloseBehavior, DEFAULT_VM_CONFIG, type LogFn, type WorkspaceEvent } from '@milibot/shared'
+import {
+  type CloseBehavior,
+  computerCapabilities,
+  DEFAULT_VM_CONFIG,
+  type LogFn,
+  type WorkspaceEvent,
+} from '@milibot/shared'
 
 import type { RuntimeConfig } from '../config/env'
 import { DAEMON_VERSION, dataPaths, workspacePaths } from '../config/paths'
@@ -123,7 +129,7 @@ export function createRuntimeFromConfig(
       fakeScriptPath: config.fakeLlm,
       // Without a window, a workspace set to suspend its VM on close keeps it off until one opens.
       vmAutostart: () => vmAutostart() && !(background && closeBehavior === 'suspend_vm'),
-      enableCliEngines: true,
+      enableCliEngines: computerCapabilities(config.computer).has('shell'),
       closeBehavior: vmEnabled ? () => closeBehavior : undefined,
       version: DAEMON_VERSION,
       log,

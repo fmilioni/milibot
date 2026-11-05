@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, openSync, readSync } from 'node:fs'
 import { open, readFile, rm } from 'node:fs/promises'
 import { join, posix } from 'node:path'
 
@@ -15,12 +15,12 @@ import {
 
 import { DaemonError, errorMessage } from '../../errors'
 import { sanitizeFileName } from '../../util/safe-path'
-import { assertUploadComplete, mimeFromName, writeChunkAt } from '../files'
+import { assertUploadComplete, decodeText, mimeFromName, sniffFile, writeChunkAt } from '../files'
 import { isVmRunning, type VmController, VmCopyQueue } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
 import { MAX_MODEL_IMAGE_BYTES, maxFileMb, MB } from './limits'
 import type { AttachmentEvents } from './notify'
-import { conversationSlug, uniqueName, uploadDir } from './paths'
+import { type AttachedText, conversationSlug, uniqueName, uploadDir } from './paths'
 import { type AttachmentRow, type AttachmentStore, toAttachment, toMessageAttachment } from './store'
 import { freePath, storedImage } from './vm-files'
 
@@ -80,6 +80,24 @@ export class AttachmentUploads {
     const row = this.deps.attachments.row(id)
     const path = this.stagingPath(id)
     return row.status !== 'uploading' && existsSync(path) ? path : null
+  }
+
+  /**
+   * The text of a staged text file, up to `maxBytes` (`cut` when it holds more); null for other files. Read
+   * synchronously while a message is posted, so the cap keeps it short.
+   */
+  stagedText(id: string, maxBytes: number): AttachedText | null {
+    const file = this.stagedFile(id)
+    if (!file) {
+      return null
+    }
+
+    const head = readHead(file, maxBytes + 1)
+    if (sniffFile(this.deps.attachments.row(id).name, head).type !== 'text') {
+      return null
+    }
+
+    return { text: decodeText(head.subarray(0, maxBytes)), cut: head.length > maxBytes }
   }
 
   create(conversationId: string, body: UploadFileBody): Attachment {
@@ -234,5 +252,15 @@ export class AttachmentUploads {
       attachments.setStatus(row.id, 'failed', { error: message.slice(0, 300) })
       events.changed(row.id)
     }
+  }
+}
+
+function readHead(file: string, bytes: number): Uint8Array {
+  const buffer = Buffer.alloc(bytes)
+  const fd = openSync(file, 'r')
+  try {
+    return buffer.subarray(0, readSync(fd, buffer, 0, bytes, 0))
+  } finally {
+    closeSync(fd)
   }
 }

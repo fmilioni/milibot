@@ -16,6 +16,7 @@ import {
   CLI_ENGINES,
   type CliEngine,
   type CloseBehavior,
+  computerCapabilities,
   type ComputerKind,
   LLM_CALL_RUNNING,
   type LogFn,
@@ -200,6 +201,7 @@ export interface ContainerOptions {
  */
 export function createContainer(options: ContainerOptions) {
   const { workspaceId, workspaceDir, db, emit, now, vm, host, log, overrides } = options
+  const capabilities = computerCapabilities(options.computer)
   const background = (what: string, promise: Promise<unknown>) =>
     void promise.catch((err: unknown) => log('warn', `${what} failed`, { err: errorMessage(err) }))
 
@@ -233,6 +235,7 @@ export function createContainer(options: ContainerOptions) {
     workspaceId,
     secrets: options.secrets,
     vm,
+    capabilities,
     blobs,
     emit,
     now,
@@ -340,6 +343,7 @@ export function createContainer(options: ContainerOptions) {
     workspaceName: () => options.workspaceName,
     version: options.version,
     vm,
+    capabilities,
     vmPending: () => store.settings.get<boolean>(SETUP_VM_PENDING_KEY, false),
     emit,
     now,
@@ -415,6 +419,7 @@ export function createContainer(options: ContainerOptions) {
     userDir: join(workspaceDir, 'skills'),
     builtinDir:
       overrides.builtinSkillsDir === undefined ? defaultBuiltinSkillsDir() : overrides.builtinSkillsDir,
+    capabilities,
     procedures,
     vm,
     emit,
@@ -507,6 +512,7 @@ export function createContainer(options: ContainerOptions) {
   const attachments = new AttachmentService({
     store,
     vm,
+    capabilities,
     blobs,
     stagingDir: join(workspaceDir, 'uploads'),
     emit,
@@ -633,6 +639,7 @@ export function createContainer(options: ContainerOptions) {
     emit,
     embeddings,
     modelsDir: embeddingOptions?.modelsDir ?? null,
+    capabilities,
     legacyOffice: () => office.access(),
     now,
     log,
@@ -706,6 +713,7 @@ export function createContainer(options: ContainerOptions) {
   const browser = new BrowserService({ vm, log })
   const web = new WebService({
     vm,
+    capabilities,
     host,
     searchKey: () => credentials.webSearch.current(),
     reportSearch: (error) => credentials.webSearch.report(error),
@@ -765,7 +773,7 @@ export function createContainer(options: ContainerOptions) {
     new McpToolServer({
       getBot: (id) => store.bots.find(id),
       runTool: (botId, call, laneKey) => host.runTool(botId, null, call, laneKey),
-      enabledFamilies: (bot) => skillContext(bot).families,
+      toolScope: (bot) => skillContext(bot),
       readOnlyLane: (laneKey) => host.isReadOnlyLane(laneKey),
       proxy: {
         tools: (botId, slug) => externalMcp.proxyTools(botId, slug),
@@ -823,6 +831,7 @@ export function createContainer(options: ContainerOptions) {
     new WorkSessionService({
       db,
       store,
+      capabilities,
       todos: stepLists,
       worktrees,
       host,
@@ -1058,6 +1067,7 @@ export function createContainer(options: ContainerOptions) {
       providers,
       clients: providerClients,
       vm,
+      capabilities,
       now,
       created: () => {
         bots.introduceFirstBot()
@@ -1080,7 +1090,7 @@ export function createContainer(options: ContainerOptions) {
       log,
     }).handlers(),
     new SetupRoutes({ store, vm, introduceFirstBot: () => bots.introduceFirstBot(), log }).handlers(),
-    new CliEngineRoutes({ store, vm, runtimes: cliEngines, now, log }).handlers(),
+    new CliEngineRoutes({ store, vm, capabilities, runtimes: cliEngines, now, log }).handlers(),
     settings.handlers(),
     office.handlers(),
     groups.handlers(),

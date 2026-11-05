@@ -3,6 +3,7 @@ name: slides
 description: 'Presentations as 1920×1080 slides on the canvas, exported to PDF or PowerPoint. Load it together with design before making a deck or slides.'
 milibot:
   tools: [design]
+  requires: [shell, browser]
 ---
 
 # Slides

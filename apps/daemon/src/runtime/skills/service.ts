@@ -15,6 +15,7 @@ import {
   type Bot,
   type BotScope,
   type BotSkill,
+  type ComputerCapability,
   type CreateSkillBody,
   estimateTokens,
   type LogFn,
@@ -62,6 +63,7 @@ export interface SkillEntry {
   error: string | null
   tools: string[]
   defaultFor: 'all' | 'first'
+  requires: ComputerCapability[]
   allowed: BotScope
   enabled: boolean
   /** Bots with an explicit switch on / off. */
@@ -89,6 +91,8 @@ export interface SkillServiceDeps {
   /** `<wsDir>/skills`. */
   userDir: string
   builtinDir: string | null
+  /** What the workspace's computer offers: built-ins that require more are active for no bot. */
+  capabilities: ReadonlySet<ComputerCapability>
   procedures: Pick<ProcedureService, 'list'>
   vm: VmController
   emit: (event: WorkspaceEvent) => void
@@ -197,6 +201,7 @@ export class SkillService {
         error: scanned.error,
         tools: scanned.meta?.milibot?.tools ?? [],
         defaultFor: scanned.meta?.milibot?.default ?? 'all',
+        requires: scanned.meta?.milibot?.requires ?? [],
         allowed: row ? parseJson<BotScope>(row.allowed_bots, 'all') : 'all',
         enabled: row ? row.enabled === 1 : true,
         ...botSwitches(id),
@@ -224,6 +229,7 @@ export class SkillService {
             : null),
         tools: [],
         defaultFor: 'all',
+        requires: [],
         allowed: parseJson<BotScope>(row.allowed_bots, 'all'),
         enabled: row.enabled === 1,
         ...botSwitches(row.id),
@@ -252,6 +258,7 @@ export class SkillService {
         error: null,
         tools: [],
         defaultFor: 'all',
+        requires: [],
         allowed: procedure.botId ? [procedure.botId] : 'all',
         enabled: row ? row.enabled === 1 : true,
         ...botSwitches(procedure.id),
@@ -325,6 +332,7 @@ export class SkillService {
       enabled: entry.enabled,
       allowedBots: entry.allowed,
       defaultFor: entry.defaultFor,
+      requires: entry.requires,
       tools: entry.tools,
       toolCount: entry.tools.reduce(
         (sum, family) => sum + (TOOL_FAMILIES[family as keyof typeof TOOL_FAMILIES]?.length ?? 0),
@@ -397,7 +405,8 @@ export class SkillService {
   private botState(entry: SkillEntry, bot: Bot, prefs: Map<string, boolean>): BotState {
     const enabled = prefs.get(entry.id) ?? entry.defaultFor !== 'first'
     const allowed = entry.allowed === 'all' || entry.allowed.includes(bot.id)
-    return { enabled, allowed, active: !entry.error && entry.enabled && allowed && enabled }
+    const fitsComputer = entry.requires.every((capability) => this.deps.capabilities.has(capability))
+    return { enabled, allowed, active: !entry.error && entry.enabled && allowed && enabled && fitsComputer }
   }
 
   /** Whether each skill is active for `bot` (its switches read once). */
@@ -406,7 +415,10 @@ export class SkillService {
     return (entry) => this.botState(entry, bot, prefs).active
   }
 
-  /** The bot's catalog and tool families: a built-in's families go away only while it is off for the bot. */
+  /**
+   * The bot's catalog, tool families and the computer's capabilities: a built-in's families go away only
+   * while it is off for the bot.
+   */
   skillContext(bot: Bot): SkillContext {
     const entries = this.entries()
     const prefs = this.rows.prefs(bot.id)
@@ -426,6 +438,7 @@ export class SkillService {
         })),
       ),
       families: new Set(TOOL_FAMILY_NAMES.filter((f) => on.has(f) || !off.has(f))),
+      capabilities: this.deps.capabilities,
     }
   }
 

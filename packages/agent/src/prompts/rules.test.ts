@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs'
 
-import { FIRST_BOT_DEFAULTS } from '@milibot/shared'
+import { computerCapabilities, FIRST_BOT_DEFAULTS } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import { CLI_ENGINE_DRIVERS } from '../cli/registry'
 import { makeBot } from '../test-support/env'
 import { TOOL_FAMILY_NAMES } from '../tools/policy'
-import { sessionRules } from './lanes'
+import { sessionRules, subagentRules } from './lanes'
 import { conversationNote, projectNote } from './notes'
 import { composeSystemPrompt, globalRules, introInstruction, personaSection } from './rules'
 import { CATALOG_DESCRIPTION_MAX, formatSkillCatalog } from './skill-catalog'
@@ -18,9 +18,30 @@ const prompt = (claudeCode: boolean) =>
   composeSystemPrompt({ bot, team: [], cli: claudeCode ? CLI_ENGINE_DRIVERS.claude_code.wording : null })
 const skill = (slug: string) =>
   readFileSync(new URL(`../../skills/${slug}/SKILL.md`, import.meta.url), 'utf8')
+const vm = computerCapabilities('vm')
 const families = (...without: string[]) => new Set(TOOL_FAMILY_NAMES.filter((f) => !without.includes(f)))
 
 describe('global rules', () => {
+  it('describes no machine to a bot whose workspace has no computer', () => {
+    const text = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families(), capabilities: computerCapabilities('none') },
+    })
+
+    expect(text).toContain('## Working without a computer')
+    expect(text).toContain("the workspace's computer setting")
+    for (const machine of [
+      '## Your machine',
+      'virtual machine',
+      'watch your screen',
+      '/workspace',
+      'bot-iris',
+    ]) {
+      expect(text).not.toContain(machine)
+    }
+  })
+
   it('names the Linux user the tools really run as', () => {
     expect(prompt(false)).toContain('your own Linux user `bot-iris`')
     expect(prompt(true)).toContain('run as the shared Linux user `agent`')
@@ -52,15 +73,27 @@ describe('global rules', () => {
   })
 
   it('mentions request_secret only while the secrets skill is on, and always forbids revealing secrets', () => {
-    const on = composeSystemPrompt({ bot, team: [], skills: { catalog: '', families: families() } })
-    const off = composeSystemPrompt({ bot, team: [], skills: { catalog: '', families: families('secrets') } })
+    const on = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families(), capabilities: vm },
+    })
+    const off = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families('secrets'), capabilities: vm },
+    })
     expect(on).toContain('get it with request_secret')
     expect(off).not.toContain('request_secret')
     for (const text of [on, off]) expect(text).toContain('Never reveal, print or copy secrets')
   })
 
   it('decides in the core where work runs, so the skill that says how gets loaded', () => {
-    const all = composeSystemPrompt({ bot, team: [], skills: { catalog: '', families: families() } })
+    const all = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families(), capabilities: vm },
+    })
     expect(all).toContain('## Sizing the work')
     expect(all).toContain('open a work session for it (plans-and-sessions skill), even without a plan')
     expect(all).toContain('before investigating or starting it here')
@@ -68,14 +101,14 @@ describe('global rules', () => {
     const noBoards = composeSystemPrompt({
       bot,
       team: [],
-      skills: { catalog: '', families: families('boards') },
+      skills: { catalog: '', families: families('boards'), capabilities: vm },
     })
     expect(noBoards).toContain('## Sizing the work')
     expect(noBoards).not.toContain('boards skill')
     const noPlans = composeSystemPrompt({
       bot,
       team: [],
-      skills: { catalog: '', families: families('plans') },
+      skills: { catalog: '', families: families('plans'), capabilities: vm },
     })
     expect(noPlans).not.toContain('## Sizing the work')
     expect(composeSystemPrompt({ bot, team: [], helper: true })).not.toContain('## Sizing the work')
@@ -90,7 +123,11 @@ describe('global rules', () => {
       { name: 'web-browsing', description: 'Websites.' },
       { name: 'code-and-repos', description: 'Git\n and PRs.' },
     ])
-    const text = composeSystemPrompt({ bot, team: [], skills: { catalog, families: families() } })
+    const text = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog, families: families(), capabilities: vm },
+    })
     expect(text.endsWith(catalog)).toBe(true)
     expect(catalog).toContain('load its skill with skill_load')
     expect(catalog).toContain('- code-and-repos — Git and PRs.\n- web-browsing — Websites.')
@@ -106,11 +143,15 @@ describe('global rules', () => {
     }
     expect(FIRST_BOT_DEFAULTS.en.persona).toContain('Do the tasks the user gives you yourself')
     expect(FIRST_BOT_DEFAULTS['pt-BR'].persona).toContain('Faça você mesmo')
-    const withTeam = composeSystemPrompt({ bot, team: [], skills: { catalog: '', families: families() } })
+    const withTeam = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families(), capabilities: vm },
+    })
     const withoutTeam = composeSystemPrompt({
       bot,
       team: [],
-      skills: { catalog: '', families: families('team') },
+      skills: { catalog: '', families: families('team'), capabilities: vm },
     })
     for (const text of [withTeam, withoutTeam])
       expect(text).toContain('do it yourself, even when it is long or recurring')
@@ -121,11 +162,15 @@ describe('global rules', () => {
   })
 
   it("points to the user's documents in the core only while the knowledge base is on", () => {
-    const on = composeSystemPrompt({ bot, team: [], skills: { catalog: '', families: families() } })
+    const on = composeSystemPrompt({
+      bot,
+      team: [],
+      skills: { catalog: '', families: families(), capabilities: vm },
+    })
     const off = composeSystemPrompt({
       bot,
       team: [],
-      skills: { catalog: '', families: families('knowledge') },
+      skills: { catalog: '', families: families('knowledge'), capabilities: vm },
     })
     expect(on).toContain('search the knowledge base before relying on general knowledge')
     expect(off).not.toContain('knowledge base')
@@ -143,7 +188,25 @@ describe('global rules', () => {
     expect(text).toContain('\n\n# Team\n- Ana (Finance)')
     const session = { id: 'ses_1', title: 'Shop', cwd: '/workspace/shop' }
     expect(sessionRules(session)).toContain('request_secret')
-    expect(sessionRules(session, null, false)).not.toContain('request_secret')
+    expect(sessionRules(session, null, { families: families('secrets'), capabilities: vm })).not.toContain(
+      'request_secret',
+    )
+  })
+
+  it('gives sessions and helpers without a computer no folder, files or commands', () => {
+    const none = { families: families(), capabilities: computerCapabilities('none') }
+    const session = { id: 'ses_1', title: 'Shop', cwd: '/workspace' }
+
+    const rules = sessionRules(session, null, none)
+    const helper = subagentRules(session, true, null, none)
+
+    expect(rules).toContain('the session has no folder')
+    expect(rules).toContain('todo_write')
+    for (const text of [rules, helper]) {
+      for (const machine of ['/workspace', 'grep', 'file_read', 'bash', 'screenshot']) {
+        expect(text).not.toContain(machine)
+      }
+    }
   })
 
   it('tells a session to finish once what is left depends on another bot', () => {

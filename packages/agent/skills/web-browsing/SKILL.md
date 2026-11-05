@@ -3,6 +3,7 @@ name: web-browsing
 description: 'Websites through the browser tools on your Chrome. Load it before logging in, forms, webmail, shopping, dashboards or pages that need JavaScript.'
 milibot:
   tools: [browser]
+  requires: [browser]
 ---
 
 # Web browsing

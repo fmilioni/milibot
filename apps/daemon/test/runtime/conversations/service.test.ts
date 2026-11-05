@@ -18,7 +18,12 @@ beforeEach(() => {
     store,
     emit: (e) => events.push(e),
     host: { onMessageCreated: () => undefined },
-    attachments: { claim: () => [], bind: () => undefined, settle: async () => undefined },
+    attachments: {
+      claim: () => [],
+      bind: () => undefined,
+      settle: async () => undefined,
+      messageContent: (text) => text,
+    },
     userRequests: { answerFromChat: () => false },
     workSessions: { onUserMessage: () => undefined },
     setAside: { dropConversation: () => undefined },

@@ -3,6 +3,7 @@ name: code-and-repos
 description: 'Git repos and worktrees, pull requests, Docker and task cards. Load it before working on code or a repo, opening or merging a PR, or running Docker.'
 milibot:
   tools: [repos]
+  requires: [shell]
 ---
 
 # Code and repositories

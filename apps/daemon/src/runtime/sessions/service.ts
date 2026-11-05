@@ -10,6 +10,7 @@ import { cliKeys } from '@milibot/agent/cli'
 import {
   type Bot,
   CLI_ENGINES,
+  type ComputerCapability,
   type ListWorkSessionsQuery,
   type LogFn,
   type Message,
@@ -67,6 +68,8 @@ export interface WorkSessionServiceDeps {
   worktrees: WorktreeStore
   host: Pick<AgentHost, 'enqueueTurn' | 'control' | 'closeLane'>
   vm: VmController
+  /** Without a `shell` sessions have no folder: no repository, no `/workspace` path. */
+  capabilities: ReadonlySet<ComputerCapability>
   projects: Pick<ProjectService, 'find'>
   plans: SessionPlans
   /** Tool calls of a conversation, oldest first (the last `limit`). */
@@ -347,16 +350,14 @@ export class WorkSessionService {
       )
     const id = newId('workSession')
     const short = id.slice(-8).toLowerCase()
-    const repoName = input.repo ? sanitizeRepoName(input.repo) : null
-    const folder = !repoName && input.folder ? sessionFolder(input.folder) : null
+    const repoName = this.hasFolders && input.repo ? sanitizeRepoName(input.repo) : null
+    const folder = this.hasFolders && !repoName && input.folder ? sessionFolder(input.folder) : null
     if (folder)
       assertFolderFree(
         folder,
         this.store.openFolders().filter((f) => !stale.some((row) => row.cwd === f.cwd)),
       )
-    const cwd = repoName
-      ? `${WORKSPACE_DIR}/worktrees/${repoName}/${bot.slug}-${short}`
-      : (folder ?? `${SESSIONS_DIR}/${bot.slug}-${short}`)
+    const cwd = this.sessionCwd(bot, short, repoName, folder)
     const conversation = this.deps.store.conversations.create({
       type: 'session',
       botIds: [bot.id],
@@ -428,6 +429,23 @@ export class WorkSessionService {
     } catch (err) {
       this.deps.log?.('warn', 'work session card link failed', { sessionId: row.id, err: errorMessage(err) })
     }
+  }
+
+  /** Whether sessions work in a folder of the computer (a plan's folder is ignored without one). */
+  get hasFolders(): boolean {
+    return this.deps.capabilities.has('shell')
+  }
+
+  private sessionCwd(bot: Bot, short: string, repoName: string | null, folder: string | null): string | null {
+    if (!this.hasFolders) {
+      return null
+    }
+
+    if (repoName) {
+      return `${WORKSPACE_DIR}/worktrees/${repoName}/${bot.slug}-${short}`
+    }
+
+    return folder ?? `${SESSIONS_DIR}/${bot.slug}-${short}`
   }
 
   /**

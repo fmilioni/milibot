@@ -1,6 +1,12 @@
 import type { ToolExecContext, TurnRequest } from '@milibot/agent'
 import { FakeEmbeddingProvider } from '@milibot/agent/embeddings'
-import type { Bot, PlanPayload, VmInfo, WorkspaceEvent } from '@milibot/shared'
+import {
+  type Bot,
+  computerCapabilities,
+  type PlanPayload,
+  type VmInfo,
+  type WorkspaceEvent,
+} from '@milibot/shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { type Db } from '../../../src/db/sqlite'
@@ -47,6 +53,7 @@ function setup() {
       ofConversation: (id): string | null => projects.current(id)?.id ?? null,
     },
     workspaceDir: '/nonexistent/milibot-test',
+    capabilities: computerCapabilities('vm'),
     vm: {
       status: () => ({ state: 'stopped', desktops: 0 }) as unknown as VmInfo,
       runningGuest: () => {

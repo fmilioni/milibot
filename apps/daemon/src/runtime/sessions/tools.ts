@@ -69,12 +69,17 @@ export class SessionTools extends ToolSwitch {
       projectId = 'project' in found ? found.project.id : null
     } else projectId = plan?.projectId ?? this.deps.projects.current(ctx.conversationId)?.id ?? null
     let repo: string | null = trimmedString(a.repo) || null
+    const folderAsked = trimmedString(a.folder)
+    if ((repo || folderAsked) && !this.deps.sessions.hasFolders) {
+      return toolError(
+        'This workspace has no computer, so a session has no repository or folder: start it without "repo" and "folder".',
+      )
+    }
     if (repo) sanitizeRepoName(repo)
-    const folder = repo
-      ? null
-      : trimmedString(a.folder)
-        ? sessionFolder(trimmedString(a.folder))
-        : (plan?.folder ?? null)
+    let folder: string | null = null
+    if (!repo) {
+      folder = folderAsked ? sessionFolder(folderAsked) : (plan?.folder ?? null)
+    }
     const asked = modelRequestArgs(a)
     const model = asked ? this.deps.models?.request(ctx.bot, asked, null) : null
     if (asked && !model) return toolError('Choosing a model for a session is not available here.')

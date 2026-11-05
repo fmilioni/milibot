@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { BotScope } from '../bots/bots'
 import { endpoint, Ok } from '../http/endpoint'
+import { ComputerCapability } from '../workspace/computer'
 
 /*
  * Skills: folders with a `SKILL.md` (YAML frontmatter + markdown instructions) and optional files that bots
@@ -49,6 +50,8 @@ export const Skill = z.object({
   defaultFor: z.enum(['all', 'first']),
   /** Tool families a built-in enables for the bots it is active for. */
   tools: z.array(z.string()),
+  /** What of the workspace's computer a built-in needs: without it the skill is active for no bot. */
+  requires: z.array(ComputerCapability),
   toolCount: z.number().int(),
   /** Bots that turned it on themselves (`defaultFor: first` is off for everyone else). */
   enabledFor: z.array(z.string()),
@@ -93,7 +96,10 @@ export const BotSkill = z.object({
   /** The bot's own switch (no choice stored: the skill's default). */
   enabled: z.boolean(),
   allowed: z.boolean(),
-  /** In the bot's catalog: valid, enabled in the workspace, allowed and enabled for the bot. */
+  /**
+   * In the bot's catalog: valid, enabled in the workspace, allowed and enabled for the bot, and the workspace's
+   * computer has what it `requires`.
+   */
   active: z.boolean(),
 })
 export type BotSkill = z.infer<typeof BotSkill>

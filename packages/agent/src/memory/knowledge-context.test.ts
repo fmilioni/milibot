@@ -1,3 +1,4 @@
+import { computerCapabilities } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import { DefaultAgentHost } from '../host/agent-host'
@@ -146,7 +147,13 @@ describe('knowledge in the context', () => {
         return '# Current project: Store'
       },
     }
-    Object.assign(env, { skillContext: () => ({ catalog: '', families: new Set(['browser', 'computer']) }) })
+    Object.assign(env, {
+      skillContext: () => ({
+        catalog: '',
+        families: new Set(['browser', 'computer']),
+        capabilities: computerCapabilities('vm'),
+      }),
+    })
     const bot = makeBot()
     const conversation = env.addBot(bot)
     conversation.projectId = 'prj_1'

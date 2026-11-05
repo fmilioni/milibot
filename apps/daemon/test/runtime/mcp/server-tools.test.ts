@@ -29,7 +29,7 @@ function setup(servers: McpServer[] = [], options: { manager?: boolean; prefs?: 
       test: async () => 'tested',
       connect: async () => 'connected',
     },
-    store: { validate: () => undefined },
+    store: { checkTransport: () => undefined, validate: () => undefined },
     listBots: () => [bot, other],
     botServers: () => options.prefs ?? [],
     managesTeam: () => options.manager ?? true,

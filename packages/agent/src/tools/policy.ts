@@ -1,9 +1,13 @@
+import type { ComputerCapability } from '@milibot/shared'
+
 import type { LaneKind } from '../host/lanes'
 import type { ToolDefinition } from '../llm/provider'
+import type { ToolScope } from '../skills/context'
 import { isToolName, TOOL_DEFINITIONS, type ToolName } from './catalog'
 import { BOARD_READ_TOOLS, boardTools } from './families/boards'
 import { browserTools } from './families/browser'
 import { designTools } from './families/design'
+import { fileTools } from './families/files'
 import { imageTools } from './families/images'
 import { knowledgeTools } from './families/knowledge'
 import { mcpServerTools } from './families/mcp-servers'
@@ -71,6 +75,37 @@ export const TOOL_FAMILIES = {
   workspace_settings: [...workspaceSettingsTools.names],
   mcp_servers: [...mcpServerTools.names],
 } satisfies Record<string, ToolName[]>
+
+/** What of the workspace's computer each group of tools needs (every capability listed). */
+const COMPUTER_NEEDS: ReadonlyArray<readonly [readonly ComputerCapability[], readonly ToolName[]]> = [
+  [['desktop'], ['computer']],
+  [['browser'], [...browserTools.names, 'design_screenshot']],
+  [
+    ['shell'],
+    [
+      ...fileTools.names,
+      'repo_checkout',
+      'repo_list',
+      'repo_release',
+      'knowledge_add',
+      'share_file',
+      'generate_image',
+      'vm_status',
+    ],
+  ],
+  [['shell', 'browser'], ['design_export']],
+]
+
+/** Skills that need a machine say so in their `milibot.requires`, which takes their families away too. */
+const TOOL_CAPABILITIES: ReadonlyMap<ToolName, readonly ComputerCapability[]> = new Map(
+  COMPUTER_NEEDS.flatMap(([capabilities, names]) => names.map((name) => [name, capabilities] as const)),
+)
+
+/** Whether the workspace's computer offers what a tool needs (tools outside `COMPUTER_NEEDS` need nothing). */
+export function toolFitsComputer(name: string, capabilities: ReadonlySet<ComputerCapability>): boolean {
+  const needed = isToolName(name) ? TOOL_CAPABILITIES.get(name) : undefined
+  return !needed || needed.every((capability) => capabilities.has(capability))
+}
 
 export type ToolFamily = keyof typeof TOOL_FAMILIES
 export const TOOL_FAMILY_NAMES = Object.keys(TOOL_FAMILIES) as ToolFamily[]
@@ -151,15 +186,28 @@ export interface ToolSetOptions {
   native?: readonly ToolName[]
   /** A helper that must not change files. */
   readOnly?: boolean
-  /** Families enabled by the bot's active skills; absent: every family. */
-  enabledFamilies?: ReadonlySet<string>
+  /** The bot's skill families and the computer's capabilities; absent: every family and capability. */
+  scope?: ToolScope
 }
 
-/** Whether the bot's active skills allow a tool in a lane (tools outside every family always are). */
-export function toolEnabled(name: string, lane: LaneKind, enabledFamilies?: ReadonlySet<string>): boolean {
-  if (!enabledFamilies) return true
+/**
+ * Whether the bot's active skills and the workspace's computer allow a tool in a lane. Tools outside every
+ * family pass the skills; a lane's `keep` overrides an inactive skill, never a missing capability.
+ */
+export function toolEnabled(name: string, lane: LaneKind, scope?: ToolScope): boolean {
+  if (!scope) {
+    return true
+  }
+
+  if (!toolFitsComputer(name, scope.capabilities)) {
+    return false
+  }
+
   const family = toolFamily(name)
-  if (!family || enabledFamilies.has(family)) return true
+  if (!family || scope.families.has(family)) {
+    return true
+  }
+
   return (LANE_TOOLS[lane].keep as string[]).includes(name)
 }
 
@@ -168,7 +216,7 @@ export function toolsForLane(lane: LaneKind, options: ToolSetOptions = {}): Tool
   return (Object.keys(TOOL_DEFINITIONS) as ToolName[])
     .filter((name) => !options.native?.includes(name))
     .filter((name) => toolAllowedInLane(name, lane, options.readOnly))
-    .filter((name) => toolEnabled(name, lane, options.enabledFamilies))
+    .filter((name) => toolEnabled(name, lane, options.scope))
     .map((name) => TOOL_DEFINITIONS[name])
 }
 

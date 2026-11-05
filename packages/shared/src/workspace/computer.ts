@@ -4,6 +4,23 @@ import { z } from 'zod'
 export const ComputerKind = z.enum(['vm', 'none'])
 export type ComputerKind = z.infer<typeof ComputerKind>
 
+/**
+ * What a computer offers the bots: `shell` a /workspace filesystem and commands (CLI engines need it too),
+ * `desktop` a screen and input, `browser` a Chrome the bots and the design renderer drive, `documents`
+ * PDF/Office/OCR extraction.
+ */
+export const ComputerCapability = z.enum(['shell', 'desktop', 'browser', 'documents'])
+export type ComputerCapability = z.infer<typeof ComputerCapability>
+
+const COMPUTER_CAPABILITIES: Record<ComputerKind, readonly ComputerCapability[]> = {
+  vm: ComputerCapability.options,
+  none: [],
+}
+
+export function computerCapabilities(kind: ComputerKind): ReadonlySet<ComputerCapability> {
+  return new Set(COMPUTER_CAPABILITIES[kind])
+}
+
 export const VM_SIZE_LIMITS = {
   minCpus: 1,
   minMemGb: 2,

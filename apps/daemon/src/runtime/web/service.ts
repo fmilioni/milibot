@@ -3,6 +3,7 @@ import { WEB_EXTRACT_SYSTEM_PROMPT, webExtractInput } from '@milibot/agent/promp
 import {
   type Bot,
   clipLine,
+  type ComputerCapability,
   estimateTokens,
   type ExtractResult,
   type Language,
@@ -12,6 +13,7 @@ import {
 import { DaemonError, errorMessage } from '../../errors'
 import { decodeText, sniffFile } from '../files'
 import type { ExtractOptions, VmController } from '../vm'
+import { fetchOnHost } from './host-fetch'
 import { htmlToMarkdown, textToMarkdown } from './html-markdown'
 import {
   ANSWER_MAX_CHARS,
@@ -36,11 +38,13 @@ import {
   type SearchQuery,
   searchTavily,
 } from './search'
-import { normalizeWebUrl } from './url-policy'
+import { LOCAL_ONLY, LOCAL_ONLY_WITHOUT_COMPUTER, normalizeWebUrl } from './url-policy'
 import { fetchInVm, type VmFetchRequest, type VmFetchResult } from './vm-fetch'
 
 export interface WebDeps {
   vm: VmController
+  /** Without a `shell`, pages download from the daemon; without `documents`, PDF and Office are refused. */
+  capabilities: ReadonlySet<ComputerCapability>
   host: Pick<AgentHost, 'writeText'>
   searchKey: () => Promise<{ provider: WebSearchProvider; key: string } | null>
   /** The outcome of a search (null = it worked), for the settings. */
@@ -138,7 +142,8 @@ export class WebService {
     ctx: ToolExecContext,
     request: { url: string; prompt: string | null; page: number | null },
   ): Promise<{ text: string; title: string; url: string }> {
-    const { url, httpFallback } = normalizeWebUrl(request.url)
+    const localOnly = this.deps.capabilities.has('shell') ? LOCAL_ONLY : LOCAL_ONLY_WITHOUT_COMPUTER
+    const { url, httpFallback } = normalizeWebUrl(request.url, localOnly)
     const doc = await this.loadDoc(ctx, url.href, httpFallback)
     const text =
       !request.prompt || request.page !== null
@@ -205,11 +210,7 @@ export class WebService {
       httpFallback,
       acceptLanguage: this.deps.userLanguage() === 'pt-BR' ? 'pt-BR,pt;q=0.9,en;q=0.8' : 'en-US,en;q=0.9',
     }
-    const fetched = await this.limited(() =>
-      this.deps.vmFetch
-        ? this.deps.vmFetch(ctx.bot, request, ctx.signal)
-        : this.deps.vm.guest().then((guest) => fetchInVm(guest, ctx.bot, request, ctx.signal)),
-    )
+    const fetched = await this.limited(() => this.download(ctx, request))
     const doc = await this.convert(url, fetched, ctx.signal)
     this.remember(doc)
     return doc
@@ -241,17 +242,44 @@ export class WebService {
       if (sniff.type === 'document' && sniff.kind === 'image')
         throw new DaemonError(
           'validation_failed',
-          `This URL is an image (${type || 'image'}); download it with bash (curl -o) and look at it with file_read.`,
+          `This URL is an image (${type || 'image'}); ${this.downloadHint('look at it with file_read')}`,
         )
+      if (!this.deps.capabilities.has('documents')) {
+        throw new DaemonError(
+          'validation_failed',
+          `This URL is a document (${type || 'document'}); reading documents needs a computer, which this workspace does not have.`,
+        )
+      }
       return this.extractDoc(base, fetched, sniff.type === 'document' ? sniff.kind : undefined, signal)
     }
     if (sniff.type === 'binary')
       throw new DaemonError(
         'validation_failed',
-        `This URL is not a readable page (${type || sniff.description}); download it with bash (curl -o) instead.`,
+        `This URL is not a readable page (${type || sniff.description}); ${this.downloadHint('open it from there')}`,
       )
     const text = textToMarkdown(decodeBody(fetched.body, fetched.charset), type)
     return this.withPages({ ...base, kind: 'text', title: fileName(fetched.url, '') }, text)
+  }
+
+  /** What to do with a file web_fetch can't read: download it, when there is a computer to download it to. */
+  private downloadHint(then: string): string {
+    if (!this.deps.capabilities.has('shell')) {
+      return 'it can only be read on a computer, which this workspace does not have.'
+    }
+
+    return `download it with bash (curl -o) and ${then}.`
+  }
+
+  private async download(ctx: ToolExecContext, request: VmFetchRequest): Promise<VmFetchResult> {
+    if (this.deps.vmFetch) {
+      return this.deps.vmFetch(ctx.bot, request, ctx.signal)
+    }
+
+    if (!this.deps.capabilities.has('shell')) {
+      return fetchOnHost(request, ctx.signal)
+    }
+
+    return fetchInVm(await this.deps.vm.guest(), ctx.bot, request, ctx.signal)
   }
 
   private async extractDoc(

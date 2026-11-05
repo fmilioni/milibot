@@ -3,6 +3,7 @@ name: documents-pdf
 description: 'Designed documents as A4 pages on the canvas, exported to PDF: reports, proposals, one-pagers, CVs, flyers. Load it together with design before making one.'
 milibot:
   tools: [design]
+  requires: [shell, browser]
 ---
 
 # Documents as PDF

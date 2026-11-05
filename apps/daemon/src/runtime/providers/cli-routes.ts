@@ -4,12 +4,13 @@ import {
   type CliEngine,
   type cliEngineEndpoints,
   cliSettingKeys,
+  type ComputerCapability,
   type LogFn,
 } from '@milibot/shared'
 
 import { DaemonError, errorMessage } from '../../errors'
 import type { EndpointHandlers } from '../../handlers'
-import { isVmRunning, type VmController } from '../vm'
+import { isVmRunning, noComputerError, type VmController } from '../vm'
 import type { WorkspaceStore } from '../workspace-store'
 import { CLI_ENGINE_HOSTS } from './cli-engines'
 import type { CliEngineRuntime, CliInstaller } from './cli-engines/host'
@@ -21,6 +22,8 @@ const ELSEWHERE_CHECK_MS = 10_000
 export interface CliEngineRoutesDeps {
   store: WorkspaceStore
   vm: VmController
+  /** The engines run in the computer's shell: without one, logins and installs are refused. */
+  capabilities: ReadonlySet<ComputerCapability>
   runtimes: Record<CliEngine, CliEngineRuntime>
   now?: () => number
   log: LogFn
@@ -51,6 +54,11 @@ export class CliEngineRoutes {
     const now = this.deps.now ?? Date.now
     const settings = (engine: CliEngine) =>
       cliUserSettings(engine, (key, fallback) => store.settings.get(key, fallback))
+    const needsShell = () => {
+      if (!this.deps.capabilities.has('shell')) {
+        throw noComputerError()
+      }
+    }
 
     return {
       getCliLoginStatus: async ({ params: { engine } }) => {
@@ -79,6 +87,7 @@ export class CliEngineRoutes {
         return { loggedIn, terminalOpen, loggedInElsewhere }
       },
       openCliLoginTerminal: async ({ params: { engine }, body }) => {
+        needsShell()
         const bot = body.botId ? store.bots.get(body.botId) : store.bots.first()
         if (!bot) throw new DaemonError('not_found', 'No bot to open the terminal on')
         if (!isVmRunning(vm)) {
@@ -96,7 +105,10 @@ export class CliEngineRoutes {
         return { botId: bot.id }
       },
       getCliInstall: async ({ params: { engine } }) => this.installer(engine).status(),
-      installCli: async ({ params: { engine } }) => this.installer(engine).install(),
+      installCli: async ({ params: { engine } }) => {
+        needsShell()
+        return this.installer(engine).install()
+      },
       getCliSettings: ({ params: { engine } }) => settings(engine),
       updateCliSettings: async ({ params: { engine }, body }) => {
         if (body.compactSystemPrompt !== undefined && !CLI_ENGINE_INFO[engine].compactSystemPrompt)

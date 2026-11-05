@@ -186,7 +186,7 @@ export class SessionStore {
     projectId: string | null
     title: string
     goal: string
-    cwd: string
+    cwd: string | null
     repoName: string | null
     model: ModelChoice | null
   }): SessionRow {

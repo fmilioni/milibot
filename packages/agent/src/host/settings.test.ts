@@ -1,3 +1,4 @@
+import { computerCapabilities } from '@milibot/shared'
 import { describe, expect, it } from 'vitest'
 
 import type { AgentEnvironment, ResolvedModel } from '../environment'
@@ -107,6 +108,7 @@ describe('agent host: settings hooks', () => {
         skillContext: () => ({
           catalog: formatSkillCatalog([{ name: 'web-browsing', description: 'Websites.' }]),
           families,
+          capabilities: computerCapabilities('vm'),
         }),
       },
     )
@@ -123,6 +125,30 @@ describe('agent host: settings hooks', () => {
     const refused = [...env.toolCalls.values()].find((c) => c.toolName === 'computer')
     expect(refused?.status).toBe('error')
     expect(JSON.stringify(refused?.result)).toContain('turned off for you')
+  })
+
+  it('offers no machine tools without a computer and refuses a call to one', async () => {
+    const { provider, env, host, bot, say } = await setup(
+      [{ toolCalls: [{ name: 'bash', arguments: { command: 'ls' } }] }, { text: 'ok' }],
+      {
+        skillContext: () => ({
+          catalog: '',
+          families: new Set(TOOL_FAMILY_NAMES),
+          capabilities: computerCapabilities('none'),
+        }),
+      },
+    )
+
+    say('hi')
+    await host.idle(bot.id)
+
+    const offered = provider.requests[0]?.tools?.map((t) => t.name) ?? []
+    expect(offered).not.toContain('bash')
+    expect(offered).not.toContain('computer')
+    expect(offered).toContain('web_fetch')
+    const refused = [...env.toolCalls.values()].find((c) => c.toolName === 'bash')
+    expect(refused?.status).toBe('error')
+    expect(JSON.stringify(refused?.result)).toContain('needs a computer')
   })
 })
 

@@ -57,8 +57,8 @@ function systemPromptOf(
     helper: !!helper,
     skills,
   })
-  if (helper) return `${base}\n\n${subagentRules(session, helper.readOnly)}`
-  if (session) return `${base}\n\n${sessionRules(session, null, skills.families.has('secrets'))}`
+  if (helper) return `${base}\n\n${subagentRules(session, helper.readOnly, null, skills)}`
+  if (session) return `${base}\n\n${sessionRules(session, null, skills)}`
   return base
 }
 
@@ -115,7 +115,7 @@ export async function nativeContext(
     request.trigger === 'intro'
       ? []
       : [
-          ...toolsForLane(kind, { readOnly: helper?.readOnly === true, enabledFamilies: skills.families }),
+          ...toolsForLane(kind, { readOnly: helper?.readOnly === true, scope: skills }),
           ...(external?.tools ?? []),
         ]
   turn.offeredTools = new Set(tools.map((tool) => tool.name))

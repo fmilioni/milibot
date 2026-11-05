@@ -3,7 +3,7 @@ import {
   type EmbeddingSetting,
   FakeEmbeddingProvider,
 } from '@milibot/agent/embeddings'
-import type { VmInfo } from '@milibot/shared'
+import { computerCapabilities, type VmInfo } from '@milibot/shared'
 import { beforeEach } from 'vitest'
 
 import type { Db } from '../../../src/db/sqlite'
@@ -115,6 +115,7 @@ export function knowledgeService(
     projects: { exists: () => false, ofConversation: () => null },
     workspaceDir: '/nonexistent/milibot-test',
     vm: vmStub(),
+    capabilities: computerCapabilities('vm'),
     host: { writeText: async () => ({ text: 'Summary.', llmCallId: null }) },
     providers: new ProviderStore({ db, workspaceId: 'ws', secrets: new MemorySecretStore() }),
     catalog: testProviders(db).catalog,
